@@ -10,11 +10,11 @@ assignees: ''
 
 <!-- The comments between these brackets won't show up in the submitted issue (as you can see in the Preview). -->
 
-### Checklist
+#### Checklist
 <!-- The first box has been checked for you to show you how it is done. -->
 
 - [x] I checked, but didn't find any duplicates (open OR closed) of this issue in the repo. <!-- Seriously, check. O_O -->
-- [ ] I have read the contribution guidelines TODO-LINK-TO-CONTRIBUTER-GUILD
+- [ ] I have read the **[contribution guidelines](../../docs/contributing.md)**
 - [ ] This issue contains only one feature request. I will open one issue for every feature I want to request.
 
 
@@ -35,12 +35,12 @@ Example: *I want to do X, but there is no way to do it.* -->
 
 #### Additional context
 <!-- Add any other context, like screenshots, about the feature request here.
-Example: *Here's a photo of my cat!* -->
+Example: *Here's a photo of my raccoon!* -->
 
 
 
 #### How will you/everyone benefit from this feature?
-<!-- Convince us! How does it change your NewPipe experience and/or your life?
+<!-- Convince us! How does it change your RaccoonChessSigma experience and/or your life?
 The better this paragraph is, the more likely a developer will think about working on it.
 Example: *This feature will help us colonize the galaxy! -->
 
