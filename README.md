@@ -18,7 +18,7 @@ By following the [Getting Started Guide](./docs/getting_started_guide.md), a use
   - [Getting Started Guide](./docs/getting_started_guide.md)
 - [Development](#development)
 - [User Interface](#user-interface)
-- [Security](.docs/security.md)
+- [Security](./docs/security.md)
 - [Support](#support)
 - [About](#about) 
 
