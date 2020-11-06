@@ -11,3 +11,26 @@ The RaccoonChessSigma evaluates chess positions using either of the following tw
 By following the [Getting Started Guide](../RaccoonChessSigma/docs/getting_started_guide.md), a user can utilize either of the engines as a [UCI-compliant Chess Engine](../RaccoonChessSigma/rcsigma/ui/uci/uci.md) or as an extensive [JavaScript Chess Library](../RaccoonChessSigma/rcsigma/ui/uci/uci.md).  
 
 ## Table of Contents
+- [Code of Conduct](../RaccoonChessSigma/docs/code_of_conduct.md)
+- Guides
+  - [Maintainer Guide](../RaccoonChessSigma/docs/maintainers.md)
+  - [Contributing Guide](../RaccoonChessSigma/docs/contributing.md)
+  - [Getting Started Guide](../RaccoonChessSigma/docs/getting_started_guide.md)
+- [Development](#development)
+- [User Interface](#user-interface)
+- [Security](../RaccoonChessSigma/docs/security.md)
+- [Support](#support)
+- [About](#about) 
+
+
+## Development
+TODO
+
+## User Interface
+TODO
+
+## Support
+TODO
+
+## About
+TODO
