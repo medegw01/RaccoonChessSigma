@@ -1,6 +1,6 @@
 # RaccoonChessSigma
 [![Build Status](https://travis-ci.org/medegw01/raccoon.js.svg?branch=master)](https://travis-ci.org/medegw01/raccoon.js)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../RaccoonChessSigma/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/medegw01/RaccoonChessSigma/blob/main/LICENSE)
 
 [RaccoonChessSigma](http://rcsigma.org/) is a free, powerful chess engine written in TypeScript. It is primarily inspired by [Vice](https://www.youtube.com/watch?v=bGAfaepBco4&list=PLZ1QII7yudbc-Ky058TEaOstZHVbT-2hg), [Stockfish](https://stockfishchess.org/), [LeelaChessZero](https://lczero.org/), and a number of open source projects and aims to serve as both reference for other authors and a high-end engine.
 
