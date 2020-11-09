@@ -29,7 +29,7 @@ By following the [Getting Started Guide](./docs/getting_started_guide.md), a use
 - [Development](#development)
 - [Architecture](./docs/architecture.md)
 - [Versioning](#versioning)
-- [About](#about) 
+- [Security](./docs/security.md) 
 
 ## Development
 
@@ -46,7 +46,3 @@ RaccoonChessSigma uses `x.y.z` where `x`, `y`, and `z` are integers representing
 * Patch is incremented when the release only contains bugfixes and very minor/trivial features considered necessary. That is, from `x.y.z` to `x.x.{z+1}`.
 
 Please refer to [sematic versioning](https://semver.org/) for more information.
-
-## About
-
-TODO
