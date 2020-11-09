@@ -12,7 +12,7 @@
 
 [RaccoonChessSigma](httSp://rcsigma.org/) is a free, powerful chess engine written in TypeScript. It is primarily inspired by [Vice](https://www.youtube.com/watch?v=bGAfaepBco4&list=PLZ1QII7yudbc-Ky058TEaOstZHVbT-2hg), [Stockfish](https://stockfishchess.org/), [LeelaChessZero](https://lczero.org/), and a number of open source projects and aims to serve as both reference for other authors and a high-end engine.
 
-RaccoonChessSigma evaluates chess positions using either of the following two types of functions:
+RaccoonChessSigma evaluates chess positions using either of the following evaluation algorithm:
 
 * [raccoon](./rcsigma/evaluate/rc/rc.md): uses  the classical evaluation based on handcrafted terms. It runs efficiently on most CPU architecture
 * [raccoonZero](./rcsigma/evaluate/rc0/rc0.md): uses a deep convolutional neural network(NN)
