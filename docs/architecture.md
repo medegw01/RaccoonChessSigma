@@ -1,4 +1,48 @@
 # Architecture
+
+RaccoonChessSigma consists of four microservices. Based on functionalities each of these microservices are further decomposed in to classes. They include:
+
+- User Interface
+  - [APIs](./../rcsigma/ui/api/api.md)
+  - [UCI](./../rcsigma/ui/uci/uci.md)  
+- [Search](#search)
+- [Game](#game)
+- Evaluate
+  - [raccoon](./../rcsigma/evaluate/rc/rc.md)
+  - [raccoonZero](./../rcsigma/evaluate/rc0/rc0.md)
+
+## Search
+
+The search will efficiently iterate down the game tree from a position to a specified depth. More information can be found on [Search Chess Programming wiki](https://www.chessprogramming.org/Search). For this projects, the following algorithms will be applied:
+
+- [ ] Transposition table
+- [ ] Static Exchange Evaluation(See)
+- [ ] Quiescence search
+- [ ] Alpha-beta search
+  - [ ] Aspiration window
+  - [ ] Interactive deepening
+  - [ ] Null move reduction
+  - [ ] Razoring pruning
+  - [ ] Futility pruning
+  - [ ] Late Move Reduction
+  - [ ] Late move pruning
+  - [ ] History futility pruning
+- [ ] Move Ordering
+  - [ ] Most value victim / Lowest Value Attacker
+  - [ ] Killer moves
+  - [ ] Butterfly history
+
+## Game
+
+Among others, this component includes the board representation; book or database; move generation or validation; piece placement or movement; check, checkmate, stalemate, and insufficient material detection.
+
+## Diagram
+
 <p align="center">
-  <img width="300" src="https://github.com/medegw01/RaccoonChessSigma/blob/main/website/static/img/rcsigma%20diagram.PNG">
+  <img width="300" src="https://github.com/aerogear/graphback/raw/master/website/static/img/logo.png">
+  <br/>
+  Key <br/>
+  <span style="color:#C4D79B; font-size: 30px"> ∎</span> — this means "something takes a lot of development (software engineering) time"<br/>
+  <span style="color:#8faadc; font-size: 30px"> ∎ </span> — this means "requires considerable amount of computation both on CPU and on GPU<br/>
+  <span style="color:#ffe699; font-size: 30px"> ∎ </span> — this ia a weight file. It is a result of an effort<br/>
 </p>

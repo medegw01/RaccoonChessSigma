@@ -1,14 +1,15 @@
 ## Getting Started Guidelines
-This document steps through the deployment and configuration of the new project
+
+This document steps through the deployment and configuration of RaccoonChessSigma
 
 ### Prerequisites
 The following are  prerequisites for building and deploying
 
-### Building New Project
+### Building RaccoonChessSigma
 Document how to fully build new project
 
-### Deploying New Project
+### Deploying RaccoonChessSigma
 Document how to deploy project if need be
 
-### Testing New Project
+### Testing RaccoonChessSigma
 Document how to test project if need be
