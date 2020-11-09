@@ -39,7 +39,7 @@ Among others, this component includes the board representation; book or database
 ## Diagram
 
 <p align="center">
-  <img width="600" src="https://github.com/medegw01/RaccoonChessSigma/blob/main/rcsigma%20diagram.PNG">
+  <img width="650" src="https://github.com/medegw01/RaccoonChessSigma/blob/main/rcsigma%20diagram.PNG">
   <br/>
 </p>
 
