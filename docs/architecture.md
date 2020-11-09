@@ -43,7 +43,7 @@ Among others, this component includes the board representation; book or database
   <br/>
 </p>
 
-Key <br/>
+### Key
 ![#C4D79B](https://placehold.it/15/C4D79B/000000?text=+) — this means "something takes a lot of development (software engineering) time." <br/>
 ![#8faadc](https://placehold.it/15/8faadc/000000?text=+) — this means "requires considerable amount of computation both on CPU and on GPU." <br/>
 ![#ffe699](https://placehold.it/15/ffe699/000000?text=+) — this ia a weight file. It is a result of an effort. <br/>
