@@ -41,8 +41,10 @@ Among others, this component includes the board representation; book or database
 <p align="center">
   <img width="300" src="https://github.com/aerogear/graphback/raw/master/website/static/img/logo.png">
   <br/>
-  Key <br/>
-  <span style="color:#C4D79B; font-size: 30px"> ∎</span> — this means "something takes a lot of development (software engineering) time"<br/>
-  <span style="color:#8faadc; font-size: 30px"> ∎ </span> — this means "requires considerable amount of computation both on CPU and on GPU<br/>
-  <span style="color:#ffe699; font-size: 30px"> ∎ </span> — this ia a weight file. It is a result of an effort<br/>
 </p>
+
+Key <br/>
+![#C4D79B](https://placehold.it/15/C4D79B/000000?text=+) — this means "something takes a lot of development (software engineering) time." <br/>
+![#8faadc](https://placehold.it/15/8faadc/000000?text=+) — this means "requires considerable amount of computation both on CPU and on GPU." <br/>
+![#ffe699](https://placehold.it/15/ffe699/000000?text=+) — this ia a weight file. It is a result of an effort. <br/>
+
