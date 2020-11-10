@@ -43,6 +43,6 @@ RaccoonChessSigma uses `x.y.z` where `x`, `y`, and `z` are integers representing
 
 * Major is incremented when the release contains breaking changes, all other numbers are set to 0. That is, from `x.y.z` to `{x+1}.0.0`.
 * Minor is incremented when the release contains new non-breaking features, patch is set to 0. That is, from `x.y.z` to `x.{y+1}.0`.
-* Patch is incremented when the release only contains bugfixes and very minor/trivial features considered necessary. That is, from `x.y.z` to `x.x.{z+1}`.
+* Patch is incremented when the release only contains bugfixes and very minor/trivial features considered necessary. That is, from `x.y.z` to `x.y.{z+1}`.
 
 Please refer to [sematic versioning](https://semver.org/) for more information.
