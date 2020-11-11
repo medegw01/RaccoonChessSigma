@@ -4,7 +4,7 @@
 # RaccoonChessSigma
 
 <p align="center">
-  <img width="400" src="https://github.com/medegw01/RaccoonChessSigma/blob/main/website/static/img/rcsigma%20logo.png">
+  <img width="300" src="https://github.com/medegw01/RaccoonChessSigma/blob/main/website/static/img/rcsigma%20logo.png">
   <br/> 
   ♔ ♕ ♖ ♗ ♘ ♙<br/>
   TypeScript Chess Library and Engine
