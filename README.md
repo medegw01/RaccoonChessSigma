@@ -36,9 +36,11 @@ By following the [Getting Started Guide](./docs/getting_started_guide.md), a use
 TODO
 
 ## Architecture
+
 To understand project, it's imperative you understand the [architecture](./docs/architecture.md)
 
 ## Versioning
+
 RaccoonChessSigma uses `x.y.z` where `x`, `y`, and `z` are integers representing `major.minor.patch`.
 
 * Major is incremented when the release contains breaking changes, all other numbers are set to 0. That is, from `x.y.z` to `{x+1}.0.0`.

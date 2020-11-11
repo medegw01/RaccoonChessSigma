@@ -1,12 +1,11 @@
-## Security Policy
+# Security Policy
 
-Documentation of the measures taken to inspect for security vulnerabilities in the repository. This documentation should also, at least, include ways the issues detected are handled.
-### Supported Versions
+TODO
 
-| Version | Supported          |
-| ------- | ------------------ |
-|         |
+## Supported Versions
 
-### Reporting a Vulnerability
+TODO
 
-Please report a vulnerability by opening an Issue in this repository.
+## Reporting a Vulnerability
+ 
+TODO

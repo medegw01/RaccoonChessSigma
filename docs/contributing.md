@@ -14,7 +14,7 @@ screenshots, logs, stack traces, and anything else that can describe the problem
 As with defects, a detailed description of your feature request will help maintainers evaluate the value and feasibility of your request more quickly.
 When a request has been reviewed and accepted, it will be being scheduled for a future release, resulting in a related pull request.
 * If you discovered a security vulnerability in this project? We ask you to alert the maintainers by sending an email describing the issue, impact, and 
-fix - if applicable. You can reach RaccoonChessSigma maintainers at **michael.edegware@gmail.com**
+fix - if applicable. You can reach RaccoonChessSigma maintainers on the [mailing lists](mailto:michael.edegware@gmail.com?subject=[RaccoonChessSigma]%20<replace%20me%20with%20more%20specific%20subject>)
 * If you would like to make code contributions, all your commits should be signed with Developer Certificate of Origin. See [Sign your work](#sign-your-work). 
 
 ## Steps to Contribute:
@@ -29,14 +29,15 @@ fix - if applicable. You can reach RaccoonChessSigma maintainers at **michael.ed
 * Push your changes to the branch in your fork of the repository.
 * Submit a pull request to the original repository. See [Pull Request checklist](#pull-request-checklist)
   
-## Pull Request Checklist :
+## Pull Request Checklist:
+
 * Rebase to the current main branch before submitting your pull request.
 * Commits should be as small as possible. Each commit should follow the checklist below:
 
-  - For code changes, add tests relevant to the fixed bug or new feature
-  - Pass the GitHub test - includes spell checks, testing, etc
-  - Commit header (first line) should convey what changed
-  - DCO Signed 
+- For code changes, add tests relevant to the fixed bug or new feature
+- Pass the GitHub test - includes spell checks, testing, etc
+- Commit header (first line) should convey what changed
+- DCO Signed 
 
 
 ## Signing your commits
@@ -45,7 +46,7 @@ We require that developers sign off their commits to certify that they have perm
 
 To make sure that pull requests have all commits signed off, we use the Probot DCO plugin.
 
-#### Signing off a commit
+### Signing off a commit
 
 Using the git command line
 Use either `--signoff` or `-s` with the commit command. See this [document](https://probot.github.io/apps/dco/) for an example.
