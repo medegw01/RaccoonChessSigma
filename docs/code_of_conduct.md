@@ -55,7 +55,7 @@ further defined and clarified by project maintainers.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by submitting an [incident repoort](https://forms.gle/VdvWGnfLm7bNjURx8) or contacting the project team at michael.edegware@gmail.com. All
+reported by submitting an [incident report](https://forms.gle/VdvWGnfLm7bNjURx8) or contacting the project team on the [mailing list](mailto:michael.edegware@gmail.com?subject=[RaccoonChessSigma INCIDENT REPORT]%20<replace%20me%20with%20more%20specific%20subject>). All
 complaints will be reviewed and investigated and will result in a response that
 is deemed necessary and appropriate to the circumstances. The project team is
 obligated to maintain confidentiality with regard to the reporter of an incident.
