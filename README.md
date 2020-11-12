@@ -37,7 +37,7 @@ TODO
 
 ## Architecture
 
-To understand project, it's imperative you understand the [architecture](./docs/architecture.md)
+To understand project, it's imperative you understand [RaccoonChessSigma architecture](./docs/architecture.md).
 
 ## Versioning
 
