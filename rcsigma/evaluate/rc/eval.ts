@@ -1,0 +1,1 @@
+enum PHASE { MG, EG }
