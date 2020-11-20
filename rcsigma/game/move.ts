@@ -289,6 +289,24 @@ function san_to_move(san: string, board: board_t) {
     return NO_MOVE;
 }
 
+function clean_smith(smith: string) {
+    let rlt = "";
+    let matches = smith.match(
+        /([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/
+    );
+    if (matches) {
+        //let piece = matches[1];
+        let from = matches[2];
+        let to = matches[3];
+        let promotion = matches[4];
+        if (typeof from !== 'undefined' && typeof to !== 'undefined') {
+            rlt += (from + to);
+        }
+        if (typeof promotion !== 'undefined') rlt += promotion;
+    }
+    return rlt;
+}
+
 /*****************************************************************************
 * MOVE GENERATION
 ****************************************************************************/
