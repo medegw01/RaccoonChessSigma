@@ -1,7 +1,6 @@
 /*****************************************************************************
   * OPENING BOOK
   ****************************************************************************/
-
 let book_file: DataView;
 let book_size: number;
 type entry_t = {
@@ -96,4 +95,35 @@ function book_move(board: board_t) {
         }
     }
     return NO_MOVE;
+}
+
+/*****************************************************************************
+  * NOOB PROBE BOOK
+****************************************************************************/
+// https://www.chessdb.cn/cloudbookc_api_en.html
+type noobprobe_t = {
+    option: string;
+    value: string;
+}
+interface noobprobe_callback { (arg: string): void }
+
+function fetch_noob(action: string, params: noobprobe_t[], board: board_t, callback: noobprobe_callback) {
+    //http://www.chessdb.cn/cdb.php?action=[ACTION]{&[OPTION1]=[VALUE1]...&[OPTIONn]=[VALUEn]}
+    let fen = board_to_fen(board);
+    let params_str = "";
+    for (let param of params) {
+        params_str += `&${param.option}=${param.value}`;
+    }
+
+    const url = `http://www.chessdb.cn/cdb.php?action=${action}${params_str}&board=${fen}`
+
+    const Http = new XMLHttpRequest();
+    Http.onreadystatechange = function () {
+        if (Http.readyState == 4 && Http.status == 200) {
+            callback(Http.responseText)
+        }
+    }
+    Http.open("GET", url, true);
+    Http.send(null);
+
 }
