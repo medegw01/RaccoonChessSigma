@@ -94,8 +94,6 @@ const is_color_pawn = [
     [false, false, false, false, false, false, false, true, false, false, false, false, false]
 ];
 
-
-
 const flip = [
     56, 57, 58, 59, 60, 61, 62, 63,
     48, 49, 50, 51, 52, 53, 54, 55,
@@ -165,8 +163,12 @@ function initialize_hash_key() {
     castle_permission[SQUARES.A8] &= ~CASTLING.BLACK_CASTLE_OOO;
 }
 
-function initialize_params() {
+function initialize_game() {
     initialize_square120_to_square64();
     initialize_hash_key();
     initialize_files_rank_array();
+}
+
+function get_time_ms() {
+    return new Date().getTime();
 }
