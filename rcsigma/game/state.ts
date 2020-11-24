@@ -1,17 +1,24 @@
-function in_check(board: board_t) {
-    return (is_square_attacked(board.king_square[board.turn], (board.turn) ^ 1, board))
+import * as board_ from './board'
+import * as attack_ from './attack'
+import * as move_ from './move'
+
+export function in_check(board: board_.board_t) {
+    return (attack_.is_square_attacked(board.king_square[board.turn], (board.turn) ^ 1, board))
 }
-function in_checkmate(board: board_t) {
+
+export function in_checkmate(board: board_.board_t) {
     let check = in_check(board);
-    let moves = generate_legal_moves(board);
+    let moves = move_.generate_legal_moves(board);
     return check && moves.length === 0;
 }
-function in_stalemate(board: board_t) {
+
+export function in_stalemate(board: board_.board_t) {
     let check = in_check(board);
-    let moves = generate_legal_moves(board);
+    let moves = move_.generate_legal_moves(board);
     return !check && moves.length === 0;
 }
-function in_threefold_repetition(board: board_t) {
+
+export function in_threefold_repetition(board: board_.board_t) {
     let count = 0;
     for (let i = 0; i < board.history_ply; i++) {
         if (count >= 3) return true;
@@ -19,17 +26,19 @@ function in_threefold_repetition(board: board_t) {
     }
     return count >= 2;
 }
-function insufficient_material(board: board_t) {
-    if (board.number_pieces[PIECES.WHITEPAWN] || board.number_pieces[PIECES.BLACKPAWN]) return false;
-    if (board.number_pieces[PIECES.WHITEQUEEN] || board.number_pieces[PIECES.BLACKQUEEN]
-        || board.number_pieces[PIECES.WHITEROOK] || board.number_pieces[PIECES.BLACKROOK]) return false;
-    if (board.number_pieces[PIECES.WHITEBISHOP] > 1 || board.number_pieces[PIECES.BLACKBISHOP] > 1) return false;
-    if (board.number_pieces[PIECES.WHITEKNIGHT] > 1 || board.number_pieces[PIECES.BLACKKNIGHT] > 1) return false;
-    if (board.number_pieces[PIECES.WHITEKNIGHT] && board.number_pieces[PIECES.WHITEBISHOP]) return false;
-    if (board.number_pieces[PIECES.BLACKBISHOP] && board.number_pieces[PIECES.BLACKKNIGHT]) return false;
+
+export function insufficient_material(board: board_.board_t) {
+    if (board.number_pieces[board_.PIECES.WHITEPAWN] || board.number_pieces[board_.PIECES.BLACKPAWN]) return false;
+    if (board.number_pieces[board_.PIECES.WHITEQUEEN] || board.number_pieces[board_.PIECES.BLACKQUEEN]
+        || board.number_pieces[board_.PIECES.WHITEROOK] || board.number_pieces[board_.PIECES.BLACKROOK]) return false;
+    if (board.number_pieces[board_.PIECES.WHITEBISHOP] > 1 || board.number_pieces[board_.PIECES.BLACKBISHOP] > 1) return false;
+    if (board.number_pieces[board_.PIECES.WHITEKNIGHT] > 1 || board.number_pieces[board_.PIECES.BLACKKNIGHT] > 1) return false;
+    if (board.number_pieces[board_.PIECES.WHITEKNIGHT] && board.number_pieces[board_.PIECES.WHITEBISHOP]) return false;
+    if (board.number_pieces[board_.PIECES.BLACKBISHOP] && board.number_pieces[board_.PIECES.BLACKKNIGHT]) return false;
     return true;
 }
-function in_draw(board: board_t) {
+
+export function in_draw(board: board_.board_t) {
     let is_50_move = (board.half_moves >= 100 && board.ply);
     return is_50_move || insufficient_material(board) || in_threefold_repetition(board);
 }

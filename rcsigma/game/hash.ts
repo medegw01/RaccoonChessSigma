@@ -1,9 +1,12 @@
-const random_piece = 0;
-const random_castle = 768;
-const random_enpass = 772;
-const random_turn = 780;
+import * as board_ from './board'
+import * as util_ from '../util'
 
-const random64_poly: bitboard_t[] = [ //-- http://hgm.nubati.net/book_format.html
+export const random_piece = 0;
+export const random_castle = 768;
+export const random_enpass = 772;
+export const random_turn = 780;
+
+export const random64_poly: bigint[] = [ //-- http://hgm.nubati.net/book_format.html
     BigInt("0x9D39247E33776D41"), BigInt("0x2AF7398005AAA5C7"), BigInt("0x44DB015024623547"), BigInt("0x9C15F73E62A76AE2"),
     BigInt("0x75834465489C0C89"), BigInt("0x3290AC3A203001BF"), BigInt("0x0FBBAD1F61042279"), BigInt("0xE83A908FF2FB60CA"),
     BigInt("0x0D7E765D58755C10"), BigInt("0x1A083822CEAFE02D"), BigInt("0x9605D5F0E25EC3B0"), BigInt("0xD021FF5CD13A2ED5"),
@@ -203,11 +206,11 @@ const random64_poly: bitboard_t[] = [ //-- http://hgm.nubati.net/book_format.htm
 ];
 
 
-function pawn_cp(board: board_t) {
+function pawn_cp(board: board_.board_t) {
     let sqWithPawn = 0;
-    let targetPce = (board.turn === COLORS.WHITE) ? PIECES.WHITEPAWN : PIECES.BLACKPAWN;
-    if (board.enpassant !== SQUARES.OFF_SQUARE) {
-        if (board.turn === COLORS.WHITE) {
+    let targetPce = (board.turn === board_.COLORS.WHITE) ? board_.PIECES.WHITEPAWN : board_.PIECES.BLACKPAWN;
+    if (board.enpassant !== board_.SQUARES.OFF_SQUARE) {
+        if (board.turn === board_.COLORS.WHITE) {
             sqWithPawn = board.enpassant - 10;
         } else {
             sqWithPawn = board.enpassant + 10;
@@ -222,33 +225,33 @@ function pawn_cp(board: board_t) {
     return false;
 }
 
-function polyglot_key(board: board_t): bitboard_t {
+export function polyglot_key(board: board_.board_t): board_.bitboard_t {
     let sq, rank = 0, file = 0;
-    let final_key = 0n, piece = PIECES.EMPTY, poly_piece = 0;
+    let final_key = 0n, piece = board_.PIECES.EMPTY, poly_piece = 0;
 
-    for (sq = 0; sq < BOARD_SQUARE_NUM; ++sq) {
+    for (sq = 0; sq < util_.BOARD_SQUARE_NUM; ++sq) {
         piece = board.pieces[sq];
-        if (SQUARE_ON_BOARD(sq) && piece !== PIECES.EMPTY) {
-            poly_piece = get_poly_piece[piece];
-            rank = ranks_board[sq];
-            file = files_board[sq];
+        if (board_.SQUARE_ON_BOARD(sq) && piece !== board_.PIECES.EMPTY) {
+            poly_piece = util_.get_poly_piece[piece];
+            rank = util_.ranks_board[sq];
+            file = util_.files_board[sq];
             final_key ^= random64_poly[random_piece + (64 * poly_piece) + (8 * rank) + file];
         }
     }
 
     // castling
-    if (board.castling_right & CASTLING.WHITE_CASTLE_OO) final_key ^= random64_poly[random_castle + 0];
-    if (board.castling_right & CASTLING.WHITE_CASTLE_OOO) final_key ^= random64_poly[random_castle + 1];
-    if (board.castling_right & CASTLING.BLACK_CASTLE_OO) final_key ^= random64_poly[random_castle + 2];
-    if (board.castling_right & CASTLING.BLACK_CASTLE_OOO) final_key ^= random64_poly[random_castle + 3];
+    if (board.castling_right & board_.CASTLING.WHITE_CASTLE_OO) final_key ^= random64_poly[random_castle + 0];
+    if (board.castling_right & board_.CASTLING.WHITE_CASTLE_OOO) final_key ^= random64_poly[random_castle + 1];
+    if (board.castling_right & board_.CASTLING.BLACK_CASTLE_OO) final_key ^= random64_poly[random_castle + 2];
+    if (board.castling_right & board_.CASTLING.BLACK_CASTLE_OOO) final_key ^= random64_poly[random_castle + 3];
 
     // enpassant
     if (pawn_cp(board)) {
-        file = files_board[board.enpassant];
+        file = util_.files_board[board.enpassant];
         final_key ^= random64_poly[random_enpass + file];
     }
 
-    if (board.turn === COLORS.WHITE) {
+    if (board.turn === board_.COLORS.WHITE) {
         final_key ^= random64_poly[random_turn];
     }
     return final_key;

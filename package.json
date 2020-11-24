@@ -25,7 +25,7 @@
   },
   "scripts": {
     "compile": "tsc",
-    "test": "jest --colors test",
+    "test": "jest --colors --watchAll test",
     "coverage": "jest --coverage"
   },
   "author": "Michael Edegware <michael.edegware@gmail.com> (https://www.edegware.com/)",

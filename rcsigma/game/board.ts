@@ -1,5 +1,8 @@
+import * as util_ from '../util'
+import * as hash_ from './hash'
+import * as move_ from './move'
 
-enum PIECES {
+export enum PIECES {
     EMPTY,
     WHITEPAWN,
     WHITEBISHOP,
@@ -16,9 +19,9 @@ enum PIECES {
     OFF_BOARD_PIECE
 };
 
-enum FILES { A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE, NONE_FILE };
+export enum FILES { A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE, NONE_FILE };
 
-enum RANKS {
+export enum RANKS {
     FIRST_RANK,
     SECOND_RANK,
     THIRD_RANK,
@@ -30,9 +33,9 @@ enum RANKS {
     NONE_RANK
 };
 
-enum COLORS { WHITE, BLACK, BOTH };
+export enum COLORS { WHITE, BLACK, BOTH };
 
-enum SQUARES {
+export enum SQUARES {
     A1 = 21, B1, C1, D1, E1, F1, G1, H1,
     A2 = 31, B2, C2, D2, E2, F2, G2, H2,
     A3 = 41, B3, C3, D3, E3, F3, G3, H3,
@@ -43,17 +46,17 @@ enum SQUARES {
     A8 = 91, B8, C8, D8, E8, F8, G8, H8, OFF_SQUARE, OFF_BOARD
 };
 
-enum CASTLING {
+export enum CASTLING {
     WHITE_CASTLE_OO = 1 << 0,
     WHITE_CASTLE_OOO = 1 << 1,
     BLACK_CASTLE_OO = 1 << 2,
     BLACK_CASTLE_OOO = 1 << 3
 };
 
-type bitboard_t = bigint
+export type bitboard_t = bigint
 
-type undo_t = {
-    move: move_t;
+export type undo_t = {
+    move: move_.move_t;
 
     enpassant: SQUARES;
     turn: COLORS;
@@ -69,7 +72,7 @@ type undo_t = {
     material_mg: number[];
 }
 
-type board_t = {
+export type board_t = {
     pieces: PIECES[];
     pawns: bitboard_t[];
     king_square: SQUARES[];
@@ -100,18 +103,18 @@ type board_t = {
 /*****************************************************************************
  * MACRO
  ****************************************************************************/
-function FILE_RANK_TO_SQUARE(file: number, rank: number) { return ((21 + (file)) + ((rank) * 10)); }
-function SQ64(SQ120: number) { return (square120_to_square64[(SQ120)]); }
-function SQ120(square_64: number) { return (square64_to_square120[(square_64)]); }
-function FLIP64(sq: SQUARES) { return (flip[(sq)]) }
+export function FILE_RANK_TO_SQUARE(file: number, rank: number) { return ((21 + (file)) + ((rank) * 10)); }
+export function SQ64(SQ120: number) { return (util_.square120_to_square64[(SQ120)]); }
+export function SQ120(square_64: number) { return (util_.square64_to_square120[(square_64)]); }
+export function FLIP64(sq: SQUARES) { return (util_.flip[(sq)]) }
 
-function SQUARE_ON_BOARD(sq: SQUARES) { return (files_board[(sq)] !== SQUARES.OFF_BOARD); }
-function IS_VALID_PIECE(pce: PIECES) { return ((pce) >= PIECES.WHITEPAWN && (pce) <= PIECES.BLACKKING) }
-function IS_VALID_TURN(turn: COLORS) { return ((turn) == COLORS.WHITE || (turn) == COLORS.BLACK) }
-function IS_VALID_FILE_RANK(fr: number) { return ((fr) >= 0 && (fr) <= 7) }
+export function SQUARE_ON_BOARD(sq: SQUARES) { return (util_.files_board[(sq)] !== SQUARES.OFF_BOARD); }
+export function IS_VALID_PIECE(pce: PIECES) { return ((pce) >= PIECES.WHITEPAWN && (pce) <= PIECES.BLACKKING) }
+//function IS_VALID_TURN(turn: COLORS) { return ((turn) == COLORS.WHITE || (turn) == COLORS.BLACK) }
+//function IS_VALID_FILE_RANK(fr: number) { return ((fr) >= 0 && (fr) <= 7) }
 
-function SQUARE_COLOR(sq: SQUARES) { return (ranks_board[(sq)] + files_board[(sq)]) % 2 === 0 ? COLORS.BLACK : COLORS.WHITE; }
-function PIECE_INDEX(piece: number, piece_num: number) { return (piece * 10 + piece_num) }
+export function SQUARE_COLOR(sq: SQUARES) { return (util_.ranks_board[(sq)] + util_.files_board[(sq)]) % 2 === 0 ? COLORS.BLACK : COLORS.WHITE; }
+export function PIECE_INDEX(piece: number, piece_num: number) { return (piece * 10 + piece_num) }
 
 
 /*****************************************************************************
@@ -135,7 +138,7 @@ function check_board(position: board_t) {
     for (let p = PIECES.WHITEPAWN; p <= PIECES.BLACKKING; ++p) {
         for (let p_num = 0; p_num < position.number_pieces[p]; ++p_num) {
             let SQ120: number = position.piece_list[PIECE_INDEX(p, p_num)]
-            ASSERT(position.pieces[SQ120] == p, `Piece List Mismatch\n Got: ${piece_to_ascii[position.pieces[SQ120]]} Expect: ${piece_to_ascii[p]}`);
+            util_.ASSERT(position.pieces[SQ120] == p, `BoardErr: Piece List Mismatch\n Got: ${util_.piece_to_ascii[position.pieces[SQ120]]} Expect: ${util_.piece_to_ascii[p]}`);
         }
     }
 
@@ -144,68 +147,71 @@ function check_board(position: board_t) {
         let sq120 = SQ120(square_64);
         let p = position.pieces[sq120];
         tmp_number_piece[p]++;
-        let color = get_color_piece[p];
-        if (is_big_piece[p]) tmp_number_big_piece[color]++;
-        if (is_minor_piece[p]) tmp_number_minor_piece[color]++;
-        if (is_major_piece[p]) tmp_number_major_piece[color]++;
+        let color = util_.get_color_piece[p];
+        if (util_.is_big_piece[p]) tmp_number_big_piece[color]++;
+        if (util_.is_minor_piece[p]) tmp_number_minor_piece[color]++;
+        if (util_.is_major_piece[p]) tmp_number_major_piece[color]++;
 
-        tmp_material_eg[color] += get_value_piece[PHASE.MG][p];
-        tmp_material_mg[color] += get_value_piece[PHASE.EG][p];
+        tmp_material_eg[color] += util_.get_value_piece[util_.PHASE.EG][p];
+        tmp_material_mg[color] += util_.get_value_piece[util_.PHASE.MG][p];
     }
 
     for (let p = PIECES.WHITEPAWN; p <= PIECES.BLACKKING; ++p) {
-        ASSERT(tmp_number_piece[p] == position.number_pieces[p], `no. of Pieces Mismatch\n Got: ${position.number_pieces[p]} Expect: ${tmp_number_piece[p]}`);
+        util_.ASSERT(tmp_number_piece[p] == position.number_pieces[p], `BoardErr: no. of Pieces Mismatch\n Got: ${position.number_pieces[p]} Expect: ${tmp_number_piece[p]}`);
     }
 
     // check bitboards count
-    let pcount = COUNT_BITS(tmp_pawns[COLORS.WHITE]);
-    ASSERT(pcount == position.number_pieces[PIECES.WHITEPAWN], `no. White Pawns Mismatch\n Got: ${position.number_pieces[PIECES.WHITEPAWN]} Expect: ${pcount}`);
-    pcount = COUNT_BITS(tmp_pawns[COLORS.BLACK]);
-    ASSERT(pcount == position.number_pieces[PIECES.BLACKPAWN], `no. Black Pawns Mismatch\n Got: ${position.number_pieces[PIECES.BLACKPAWN]} Expect: ${pcount}`);
-    pcount = COUNT_BITS(tmp_pawns[COLORS.BOTH]);
+    let pcount = util_.COUNT_BITS(tmp_pawns[COLORS.WHITE]);
+    util_.ASSERT(pcount == position.number_pieces[PIECES.WHITEPAWN], `BoardErr: no. White Pawns Mismatch\n Got: ${position.number_pieces[PIECES.WHITEPAWN]} Expect: ${pcount}`);
+    pcount = util_.COUNT_BITS(tmp_pawns[COLORS.BLACK]);
+    util_.ASSERT(pcount == position.number_pieces[PIECES.BLACKPAWN], `BoardErr: no. Black Pawns Mismatch\n Got: ${position.number_pieces[PIECES.BLACKPAWN]} Expect: ${pcount}`);
+    pcount = util_.COUNT_BITS(tmp_pawns[COLORS.BOTH]);
     let both_pawns = position.number_pieces[PIECES.BLACKPAWN] + position.number_pieces[PIECES.WHITEPAWN];
-    ASSERT(pcount == both_pawns, `no. Both Pawns Mismatch\n Got: ${both_pawns} Expect: ${pcount}`);
+    util_.ASSERT(pcount == both_pawns, `BoardErr: no. Both Pawns Mismatch\n Got: ${both_pawns} Expect: ${pcount}`);
 
 
     // check bitboards squares
 
     for (let square_64 = 0; square_64 <= 64; ++square_64) {
-        if (ISKthBIT_SET(tmp_pawns[COLORS.WHITE], square_64)) {
-            ASSERT(position.pieces[SQ120(square_64)] == PIECES.WHITEPAWN, `no. White Pawn BitBoard  Mismatch at ${SQ120(square_64)}`);
+        if (util_.ISKthBIT_SET(tmp_pawns[COLORS.WHITE], square_64)) {
+            util_.ASSERT(position.pieces[SQ120(square_64)] == PIECES.WHITEPAWN, `BoardErr: no. White Pawn BitBoard  Mismatch at ${SQ120(square_64)}`);
         }
     }
     for (let square_64 = 0; square_64 <= 64; ++square_64) {
-        if (ISKthBIT_SET(tmp_pawns[COLORS.BLACK], square_64)) {
-            ASSERT(position.pieces[SQ120(square_64)] == PIECES.BLACKPAWN, `no. White Pawn BitBoard  Mismatch at  ${SQ120(square_64)}`);
+        if (util_.ISKthBIT_SET(tmp_pawns[COLORS.BLACK], square_64)) {
+            util_.ASSERT(position.pieces[SQ120(square_64)] == PIECES.BLACKPAWN, `BoardErr: no. White Pawn BitBoard  Mismatch at  ${SQ120(square_64)}`);
         }
     }
     for (let square_64 = 0; square_64 <= 64; ++square_64) {
-        if (ISKthBIT_SET(tmp_pawns[COLORS.BOTH], square_64)) {
-            ASSERT(position.pieces[SQ120(square_64)] == PIECES.BLACKPAWN || position.pieces[SQ120(square_64)] == PIECES.WHITEPAWN, `no. Both Pawns BitBoard Mismatch at ${SQ120(square_64)}`);
+        if (util_.ISKthBIT_SET(tmp_pawns[COLORS.BOTH], square_64)) {
+            util_.ASSERT(position.pieces[SQ120(square_64)] == PIECES.BLACKPAWN || position.pieces[SQ120(square_64)] == PIECES.WHITEPAWN, `BoardErr: no. Both Pawns BitBoard Mismatch at ${SQ120(square_64)}`);
         }
     }
 
-    ASSERT(tmp_material_eg[COLORS.WHITE] == position.material_eg[COLORS.WHITE] && tmp_material_eg[COLORS.BLACK] == position.material_eg[COLORS.BLACK], `eg Material imbalance`);
-    ASSERT(tmp_material_mg[COLORS.WHITE] == position.material_mg[COLORS.WHITE] && tmp_material_mg[COLORS.BLACK] == position.material_mg[COLORS.BLACK], `mg Material imbalance`);
-    ASSERT(tmp_number_minor_piece[COLORS.WHITE] == position.number_minor_pieces[COLORS.WHITE], `no. White minor piece Mismatch\n Got: ${position.number_minor_pieces[COLORS.WHITE]} Expect: ${tmp_number_minor_piece[COLORS.WHITE]}`);
-    ASSERT(tmp_number_minor_piece[COLORS.BLACK] == position.number_minor_pieces[COLORS.BLACK], `no. Black minor piece Mismatch\n Got: ${position.number_minor_pieces[COLORS.BLACK]} Expect: ${tmp_number_minor_piece[COLORS.BLACK]}`);
-    ASSERT(tmp_number_major_piece[COLORS.WHITE] == position.number_major_pieces[COLORS.WHITE], `no. White major piece Mismatch\n Got: ${position.number_major_pieces[COLORS.WHITE]} Expect: ${tmp_number_major_piece[COLORS.WHITE]}`)
-    ASSERT(tmp_number_major_piece[COLORS.BLACK] == position.number_major_pieces[COLORS.BLACK], `no. Black major piece Mismatch\n Got: ${position.number_major_pieces[COLORS.BLACK]} Expect: ${tmp_number_major_piece[COLORS.BLACK]}`);
-    ASSERT(tmp_number_big_piece[COLORS.WHITE] == position.number_big_pieces[COLORS.WHITE], `no. White big piece Mismatch\n Got: ${position.number_big_pieces[COLORS.WHITE]} Expect: ${tmp_number_big_piece[COLORS.WHITE]}`)
-    ASSERT(tmp_number_big_piece[COLORS.BLACK] == position.number_big_pieces[COLORS.BLACK], `no. White big piece Mismatch\n Got: ${position.number_big_pieces[COLORS.BLACK]} Expect: ${tmp_number_big_piece[COLORS.BLACK]}`);
+    util_.ASSERT(tmp_material_eg[COLORS.WHITE] == position.material_eg[COLORS.WHITE], `BoardErr: White eg Material imbalance. Got: ${position.material_eg[COLORS.WHITE]} Expect: ${tmp_material_eg[COLORS.WHITE]}`);
+    util_.ASSERT(tmp_material_mg[COLORS.WHITE] == position.material_mg[COLORS.WHITE], `BoardErr: White mg Material imbalance. Got: ${position.material_mg[COLORS.WHITE]} Expect: ${tmp_material_mg[COLORS.WHITE]}`);
+    util_.ASSERT(tmp_material_eg[COLORS.BLACK] == position.material_eg[COLORS.BLACK], `BoardErr: BLACK eg Material imbalance. Got: ${position.material_eg[COLORS.BLACK]} Expect: ${tmp_material_eg[COLORS.BLACK]}`);
+    util_.ASSERT(tmp_material_mg[COLORS.BLACK] == position.material_mg[COLORS.BLACK], `BoardErr: BLACK mg Material imbalance. Got: ${position.material_mg[COLORS.BLACK]} Expect: ${tmp_material_mg[COLORS.BLACK]}`);
 
-    ASSERT(position.turn == COLORS.WHITE || position.turn == COLORS.BLACK);
-    ASSERT(polyglot_key(position) == position.current_polyglot_key, `no. Poly Key Mismatch\n Got: ${position.current_polyglot_key} Expect: ${polyglot_key(position)}`);
+    util_.ASSERT(tmp_number_minor_piece[COLORS.WHITE] == position.number_minor_pieces[COLORS.WHITE], `BoardErr: no. White minor piece Mismatch\n Got: ${position.number_minor_pieces[COLORS.WHITE]} Expect: ${tmp_number_minor_piece[COLORS.WHITE]}`);
+    util_.ASSERT(tmp_number_minor_piece[COLORS.BLACK] == position.number_minor_pieces[COLORS.BLACK], `BoardErr: no. Black minor piece Mismatch\n Got: ${position.number_minor_pieces[COLORS.BLACK]} Expect: ${tmp_number_minor_piece[COLORS.BLACK]}`);
+    util_.ASSERT(tmp_number_major_piece[COLORS.WHITE] == position.number_major_pieces[COLORS.WHITE], `BoardErr: no. White major piece Mismatch\n Got: ${position.number_major_pieces[COLORS.WHITE]} Expect: ${tmp_number_major_piece[COLORS.WHITE]}`)
+    util_.ASSERT(tmp_number_major_piece[COLORS.BLACK] == position.number_major_pieces[COLORS.BLACK], `BoardErr: no. Black major piece Mismatch\n Got: ${position.number_major_pieces[COLORS.BLACK]} Expect: ${tmp_number_major_piece[COLORS.BLACK]}`);
+    util_.ASSERT(tmp_number_big_piece[COLORS.WHITE] == position.number_big_pieces[COLORS.WHITE], `BoardErr: no. White big piece Mismatch\n Got: ${position.number_big_pieces[COLORS.WHITE]} Expect: ${tmp_number_big_piece[COLORS.WHITE]}`)
+    util_.ASSERT(tmp_number_big_piece[COLORS.BLACK] == position.number_big_pieces[COLORS.BLACK], `BoardErr: no. White big piece Mismatch\n Got: ${position.number_big_pieces[COLORS.BLACK]} Expect: ${tmp_number_big_piece[COLORS.BLACK]}`);
 
-    ASSERT(position.enpassant == SQUARES.OFF_SQUARE || (ranks_board[position.enpassant] == RANKS.SIXTH_RANK && position.turn == COLORS.WHITE)
-        || (ranks_board[position.enpassant] == RANKS.THIRD_RANK && position.turn == COLORS.BLACK), `eg Wrong empassant square`);
+    util_.ASSERT(position.turn == COLORS.WHITE || position.turn == COLORS.BLACK);
+    util_.ASSERT(hash_.polyglot_key(position) == position.current_polyglot_key, `BoardErr: no. Poly Key Mismatch\n Got: ${position.current_polyglot_key} Expect: ${hash_.polyglot_key(position)}`);
 
-    ASSERT(position.pieces[position.king_square[COLORS.WHITE]] == PIECES.WHITEKING, `eg Wrong White king square`);
-    ASSERT(position.pieces[position.king_square[COLORS.BLACK]] == PIECES.BLACKKING, `eg Wrong Black king square`);
+    util_.ASSERT(position.enpassant == SQUARES.OFF_SQUARE || (util_.ranks_board[position.enpassant] == RANKS.SIXTH_RANK && position.turn == COLORS.WHITE)
+        || (util_.ranks_board[position.enpassant] == RANKS.THIRD_RANK && position.turn == COLORS.BLACK), `BoardErr: eg Wrong empassant square`);
+
+    util_.ASSERT(position.pieces[position.king_square[COLORS.WHITE]] == PIECES.WHITEKING, `BoardErr: Wrong White king square`);
+    util_.ASSERT(position.pieces[position.king_square[COLORS.BLACK]] == PIECES.BLACKKING, `BoardErr: Wrong Black king square`);
 }
 
-function reset_board(board: board_t) {
-    for (let i = 0; i < BOARD_SQUARE_NUM; i++) {
+export function reset_board(board: board_t) {
+    for (let i = 0; i < util_.BOARD_SQUARE_NUM; i++) {
         board.pieces[i] = PIECES.OFF_BOARD_PIECE;
     }
     for (let i = 0; i < 64; i++) {
@@ -237,17 +243,17 @@ function reset_board(board: board_t) {
 }
 
 function update_list_material(board: board_t) {
-    for (let square = 0; square < BOARD_SQUARE_NUM; square++) {
+    for (let square = 0; square < util_.BOARD_SQUARE_NUM; square++) {
         let piece = board.pieces[square];
         if (SQUARE_ON_BOARD(square) && piece !== PIECES.OFF_BOARD_PIECE && piece !== PIECES.EMPTY) {
-            let color = get_color_piece[piece];
+            let color = util_.get_color_piece[piece];
 
-            if (is_big_piece[piece]) board.number_big_pieces[color]++;
-            if (is_major_piece[piece]) board.number_major_pieces[color]++;
-            if (is_minor_piece[piece]) board.number_minor_pieces[color]++;
+            if (util_.is_big_piece[piece]) board.number_big_pieces[color]++;
+            if (util_.is_major_piece[piece]) board.number_major_pieces[color]++;
+            if (util_.is_minor_piece[piece]) board.number_minor_pieces[color]++;
 
-            board.material_mg[color] += get_value_piece[PHASE.MG][piece];
-            board.material_eg[color] += get_value_piece[PHASE.EG][piece];
+            board.material_mg[color] += util_.get_value_piece[util_.PHASE.MG][piece];
+            board.material_eg[color] += util_.get_value_piece[util_.PHASE.EG][piece];
             board.piece_list[(PIECE_INDEX(piece, board.number_pieces[piece]))] = square;
             board.number_pieces[piece]++;
 
@@ -256,18 +262,18 @@ function update_list_material(board: board_t) {
 
             //-- set pawns
             if (piece === PIECES.WHITEPAWN) {
-                board.pawns[COLORS.WHITE] = SET_BIT(board.pawns[COLORS.WHITE], SQ64(square));
-                board.pawns[COLORS.BOTH] = SET_BIT(board.pawns[COLORS.BOTH], SQ64(square));
+                board.pawns[COLORS.WHITE] = util_.SET_BIT(board.pawns[COLORS.WHITE], SQ64(square));
+                board.pawns[COLORS.BOTH] = util_.SET_BIT(board.pawns[COLORS.BOTH], SQ64(square));
             }
             else if (piece === PIECES.BLACKPAWN) {
-                board.pawns[COLORS.BLACK] = SET_BIT(board.pawns[COLORS.BLACK], SQ64(square));
-                board.pawns[COLORS.BOTH] = SET_BIT(board.pawns[COLORS.BOTH], SQ64(square));
+                board.pawns[COLORS.BLACK] = util_.SET_BIT(board.pawns[COLORS.BLACK], SQ64(square));
+                board.pawns[COLORS.BOTH] = util_.SET_BIT(board.pawns[COLORS.BOTH], SQ64(square));
             }
         }
     }
 }
 
-function mirror_board(board: board_t) {
+export function mirror_board(board: board_t) {
     let tempPiecesArray = new Array(64);
     let tempSide = board.turn ^ 1;
     let SwapPiece = [
@@ -299,11 +305,11 @@ function mirror_board(board: board_t) {
     if ((board.castling_right & CASTLING.BLACK_CASTLE_OOO) !== 0) tempCastlePerm |= CASTLING.WHITE_CASTLE_OOO;
 
     if (board.enpassant !== SQUARES.OFF_SQUARE) {
-        tempEnPas = SQ120(flip[SQ64(board.enpassant)]);
+        tempEnPas = SQ120(FLIP64(SQ64(board.enpassant)));
     }
 
     for (sq = 0; sq < 64; sq++) {
-        tempPiecesArray[sq] = board.pieces[SQ120(flip[sq])];
+        tempPiecesArray[sq] = board.pieces[SQ120(FLIP64(sq))];
     }
     let ply = board.ply;
     let history_ply = board.history_ply;
@@ -322,19 +328,19 @@ function mirror_board(board: board_t) {
     board.half_moves = half;
     board.ply = ply;
     board.history_ply = history_ply;
-    board.current_polyglot_key = polyglot_key(board);
+    board.current_polyglot_key = hash_.polyglot_key(board);
 
     update_list_material(board);
 }
 
-function board_to_ascii(board: board_t): string {
+export function board_to_ascii(board: board_t): string {
     let ascii_t = "\n +-----------------+\n";
     for (let rank = RANKS.EIGHTH_RANK; rank >= RANKS.FIRST_RANK; --rank) {
         ascii_t += (rank + 1).toString() + "| ";
         for (let file = FILES.A_FILE; file <= FILES.H_FILE; ++file) {
             let SQ120 = FILE_RANK_TO_SQUARE(file, rank);
             let piece = board.pieces[SQ120];
-            ascii_t += ((piece_to_ascii[piece]) + " ");
+            ascii_t += ((util_.piece_to_ascii[piece]) + " ");
         }
         ascii_t += "| \n";
     }
@@ -345,26 +351,26 @@ function board_to_ascii(board: board_t): string {
     ascii_t += "turn: " + ("wb-"[board.turn]) + '\n';
     ascii_t += "enpass: " + (board.enpassant).toString() + '\n';
     ascii_t += "castling: "
-        + (((board.castling_right & CASTLING.WHITE_CASTLE_OO) !== 0) ? piece_to_ascii[PIECES.WHITEKING] : '')
-        + (((board.castling_right & CASTLING.WHITE_CASTLE_OOO) !== 0) ? piece_to_ascii[PIECES.WHITEQUEEN] : '')
-        + (((board.castling_right & CASTLING.BLACK_CASTLE_OO) !== 0) ? piece_to_ascii[PIECES.BLACKKING] : '')
-        + (((board.castling_right & CASTLING.BLACK_CASTLE_OOO) !== 0) ? piece_to_ascii[PIECES.BLACKQUEEN] : '');
+        + (((board.castling_right & CASTLING.WHITE_CASTLE_OO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEKING] : '')
+        + (((board.castling_right & CASTLING.WHITE_CASTLE_OOO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEQUEEN] : '')
+        + (((board.castling_right & CASTLING.BLACK_CASTLE_OO) !== 0) ? util_.piece_to_ascii[PIECES.BLACKKING] : '')
+        + (((board.castling_right & CASTLING.BLACK_CASTLE_OOO) !== 0) ? util_.piece_to_ascii[PIECES.BLACKQUEEN] : '');
     ascii_t += ("\npoly key: 0x" + board.current_polyglot_key.toString(16) + '\n');
 
     return ascii_t;
 }
 
 //-- square
-function square_to_algebraic(square: SQUARES) {
-    let file = 'a'.charCodeAt(0) + files_board[square];
-    let rank = '1'.charCodeAt(0) + ranks_board[square];
+export function square_to_algebraic(square: SQUARES) {
+    let file = 'a'.charCodeAt(0) + util_.files_board[square];
+    let rank = '1'.charCodeAt(0) + util_.ranks_board[square];
     return String.fromCharCode(file) + String.fromCharCode(rank);
 }
 
 /*****************************************************************************
  * FEN
  ****************************************************************************/
-function fen_to_board(fen: string, board: board_t) {
+export function fen_to_board(fen: string, board: board_t) {
     let rank = RANKS.EIGHTH_RANK;
     let file = FILES.A_FILE;
     let n = fen.length;
@@ -373,7 +379,7 @@ function fen_to_board(fen: string, board: board_t) {
     let square_64_ = 0;
     let square_120_ = 0;
     let i = 0;
-    ASSERT(n != 0, "Empty fen provided")
+    util_.ASSERT(n != 0, "FenErr: Empty fen provided")
 
     reset_board(board);
     while ((rank >= RANKS.FIRST_RANK) && (i < n)) {
@@ -410,7 +416,7 @@ function fen_to_board(fen: string, board: board_t) {
                 i++;
                 continue;
             default:
-                ASSERT(false, `Illegal character ${fen[i]}`);
+                util_.ASSERT(false, `FenErr: Illegal character ${fen[i]}`);
         }
         for (let j = 0; j < count; j++) {
             square_64_ = rank * 8 + file;
@@ -424,7 +430,7 @@ function fen_to_board(fen: string, board: board_t) {
     }
 
     if (!(fen[i] === 'w' || fen[i] === 'b')) {
-        ASSERT(false, `Side to move is invalid. It should be w or b`);
+        util_.ASSERT(false, `FenErr: Side to move is invalid. It should be w or b`);
     }
     board.turn = (fen[i] === 'w') ? COLORS.WHITE : COLORS.BLACK;
     i += 2;
@@ -450,7 +456,7 @@ function fen_to_board(fen: string, board: board_t) {
 
         if (!(file >= FILES.A_FILE && file <= FILES.H_FILE)
             || !(rank >= RANKS.FIRST_RANK && rank <= RANKS.EIGHTH_RANK)) {
-            ASSERT(false, `Invalid en-passant square`);
+            util_.ASSERT(false, `FenErr: Invalid en-passant square`);
         }
         board.enpassant = FILE_RANK_TO_SQUARE(file, rank);
     }
@@ -462,7 +468,7 @@ function fen_to_board(fen: string, board: board_t) {
     }
     i++;
     let half_move = parseInt(half);
-    if (half_move < 0) ASSERT(false, `Half move cannot be a negative integer. GOT ${half_move}`);
+    if (half_move < 0) util_.ASSERT(false, `FenErr: Half move cannot be a negative integer. GOT ${half_move}`);
 
     let full = "";
     while (i < n) {
@@ -470,23 +476,25 @@ function fen_to_board(fen: string, board: board_t) {
     }
 
     let full_move = parseInt(full);
-    if (full_move < 1) ASSERT(false, `Full move must be greater than 0. GOT ${full_move}`);
+    if (full_move < 1) util_.ASSERT(false, `FenErr: Full move must be greater than 0. GOT ${full_move}`);
 
     board.half_moves = half_move;
     board.history_ply = 0;
     board.ply = 0;
     board.full_moves = full_move;
-    board.current_polyglot_key = polyglot_key(board);
+    board.current_polyglot_key = hash_.polyglot_key(board);
+
     update_list_material(board);
     try {
         check_board(board)
     }
     catch (err) {
-        ASSERT(false, `Cannot not parse fen`);
+        util_.ASSERT(false, `FenErr: Cannot not parse fen due to ${err}`);
     }
 
 }
-function board_to_fen(board: board_t) {
+
+export function board_to_fen(board: board_t) {
     let fen_str = "";
     let empty = 0;
 
@@ -502,7 +510,7 @@ function board_to_fen(board: board_t) {
                     fen_str += empty.toString();
                     empty = 0;
                 }
-                fen_str += piece_to_ascii[piece];
+                fen_str += util_.piece_to_ascii[piece];
 
             }
         }
