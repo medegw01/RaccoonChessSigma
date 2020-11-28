@@ -76,6 +76,9 @@ class Raccoon {
         return hash_.polyglot_key(this.board);
     }
 
+    // This recursion is what is killing you in tests 
+    // The test runners run out of heap memory pretty quickly 
+    // && It ends trying to kill the process. 
     public perft(depth: number) {
         return perft_.perft(depth, this.board);
     }

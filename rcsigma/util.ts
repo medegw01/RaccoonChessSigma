@@ -124,6 +124,7 @@ export let files_board = new Array(BOARD_SQUARE_NUM);
 export let ranks_board = new Array(BOARD_SQUARE_NUM);
 
 // functions
+// Export each of these functions so that you can test each of them individually 
 function initialize_files_rank_array() {
     for (let i = 0; i < BOARD_SQUARE_NUM; i++) {
         files_board[i] = board_.SQUARES.OFF_BOARD;
@@ -137,7 +138,7 @@ function initialize_files_rank_array() {
         }
     }
 }
-function initialize_square120_to_square64() {
+export function initialize_square120_to_square64() {
     let sq_64 = 0;
     let i, rank, file;
     for (i = 0; i < BOARD_SQUARE_NUM; ++i) {
@@ -178,6 +179,11 @@ function initialize_hash_key() {
     castle_permission[board_.SQUARES.A8] &= ~board_.CASTLING.BLACK_CASTLE_OOO;
 }
 
+
+// You can have this where you bring everything together in another file.
+// However, this seems to be central to your game and should not be in a util file 
+// Util is basicaly utility and should be something that I can export to another differnt
+// project not about chess altogether. 
 export function initialize_game() {
     initialize_square120_to_square64();
     initialize_hash_key();
