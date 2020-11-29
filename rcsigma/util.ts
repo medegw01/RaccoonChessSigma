@@ -138,7 +138,7 @@ function initialize_files_rank_array() {
         }
     }
 }
-export function initialize_square120_to_square64() {
+function initialize_square120_to_square64() {
     let sq_64 = 0;
     let i, rank, file;
     for (i = 0; i < BOARD_SQUARE_NUM; ++i) {

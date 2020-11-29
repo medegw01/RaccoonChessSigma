@@ -266,7 +266,6 @@ export function move_to_san(move: move_t, board: board_.board_t, move_already_ma
                 san += (util_.piece_to_ascii[PROMOTED(move)]).toLowerCase();
             }
 
-            console.log(`before make move verbo: ${board_.board_to_ascii(board)}`)
             function check_addOn() {
                 let check = state_.in_check(board);
                 if (state_.in_checkmate(board)) {
@@ -665,7 +664,7 @@ export function move_piece(from: board_.SQUARES, to: board_.SQUARES, board: boar
 }
 
 export function make_move(move: move_t, board: board_.board_t) {
-    console.log(`board entering make move: ${board_.board_to_ascii(board)}`)
+    //console.log(`board entering make move: ${board_.board_to_ascii(board)}`)
     if (move === NO_MOVE) return false
     let from = FROM_SQUARE(move);
     let to = TO_SQUARE(move);

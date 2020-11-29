@@ -1,153 +1,192 @@
 import * as api from '../rcsigma/ui/api/api'
 
-describe("Perft", () => {
-    let game:any; 
-    // This is just an idea on how to intialize shared variables. 
-   beforeEach(() => { 
-       game = new api.Raccoon();
-   });
-   
-    let perfts = [
-        {
-            fen: 'r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1',
-            depth: 1, nodes: BigInt("6")
-        },
-        {
-            fen: '8/PPP4k/8/8/8/8/4Kppp/8 w - - 0 1',
-            depth: 2, nodes: BigInt("89363")
-        },
-        {
-            fen: '8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1',
-            depth: 4, nodes: BigInt("43238")
-        },
-        {
-            fen: 'rnbqkbnr/p3pppp/2p5/1pPp4/3P4/8/PP2PPPP/RNBQKBNR w KQkq b6 0 4',
-            depth: 3, nodes: BigInt("23509")
-        },
-    ];
+describe("Game Tests", () => {
+    describe("Perft", () => {
+        let game: api.Raccoon;
+        beforeEach(() => {
+            game = new api.Raccoon();
+        });
 
-    it('Perft test at depth 1', () => { 
-        const perft = perfts[0];
-        console.log('This is the game', perft, game);
-        game.load(perft.fen);
-        let nodes = game.perft(perft.depth);
-        expect(nodes).toBe(perft.nodes);
+        it("Fen: start_fen; depth: 1", function () {
+            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            let nodes = game.perft(1);
+            expect(nodes).toBe(BigInt("20"));
+        });
+        it('Fen: start_fen; depth: 2', function () {
+            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            let nodes = game.perft(2);
+            expect(nodes).toBe(BigInt("400"));
+        });
+        it('Fen: start_fen; depth: 4', function () {
+            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            let nodes = game.perft(4);
+            expect(nodes).toBe(BigInt("197281"));
+        });
+        it('rnbqkbnr/p3pppp/2p5/1pPp4/3P4/8/PP2PPPP/RNBQKBNR w KQkq b6 0 4', function () {
+            game.load('rnbqkbnr/p3pppp/2p5/1pPp4/3P4/8/PP2PPPP/RNBQKBNR w KQkq b6 0 4');
+            let nodes = game.perft(3);
+            expect(nodes).toBe(BigInt("23509"));
+        });
+        it('8/PPP4k/8/8/8/8/4Kppp/8 w - - 0 1', function () {
+            game.load('8/PPP4k/8/8/8/8/4Kppp/8 w - - 0 1');
+            let nodes = game.perft(4);
+            expect(nodes).toBe(BigInt("89363"));
+        });
+        it('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1', function () {
+            game.load('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1');
+            let nodes = game.perft(4);
+            expect(nodes).toBe(BigInt("43238"));
+        });
+        it('r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1', function () {
+            game.load('r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1');
+            let nodes = game.perft(5);
+            expect(nodes).toBe(BigInt("15833292"));
+        });
     });
+    describe("Poly Keys", function () {
+        let game: api.Raccoon;
+        let start_fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        beforeEach(() => {
+            game = new api.Raccoon();
+        });
+        it("Fen: start_fen; moves: []", function () {
+            game.load(start_fen);
+            let by_fen = game.polyglot();
+            game.load(start_fen);
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x463b96181691fc9c"));
+            expect(by_move).toBe(by_fen);
+        });
+        it("Fen: start_fen; moves: ['e2e4']", function () {
+            game.load("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+            let by_fen = game.polyglot();
+            let moves = ['e2e4'];
+            game.load(start_fen);
+            for (let mv of moves) {
+                game.move(mv);
+            }
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x823c9b50fd114196"));
+            expect(by_move).toBe(by_fen);
+        });
+        it("Fen: start_fen; moves: ['e2e4', 'd7d5']", function () {
+            game.load("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
+            let by_fen = game.polyglot();
+            let moves = ['e2e4', 'd7d5'];
+            game.load(start_fen);
+            for (let mv of moves) {
+                game.move(mv);
+            }
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x0756b94461c50fb0"));
+            expect(by_move).toBe(by_fen);
+        });
+        it("Fen: start_fen; moves: ['e2e4', 'd7d5', 'e4e5']", function () {
+            game.load("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2");
+            let by_fen = game.polyglot();
+            let moves = ['e2e4', 'd7d5', 'e4e5'];
+            game.load(start_fen);
+            for (let mv of moves) {
+                game.move(mv);
+            }
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x662fafb965db29d4"));
+            expect(by_move).toBe(by_fen);
+        });
+        it("Fen: start_fen; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5']", function () {
+            game.load("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+            let by_fen = game.polyglot();
+            let moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5'];
+            game.load(start_fen);
+            for (let mv of moves) {
+                game.move(mv);
+            }
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x22a48b5a8e47ff78"));
+            expect(by_move).toBe(by_fen);
+        });
+        it("Fen: start_fen; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7']", function () {
+            game.load("rnbq1bnr/ppp1pkpp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR w - - 0 4");
+            let by_fen = game.polyglot();
+            let moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7'];
+            game.load(start_fen);
+            for (let mv of moves) {
+                game.move(mv);
+            }
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x00fdd303c946bdd9"));
+            expect(by_move).toBe(by_fen);
+        });
+        it("Fen: start_fen; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4']", function () {
+            game.load("rnbqkbnr/p1pppppp/8/8/PpP4P/8/1P1PPPP1/RNBQKBNR b KQkq c3 0 3");
+            let by_fen = game.polyglot();
+            let moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4'];
+            game.load(start_fen);
+            for (let mv of moves) {
+                game.move(mv);
+            }
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x3c8123ea7b067637"));
+            expect(by_move).toBe(by_fen);
+        });
+        it("Fen: start_fen; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3']", function () {
+            game.load("rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4");
+            let by_fen = game.polyglot();
+            let moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3'];
+            game.load(start_fen);
+            for (let mv of moves) {
+                game.move(mv);
+            }
+            let by_move = game.polyglot(true);
+            expect(by_fen).toBe(BigInt("0x5c3f9b829b279560"));
+            expect(by_move).toBe(by_fen);
+        });
+    });
+    describe("Load", function () {
+        let game: api.Raccoon;
+        beforeEach(() => {
+            game = new api.Raccoon();
+        });
+        it("Failure: Empty Board; fen: 8/8/8/8/8/8/8/8 w - - 0 1", function () {
+            let result = game.load('8/8/8/8/8/8/8/8 w - - 0 1');
+            expect(result.value).toBe(false)
+            expect(game.fen()).toBe('8/8/8/8/8/8/8/8 w - - 0 1');
+        });
+        it("Success: No Enpass; fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", function () {
+            let result = game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            expect(result.value).toBe(true)
+            expect(game.fen()).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+        });
+        it("Success: No Castling; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2", function () {
+            let result = game.load('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
+            expect(result.value).toBe(true)
+            expect(game.fen()).toBe('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
+        });
+        it("Success: With EnPass; fen: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", function () {
+            let result = game.load('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1');
+            expect(result.value).toBe(true)
+            expect(game.fen()).toBe('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1');
+        });
+        it("Failure: Empty fen provided; fen: ", function () {
+            let result = game.load("");
+            expect(result.value).toBe(false)
+            expect(result.error.includes("Empty fen provided")).toBe(true)
+        });
+        it("Failure: Illegal character 9; fen: rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", function () {
+            let result = game.load('rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            expect(result.value).toBe(false)
+            expect(result.error.includes("Illegal character 9")).toBe(true)
+        });
+        it("Failure: Half move cannot be a negative integer; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - -1 2", function () {
+            let result = game.load('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - -1 2');
+            expect(result.value).toBe(false)
+            expect(result.error.includes("Half move cannot be")).toBe(true);
+        });
+        it("Failure: Full move must be greater than 0; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 10 0", function () {
+            let result = game.load('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 10 0');
+            expect(result.value).toBe(false)
+            expect(result.error.includes("Full move must be")).toBe(true);
+        });
 
-    // it('Perft test at depth 3', () => { 
-    //     const perft = perfts[1];
-    //     console.log('wtf', perft);
-    //      game = new api.Raccoon();
-    //     console.log('This is the game', perft, game);
-    //     game.load(perft.fen);
-    //     let nodes = game.perft(perft.depth);
-    //     console.log('We are running crazy here')
-    //     expect(nodes).toBe(perft.nodes);
-    // });
+    });
 });
-
-// describe("Load", function () {
-//     let positions = []; 
-//     // Initializing like this allows you to reuse positions in multiple 
-//     //it blocks within this describe. 
-//     beforeEach(() => { 
-//         positions = [
-//             { fen: '8/8/8/8/8/8/8/8 w - - 0 1', result: true },
-//             { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', result: true },
-//             { fen: '1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2', result: true },
-//             { fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1', result: true },
-    
-//             // incomplete FEN string 
-//             { fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1', result: false },
-    
-//             // Illegal character 9
-//             { fen: 'rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', result: false },
-    
-//             // Illegal character X 
-//             { fen: '1nbqkbn1/pppp1ppX/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2', result: false },
-    
-//             // Half move cannot be a negative integer
-//             { fen: '1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - -1 2', result: false },
-    
-//             // Full move must be greater than 0 
-//             { fen: '1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 10 0', result: false },
-//         ];
-//     })
-
-//     it('Testing for psitions', () => { 
-//         positions.forEach(function (position) {
-//             let game = new api.Raccoon();
-//             game.load(position.fen);
-//             expect(game.fen() === position.fen === position.result).toBe(true);
-//         });
-//     })
-
-// });
-
-// describe("Poly Keys", function () {
-//     const start_fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-//     let positions = [
-//         {
-//             fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-//             result: BigInt("0x463b96181691fc9c"),
-//             moves: []
-//         },
-//         {
-//             fen: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
-//             result: BigInt("0x823c9b50fd114196"),
-//             moves: ['e2e4']
-//         },
-//         {
-//             fen: 'rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2',
-//             result: BigInt("0x0756b94461c50fb0"),
-//             moves: ['e2e4', 'd7d5']
-//         },
-//         {
-//             fen: 'rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2',
-//             result: BigInt("0x662fafb965db29d4"),
-//             moves: ['e2e4', 'd7d5', 'e4e5']
-//         },
-//         {
-//             fen: 'rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3',
-//             result: BigInt("0x22a48b5a8e47ff78"),
-//             moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5']
-//         },
-//         {
-//             fen: 'rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR b kq - 0 3',
-//             result: BigInt("0x652a607ca3f242c1"),
-//             moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2']
-//         },
-//         {
-//             fen: 'rnbq1bnr/ppp1pkpp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR w - - 0 4',
-//             result: BigInt("0x00fdd303c946bdd9"),
-//             moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7']
-//         },
-//         {
-//             fen: 'rnbqkbnr/p1pppppp/8/8/PpP4P/8/1P1PPPP1/RNBQKBNR b KQkq c3 0 3',
-//             result: BigInt("0x3c8123ea7b067637"),
-//             moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4']
-//         },
-//         {
-//             fen: 'rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4',
-//             result: BigInt("0x5c3f9b829b279560"),
-//             moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3']
-//         },
-//     ];
-//     it('Testing for positions 2', () => { 
-//         positions.forEach(function (position) {
-//             let game = new api.Raccoon();
-//             game.load(position.fen);
-//             let by_fen = game.polyglot();
-//             game.load(start_fen);
-//             for (let mv of position.moves) {
-//                 game.move(mv);
-//             }
-//             let by_move = game.polyglot(true);
-//             expect(by_fen).toBe(position.result);
-//             expect(by_move).toBe(by_fen);
-    
-//         });    
-//     })
-  
-
-// });

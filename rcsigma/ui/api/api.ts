@@ -76,18 +76,15 @@ class Raccoon {
         return hash_.polyglot_key(this.board);
     }
 
-    // This recursion is what is killing you in tests 
-    // The test runners run out of heap memory pretty quickly 
-    // && It ends trying to kill the process. 
     public perft(depth: number) {
         return perft_.perft(depth, this.board);
     }
 
-    public perft_summary(depth: number) {
+    public perft_summary(depth: number) {// TEST case TODO
         return perft_.perft_summary(depth, this.board);
     }
 
-    public move(move: any) {
+    public move(move: any) {// TEST case TODO
         let mv = move_.NO_MOVE;
         if (typeof move === 'string') {
             let maybe_smith = move_.clean_smith(move);
