@@ -40,9 +40,10 @@ jobs:
       - run: npm run test_coverage
       - name: Check coverage
         run: |
-          total=$(jq '(.total.lines.pct + .total.statements.pct + .total.functions.pct  + .total.branches.pct)/4)  | floor' coverage/coverage-summary.json
-          echo $total
-          if [ ${total} -lt ${THRESHOLD} ]
+          total=$(jq '(.total.lines.pct + .total.statements.pct + .total.functions.pct  + .total.branches.pct)/4' coverage/coverage-summary.json)
+          TOTAL_APPROX=$(jq -n "$total | floor")
+          echo $TOTAL_APPROX
+          if [ ${TOTAL_APPROX} -lt ${THRESHOLD} ]
           then
             echo `::error ::Coverage: ${}%, but threshold is set to ${THRESHOLD}`
           fi
