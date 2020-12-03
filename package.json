@@ -25,7 +25,8 @@
   },
   "scripts": {
     "compile": "tsc",
-    "test": "jest --colors  --watchAll --verbose true test",
+    "test": "jest --watch",
+    "test:ci": "jest --ci --reporters='default' --reporters='./github-actions-reporter'",
     "coverage": "jest --coverage"
   },
   "author": "Michael Edegware <michael.edegware@gmail.com> (https://www.edegware.com/)",
