@@ -1,6 +1,5 @@
 import * as board_ from '../../../game/board'
 
 export function raccoonZero_evaluate(board: board_.board_t) {
-    const score = board.material_eg[board.turn] + board.material_mg[board.turn]
-    return score;
+    return board.material_eg[board.turn] + board.material_mg[board.turn];
 }

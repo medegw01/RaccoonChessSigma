@@ -3,43 +3,45 @@ import * as api from '../rcsigma/ui/api/api'
 describe("Game Tests", () => {
     describe("Perft", () => {
         let game: api.Raccoon;
+        let nodes: bigint
         beforeEach(() => {
             game = new api.Raccoon();
+            nodes = BigInt("0");
         });
 
         it("Fen: start_fen; depth: 1", function () {
             game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-            const nodes = game.perft(1);
+            nodes = game.perft(1);
             expect(nodes).toBe(BigInt("20"));
         });
         it('Fen: start_fen; depth: 2', function () {
             game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-            const nodes = game.perft(2);
+            nodes = game.perft(2);
             expect(nodes).toBe(BigInt("400"));
         });
         it('Fen: start_fen; depth: 4', function () {
             game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-            const nodes = game.perft(4);
+            nodes = game.perft(4);
             expect(nodes).toBe(BigInt("197281"));
         });
         it('rnbqkbnr/p3pppp/2p5/1pPp4/3P4/8/PP2PPPP/RNBQKBNR w KQkq b6 0 4', function () {
             game.load('rnbqkbnr/p3pppp/2p5/1pPp4/3P4/8/PP2PPPP/RNBQKBNR w KQkq b6 0 4');
-            const nodes = game.perft(3);
+            nodes = game.perft(3);
             expect(nodes).toBe(BigInt("23509"));
         });
         it('8/PPP4k/8/8/8/8/4Kppp/8 w - - 0 1', function () {
             game.load('8/PPP4k/8/8/8/8/4Kppp/8 w - - 0 1');
-            const nodes = game.perft(4);
+            nodes = game.perft(4);
             expect(nodes).toBe(BigInt("89363"));
         });
         it('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1', function () {
             game.load('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1');
-            const nodes = game.perft(4);
+            nodes = game.perft(4);
             expect(nodes).toBe(BigInt("43238"));
         });
         it('r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1', function () {
             game.load('r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1');
-            const nodes = game.perft(5);
+            nodes = game.perft(5);
             expect(nodes).toBe(BigInt("15833292"));
         });
     });

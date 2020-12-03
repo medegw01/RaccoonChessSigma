@@ -223,7 +223,7 @@ function king_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.boa
 }
 
 
-export function attack(square: board_.SQUARES, color: board_.COLORS, board: board_.board_t) {
+export function attack(square: board_.SQUARES, color: board_.COLORS, board: board_.board_t): number {
     let v = 0;
     v += pawn_attack(color, square, board);
     v += king_attack(color, square, board);
