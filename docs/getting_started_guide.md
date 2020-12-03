@@ -16,7 +16,7 @@ The following are prerequisites for building and deploying:
 
 #### npm
 
-`npm i -D typescript jest ts-jest @types/jest`
+`npm install -D typescript jest ts-jest @types/jest`
 
 ### Building RaccoonChessSigma
 
@@ -32,7 +32,7 @@ Document how to test project if need be
 
 #### npm
 
-`npm t` or `npx jest`
+`npm run test`
 
 #### yarn
 

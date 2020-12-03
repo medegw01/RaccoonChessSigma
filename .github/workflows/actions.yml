@@ -35,7 +35,7 @@ jobs:
           node-version: "12.x"
       - run: npm install
       - run: npm i -D typescript jest ts-jest @types/jest
-      - run: npm test:ci
+      - run: npm run test:ci
       - name: Tests ✅
         if: ${{ success() }}
         run: |
