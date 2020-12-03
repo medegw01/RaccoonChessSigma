@@ -41,7 +41,8 @@ jobs:
       - name: Check coverage
         run: |
           total=$(jq '(.total.lines.pct + .total.statements.pct + .total.functions.pct  + .total.branches.pct)/4' coverage/coverage-summary.json)
-          if [ $total -lt $THRESHOLD ]
+          echo $total
+          if [ ${total} -lt ${THRESHOLD} ]
           then
             echo `::error ::Coverage: ${}%, but threshold is set to ${THRESHOLD}`
           fi
