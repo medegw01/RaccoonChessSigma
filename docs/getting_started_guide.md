@@ -12,11 +12,11 @@ The following are prerequisites for building and deploying:
 
 #### yarn
 
-`yarn add -D typescript jest ts-jest @types/jest`
+`yarn add -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin`
 
 #### npm
 
-`npm i -D typescript jest ts-jest @types/jest`
+`npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin`
 
 ### Building RaccoonChessSigma
 

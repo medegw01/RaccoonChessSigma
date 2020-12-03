@@ -21,7 +21,7 @@ export function book_open(arrayBuffer: ArrayBufferLike) {
 }
 function find_key(key: board_.bitboard_t) {
     let left = 0, mid, right = book_size - 1;
-    let entry: entry_t = {
+    const entry: entry_t = {
         key: 0n,
         move: move_.NO_MOVE,
         weight: 0,
@@ -41,7 +41,7 @@ function find_key(key: board_.bitboard_t) {
     return (entry.key === key) ? left : book_size;
 }
 function read_entry(entry: entry_t, index: number) {
-    let offset = index * 16;
+    const offset = index * 16;
     entry.key = book_file.getBigUint64(offset);
     entry.move = book_file.getUint16(offset + 8);
     entry.weight = book_file.getUint16(offset + 10);//use later in search
@@ -55,7 +55,7 @@ function poly_to_smith(poly_move: number) {
     smith += String.fromCharCode('1'.charCodeAt(0) + ((poly_move >> 9) & 7));
     smith += String.fromCharCode('a'.charCodeAt(0) + ((poly_move >> 0) & 7));
     smith += String.fromCharCode('1'.charCodeAt(0) + ((poly_move >> 3) & 7));
-    let promotion = (poly_move >> 12) & 7;
+    const promotion = (poly_move >> 12) & 7;
     if (promotion !== 0) {
         let pp = 'q';
         switch (promotion) {
@@ -75,7 +75,7 @@ export function book_move(board: board_.board_t) {
     if (book_file !== null && book_size !== 0) {
         let best_move_poly = move_.NO_MOVE;
         let best_score = 0;
-        let entry: entry_t = {
+        const entry: entry_t = {
             key: 0n,
             move: move_.NO_MOVE,
             weight: 0,
@@ -87,13 +87,13 @@ export function book_move(board: board_.board_t) {
             if (entry.key !== board.current_polyglot_key) {
                 break;
             }
-            let score = entry.weight;
+            const score = entry.weight;
             best_score += score;
             if (my_random(best_score) < score) best_move_poly = entry.move;
         }
         if (best_move_poly !== move_.NO_MOVE) {
-            let smith_move = poly_to_smith(best_move_poly);
-            let best_move = move_.smith_to_move(smith_move, board);
+            const smith_move = poly_to_smith(best_move_poly);
+            const best_move = move_.smith_to_move(smith_move, board);
             if (best_move !== move_.NO_MOVE) {
                 return best_move;
             }
@@ -114,9 +114,9 @@ interface noobprobe_callback { (arg: string): void }
 
 export function fetch_noob(action: string, params: noobprobe_t[], board: board_.board_t, callback: noobprobe_callback) {
     //http://www.chessdb.cn/cdb.php?action=[ACTION]{&[OPTION1]=[VALUE1]...&[OPTIONn]=[VALUEn]}
-    let fen = board_.board_to_fen(board);
+    const fen = board_.board_to_fen(board);
     let params_str = "";
-    for (let param of params) {
+    for (const param of params) {
         params_str += `&${param.option}=${param.value}`;
     }
 

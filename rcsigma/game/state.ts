@@ -7,14 +7,14 @@ export function in_check(board: board_.board_t) {
 }
 
 export function in_checkmate(board: board_.board_t) {
-    let check = in_check(board);
-    let moves = move_.generate_legal_moves(board);
+    const check = in_check(board);
+    const moves = move_.generate_legal_moves(board);
     return check && moves.length === 0;
 }
 
 export function in_stalemate(board: board_.board_t) {
-    let check = in_check(board);
-    let moves = move_.generate_legal_moves(board);
+    const check = in_check(board);
+    const moves = move_.generate_legal_moves(board);
     return !check && moves.length === 0;
 }
 
@@ -39,6 +39,6 @@ export function insufficient_material(board: board_.board_t) {
 }
 
 export function in_draw(board: board_.board_t) {
-    let is_50_move = (board.half_moves >= 100 && board.ply);
+    const is_50_move = (board.half_moves >= 100 && board.ply);
     return is_50_move || insufficient_material(board) || in_threefold_repetition(board);
 }

@@ -17,9 +17,9 @@ export enum PIECES {
     BLACKQUEEN,
     BLACKKING,
     OFF_BOARD_PIECE
-};
+}
 
-export enum FILES { A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE, NONE_FILE };
+export enum FILES { A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE, NONE_FILE }
 
 export enum RANKS {
     FIRST_RANK,
@@ -31,9 +31,9 @@ export enum RANKS {
     SEVENTH_RANK,
     EIGHTH_RANK,
     NONE_RANK
-};
+}
 
-export enum COLORS { WHITE, BLACK, BOTH };
+export enum COLORS { WHITE, BLACK, BOTH }
 
 export enum SQUARES {
     A1 = 21, B1, C1, D1, E1, F1, G1, H1,
@@ -44,14 +44,14 @@ export enum SQUARES {
     A6 = 71, B6, C6, D6, E6, F6, G6, H6,
     A7 = 81, B7, C7, D7, E7, F7, G7, H7,
     A8 = 91, B8, C8, D8, E8, F8, G8, H8, OFF_SQUARE, OFF_BOARD
-};
+}
 
 export enum CASTLING {
     WHITE_CASTLE_OO = 1 << 0,
     WHITE_CASTLE_OOO = 1 << 1,
     BLACK_CASTLE_OO = 1 << 2,
     BLACK_CASTLE_OOO = 1 << 3
-};
+}
 
 export type bitboard_t = bigint
 
@@ -121,14 +121,14 @@ export function PIECE_INDEX(piece: number, piece_num: number) { return (piece * 
 * BOARD POSITION
 ****************************************************************************/
 function check_board(position: board_t) {
-    let tmp_number_piece = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    let tmp_number_big_piece = [0, 0];
-    let tmp_number_major_piece = [0, 0];
-    let tmp_number_minor_piece = [0, 0];
-    let tmp_material_eg = [0, 0];
-    let tmp_material_mg = [0, 0];
+    const tmp_number_piece = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const tmp_number_big_piece = [0, 0];
+    const tmp_number_major_piece = [0, 0];
+    const tmp_number_minor_piece = [0, 0];
+    const tmp_material_eg = [0, 0];
+    const tmp_material_mg = [0, 0];
 
-    let tmp_pawns = [0n, 0n, 0n];
+    const tmp_pawns = [0n, 0n, 0n];
     tmp_pawns[COLORS.WHITE] = position.pawns[COLORS.WHITE];
     tmp_pawns[COLORS.BLACK] = position.pawns[COLORS.BLACK];
     tmp_pawns[COLORS.BOTH] = position.pawns[COLORS.BOTH];
@@ -137,17 +137,17 @@ function check_board(position: board_t) {
     // check piece lists
     for (let p = PIECES.WHITEPAWN; p <= PIECES.BLACKKING; ++p) {
         for (let p_num = 0; p_num < position.number_pieces[p]; ++p_num) {
-            let SQ120: number = position.piece_list[PIECE_INDEX(p, p_num)]
+            const SQ120: number = position.piece_list[PIECE_INDEX(p, p_num)]
             util_.ASSERT(position.pieces[SQ120] == p, `BoardErr: Piece List Mismatch\n Got: ${util_.piece_to_ascii[position.pieces[SQ120]]} Expect: ${util_.piece_to_ascii[p]}`);
         }
     }
 
     // check piece count and other counters
     for (let square_64 = 0; square_64 < 64; ++square_64) {
-        let sq120 = SQ120(square_64);
-        let p = position.pieces[sq120];
+        const sq120 = SQ120(square_64);
+        const p = position.pieces[sq120];
         tmp_number_piece[p]++;
-        let color = util_.get_color_piece[p];
+        const color = util_.get_color_piece[p];
         if (util_.is_big_piece[p]) tmp_number_big_piece[color]++;
         if (util_.is_minor_piece[p]) tmp_number_minor_piece[color]++;
         if (util_.is_major_piece[p]) tmp_number_major_piece[color]++;
@@ -166,7 +166,7 @@ function check_board(position: board_t) {
     pcount = util_.COUNT_BITS(tmp_pawns[COLORS.BLACK]);
     util_.ASSERT(pcount == position.number_pieces[PIECES.BLACKPAWN], `BoardErr: no. Black Pawns Mismatch\n Got: ${position.number_pieces[PIECES.BLACKPAWN]} Expect: ${pcount}`);
     pcount = util_.COUNT_BITS(tmp_pawns[COLORS.BOTH]);
-    let both_pawns = position.number_pieces[PIECES.BLACKPAWN] + position.number_pieces[PIECES.WHITEPAWN];
+    const both_pawns = position.number_pieces[PIECES.BLACKPAWN] + position.number_pieces[PIECES.WHITEPAWN];
     util_.ASSERT(pcount == both_pawns, `BoardErr: no. Both Pawns Mismatch\n Got: ${both_pawns} Expect: ${pcount}`);
 
 
@@ -244,9 +244,9 @@ export function reset_board(board: board_t) {
 
 function update_list_material(board: board_t) {
     for (let square = 0; square < util_.BOARD_SQUARE_NUM; square++) {
-        let piece = board.pieces[square];
+        const piece = board.pieces[square];
         if (SQUARE_ON_BOARD(square) && piece !== PIECES.OFF_BOARD_PIECE && piece !== PIECES.EMPTY) {
-            let color = util_.get_color_piece[piece];
+            const color = util_.get_color_piece[piece];
 
             if (util_.is_big_piece[piece]) board.number_big_pieces[color]++;
             if (util_.is_major_piece[piece]) board.number_major_pieces[color]++;
@@ -274,9 +274,9 @@ function update_list_material(board: board_t) {
 }
 
 export function mirror_board(board: board_t) {
-    let tempPiecesArray = new Array(64);
-    let tempSide = board.turn ^ 1;
-    let SwapPiece = [
+    const tempPiecesArray = new Array(64);
+    const tempSide = board.turn ^ 1;
+    const SwapPiece = [
         PIECES.EMPTY,
         PIECES.BLACKPAWN,
         PIECES.BLACKBISHOP,
@@ -311,9 +311,9 @@ export function mirror_board(board: board_t) {
     for (sq = 0; sq < 64; sq++) {
         tempPiecesArray[sq] = board.pieces[SQ120(FLIP64(sq))];
     }
-    let ply = board.ply;
-    let history_ply = board.history_ply;
-    let half = board.half_moves;
+    const ply = board.ply;
+    const history_ply = board.history_ply;
+    const half = board.half_moves;
 
     reset_board(board);
 
@@ -338,8 +338,8 @@ export function board_to_ascii(board: board_t): string {
     for (let rank = RANKS.EIGHTH_RANK; rank >= RANKS.FIRST_RANK; --rank) {
         ascii_t += (rank + 1).toString() + "| ";
         for (let file = FILES.A_FILE; file <= FILES.H_FILE; ++file) {
-            let SQ120 = FILE_RANK_TO_SQUARE(file, rank);
-            let piece = board.pieces[SQ120];
+            const SQ120 = FILE_RANK_TO_SQUARE(file, rank);
+            const piece = board.pieces[SQ120];
             ascii_t += ((util_.piece_to_ascii[piece]) + " ");
         }
         ascii_t += "| \n";
@@ -362,8 +362,8 @@ export function board_to_ascii(board: board_t): string {
 
 //-- square
 export function square_to_algebraic(square: SQUARES) {
-    let file = 'a'.charCodeAt(0) + util_.files_board[square];
-    let rank = '1'.charCodeAt(0) + util_.ranks_board[square];
+    const file = 'a'.charCodeAt(0) + util_.files_board[square];
+    const rank = '1'.charCodeAt(0) + util_.ranks_board[square];
     return String.fromCharCode(file) + String.fromCharCode(rank);
 }
 
@@ -373,7 +373,7 @@ export function square_to_algebraic(square: SQUARES) {
 export function fen_to_board(fen: string, board: board_t) {
     let rank = RANKS.EIGHTH_RANK;
     let file = FILES.A_FILE;
-    let n = fen.length;
+    const n = fen.length;
     let piece = 0;
     let count = 0;
     let square_64_ = 0;
@@ -467,7 +467,7 @@ export function fen_to_board(fen: string, board: board_t) {
         half += fen[i++];
     }
     i++;
-    let half_move = parseInt(half);
+    const half_move = parseInt(half);
     if (half_move < 0) util_.ASSERT(false, `FenErr: Half move cannot be a negative integer. GOT ${half_move}`);
 
     let full = "";
@@ -475,7 +475,7 @@ export function fen_to_board(fen: string, board: board_t) {
         full += fen[i++];
     }
 
-    let full_move = parseInt(full);
+    const full_move = parseInt(full);
     if (full_move < 1) util_.ASSERT(false, `FenErr: Full move must be greater than 0. GOT ${full_move}`);
 
     board.half_moves = half_move;
@@ -500,8 +500,8 @@ export function board_to_fen(board: board_t) {
 
     for (let rank = RANKS.EIGHTH_RANK; rank >= RANKS.FIRST_RANK; --rank) {
         for (let file = FILES.A_FILE; file <= FILES.H_FILE; file++) {
-            let sq = FILE_RANK_TO_SQUARE(file, rank);
-            let piece = board.pieces[sq];
+            const sq = FILE_RANK_TO_SQUARE(file, rank);
+            const piece = board.pieces[sq];
             if (piece === PIECES.EMPTY) {
                 empty++;
             }
@@ -522,7 +522,7 @@ export function board_to_fen(board: board_t) {
     }
 
     fen_str += (board.turn === COLORS.WHITE) ? " w " : " b ";
-    var cflag = "";
+    let cflag = "";
     if ((board.castling_right & CASTLING.WHITE_CASTLE_OO) !== 0) {
         cflag += 'K';
     }
@@ -538,7 +538,7 @@ export function board_to_fen(board: board_t) {
 
     fen_str += (cflag !== "") ? cflag : "-";
     fen_str += ' ';
-    let en_sq = board.enpassant;
+    const en_sq = board.enpassant;
     fen_str += (en_sq !== SQUARES.OFF_SQUARE) ? square_to_algebraic(en_sq) : "-";
     fen_str += ' ';
     fen_str += board.half_moves.toString();

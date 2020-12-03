@@ -87,7 +87,7 @@ class Raccoon {
     public move(move: any) {// TEST case TODO
         let mv = move_.NO_MOVE;
         if (typeof move === 'string') {
-            let maybe_smith = move_.clean_smith(move);
+            const maybe_smith = move_.clean_smith(move);
             if (maybe_smith !== "") {
                 mv = move_.smith_to_move(maybe_smith, this.board);
             }
