@@ -1,10 +1,11 @@
-[![Build Status](https://travis-ci.org/medegw01/raccoon.js.svg?branch=master)](https://travis-ci.org/medegw01/raccoon.js)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/medegw01/RaccoonChessSigma/Quality%20Gate)](https://github.com/medegw01/RaccoonChessSigma/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/medegw01/RaccoonChessSigma/blob/main/LICENSE)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/medegw01/RaccoonChessSigma?include_prereleases&label=latest&style=flat)](https://github.com/medegw01/RaccoonChessSigma/releases/latest)
 
 # RaccoonChessSigma
 
 <p align="center">
-  <img width="300" src="https://github.com/medegw01/RaccoonChessSigma/blob/main/website/static/img/rcsigma%20logo.png">
+  <img width="300" src="https://raw.githubusercontent.com/medegw01/RaccoonChessSigma/main/website/static/img/rcsigma%20logo.png">
   <br/>
   ♔ ♕ ♖ ♗ ♘ ♙<br/>
   TypeScript Chess Library and Engine
@@ -14,10 +15,10 @@
 
 RaccoonChessSigma evaluates chess positions using either of the following evaluation algorithm:
 
-* [raccoon](./rcsigma/evaluate/rc/rc.md): uses  the classical evaluation based on handcrafted terms. It runs efficiently on most CPU architecture
-* [raccoonZero](./rcsigma/evaluate/rc0/rc0.md): uses a deep convolutional neural network(NN)
+- [raccoon](./rcsigma/evaluate/rc/rc.md): uses the classical evaluation based on handcrafted terms. It runs efficiently on most CPU architecture
+- [raccoonZero](./rcsigma/evaluate/rc0/rc0.md): uses a deep convolutional neural network(NN)
 
-By following the [Getting Started Guide](./docs/getting_started_guide.md), a user can utilize either of the engines as a [UCI-compliant Chess Engine](./rcsigma/ui/uci/uci.md) or as an extensive [JavaScript Chess Library](./rcsigma/ui/api/api.md).  
+By following the [Getting Started Guide](./docs/getting_started_guide.md), a user can utilize either of the engines as a [UCI-compliant Chess Engine](./rcsigma/ui/uci/uci.md) or as an extensive [JavaScript Chess Library](./rcsigma/ui/api/api.md).
 
 ## Table of Contents
 
@@ -29,7 +30,7 @@ By following the [Getting Started Guide](./docs/getting_started_guide.md), a use
 - [Development](#development)
 - [Architecture](./docs/architecture.md)
 - [Versioning](#versioning)
-- [Security](./docs/security.md) 
+- [Security](./docs/security.md)
 
 ## Development
 
@@ -43,8 +44,8 @@ To understand project, it's imperative you understand [RaccoonChessSigma archite
 
 RaccoonChessSigma uses `x.y.z` where `x`, `y`, and `z` are integers representing `major.minor.patch`.
 
-* Major is incremented when the release contains breaking changes, all other numbers are set to 0. That is, from `x.y.z` to `{x+1}.0.0`.
-* Minor is incremented when the release contains new non-breaking features, patch is set to 0. That is, from `x.y.z` to `x.{y+1}.0`.
-* Patch is incremented when the release only contains bugfixes and very minor/trivial features considered necessary. That is, from `x.y.z` to `x.y.{z+1}`.
+- Major is incremented when the release contains breaking changes, all other numbers are set to 0. That is, from `x.y.z` to `{x+1}.0.0`.
+- Minor is incremented when the release contains new non-breaking features, patch is set to 0. That is, from `x.y.z` to `x.{y+1}.0`.
+- Patch is incremented when the release only contains bugfixes and very minor/trivial features considered necessary. That is, from `x.y.z` to `x.y.{z+1}`.
 
 Please refer to [sematic versioning](https://semver.org/) for more information.
