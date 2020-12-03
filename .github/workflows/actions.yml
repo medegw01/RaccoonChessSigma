@@ -29,13 +29,24 @@ jobs:
     steps:
       - name: Setup repo
         uses: actions/checkout@v2
+      - name: Install jq
+        run: sudo apt-get install jq
       - name: Test using Node.js
         uses: actions/setup-node@v1
         with:
           node-version: "12.x"
       - run: npm install
       - run: npm i -D typescript jest ts-jest @types/jest
-      - run: npm run test
+      - run: npm run test_coverage
+      - name: Check coverage
+        run: |
+          total=$(jq '(.total.lines.pct + .total.statements.pct + .total.functions.pct  + .total.branches.pct)/4' coverage/coverage-summary.json)
+          if [ $total -lt $THRESHOLD ]
+          then
+            echo `::error ::Coverage: ${}%, but threshold is set to ${THRESHOLD}`
+          fi
+        env:
+          THRESHOLD: 80
 
   malware_security_scan:
     name: Malware Scanner

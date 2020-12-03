@@ -26,7 +26,8 @@
   "scripts": {
     "compile": "tsc",
     "test": "jest",
-    "coverage": "jest --coverage"
+    "coverage": "jest --coverage",
+    "coverage:summary": "jest --coverage --coverageReporters='json-summary'"
   },
   "author": "Michael Edegware <michael.edegware@gmail.com> (https://www.edegware.com/)",
   "license": "MIT"
