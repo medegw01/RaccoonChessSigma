@@ -45,7 +45,8 @@ jobs:
           echo $TOTAL_APPROX
           if [ ${TOTAL_APPROX} -lt ${THRESHOLD} ]
           then
-            echo `::error ::Coverage: ${TOTAL_APPROX}%, but threshold is set to ${THRESHOLD}%`
+            echo Coverage: ${TOTAL_APPROX}%, but threshold is set to ${THRESHOLD}%
+            exit 1
           fi
         env:
           THRESHOLD: 80
