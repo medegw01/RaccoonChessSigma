@@ -73,15 +73,15 @@ export function smith_to_move(smith: string, board: board_.board_t) {
     if (smith[0].charCodeAt(0) > 'h'.charCodeAt(0) || smith[0].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
     if (smith[2].charCodeAt(0) > 'h'.charCodeAt(0) || smith[2].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
 
-    let from = board_.FILE_RANK_TO_SQUARE(smith[0].charCodeAt(0) - 'a'.charCodeAt(0), smith[1].charCodeAt(0) - '1'.charCodeAt(0));
-    let to = board_.FILE_RANK_TO_SQUARE(smith[2].charCodeAt(0) - 'a'.charCodeAt(0), smith[3].charCodeAt(0) - '1'.charCodeAt(0));
+    const from = board_.FILE_RANK_TO_SQUARE(smith[0].charCodeAt(0) - 'a'.charCodeAt(0), smith[1].charCodeAt(0) - '1'.charCodeAt(0));
+    const to = board_.FILE_RANK_TO_SQUARE(smith[2].charCodeAt(0) - 'a'.charCodeAt(0), smith[3].charCodeAt(0) - '1'.charCodeAt(0));
 
     if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
-        let moves = generate_legal_moves(board);
+        const moves = generate_legal_moves(board);
         for (let i = 0; i < moves.length; i++) {
-            let move = moves[i].move;
+            const move = moves[i].move;
             if (FROM_SQUARE(move) === from && TO_SQUARE(move) === to) {
-                let promotion_piece = PROMOTED(move);
+                const promotion_piece = PROMOTED(move);
                 if (promotion_piece !== board_.PIECES.EMPTY) {
                     if ((smith[4] === (util_.piece_to_ascii[promotion_piece]).toLowerCase())
                         || (smith[4] === (util_.piece_to_ascii[promotion_piece]).toUpperCase())) {
@@ -100,13 +100,13 @@ export function move_to_smith(move: move_t) {
     if (move != NO_MOVE) {
 
 
-        let file_from = util_.files_board[FROM_SQUARE(move)];
-        let rank_from = util_.ranks_board[FROM_SQUARE(move)];
+        const file_from = util_.files_board[FROM_SQUARE(move)];
+        const rank_from = util_.ranks_board[FROM_SQUARE(move)];
 
-        let file_to = util_.files_board[TO_SQUARE(move)];
-        let rank_to = util_.ranks_board[TO_SQUARE(move)];
+        const file_to = util_.files_board[TO_SQUARE(move)];
+        const rank_to = util_.ranks_board[TO_SQUARE(move)];
 
-        let promoted = PROMOTED(move);
+        const promoted = PROMOTED(move);
         let rlt = (String.fromCharCode('a'.charCodeAt(0) + file_from) + String.fromCharCode('1'.charCodeAt(0)
             + rank_from) + String.fromCharCode('a'.charCodeAt(0) + file_to) + String.fromCharCode('1'.charCodeAt(0)
                 + rank_to)
@@ -129,9 +129,9 @@ export function move_to_smith(move: move_t) {
 }
 
 export function move_to_verbose_move(move: move_t, board: board_.board_t, move_already_made = false) {
-    let from = FROM_SQUARE(move);
-    let to = TO_SQUARE(move);
-    let rlt = {} as verbose_move_t;
+    const from = FROM_SQUARE(move);
+    const to = TO_SQUARE(move);
+    const rlt = {} as verbose_move_t;
     rlt.from = board_.square_to_algebraic(from);
     rlt.to = board_.square_to_algebraic(to);
     rlt.color = "wb-"[board.turn];
@@ -174,11 +174,11 @@ export function move_to_verbose_move(move: move_t, board: board_.board_t, move_a
 function disambiguator(move: move_t, board: board_.board_t) {
     let diamb = "";
 
-    let moves = generate_all_moves(board);
+    const moves = generate_all_moves(board);
 
-    let from = FROM_SQUARE(move);
-    let to = TO_SQUARE(move);
-    let piece = board.pieces[from];
+    const from = FROM_SQUARE(move);
+    const to = TO_SQUARE(move);
+    const piece = board.pieces[from];
 
     let ambiguities = 0;
     let same_rank = 0;
@@ -228,8 +228,8 @@ function disambiguator(move: move_t, board: board_.board_t) {
 
 export function move_to_san(move: move_t, board: board_.board_t, move_already_made = false) {
     let san = "";
-    let from = FROM_SQUARE(move);
-    let to = TO_SQUARE(move);
+    const from = FROM_SQUARE(move);
+    const to = TO_SQUARE(move);
 
     if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
         if ((move & MOVE_FLAG.CASTLE) !== 0) {//--castling move
@@ -249,7 +249,7 @@ export function move_to_san(move: move_t, board: board_.board_t, move_already_ma
                 default: break;
             }
         } else {
-            let diam = disambiguator(move, board);
+            const diam = disambiguator(move, board);
             if (!util_.is_pawn[board.pieces[from]]) {
                 san += (util_.piece_to_ascii[board.pieces[from]]).toUpperCase();
                 san += diam;
@@ -266,8 +266,8 @@ export function move_to_san(move: move_t, board: board_.board_t, move_already_ma
                 san += (util_.piece_to_ascii[PROMOTED(move)]).toLowerCase();
             }
 
-            function check_addOn() {
-                let check = state_.in_check(board);
+            const check_addOn = function () {
+                const check = state_.in_check(board);
                 if (state_.in_checkmate(board)) {
                     san += "#";
                 }
@@ -292,7 +292,7 @@ export function move_to_san(move: move_t, board: board_.board_t, move_already_ma
 }
 
 export function san_to_move(san: string, board: board_.board_t) {
-    let legal = generate_legal_moves(board);
+    const legal = generate_legal_moves(board);
     let move: move_score_t;
     for (move of legal) {
         if (san == move_to_san(move.move, board, false)) return move.move;
@@ -302,14 +302,14 @@ export function san_to_move(san: string, board: board_.board_t) {
 
 export function clean_smith(smith: string) {
     let rlt = "";
-    let matches = smith.match(
+    const matches = smith.match(
         /([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/
     );
     if (matches) {
         //let piece = matches[1];
-        let from = matches[2];
-        let to = matches[3];
-        let promotion = matches[4];
+        const from = matches[2];
+        const to = matches[3];
+        const promotion = matches[4];
         if (typeof from !== 'undefined' && typeof to !== 'undefined') {
             rlt += (from + to);
         }
@@ -328,7 +328,7 @@ function add_capture_move(move: move_t, moves: move_score_t[]) {
     moves.push({ move: move, score: CAPTURE_BONUS });
 }
 function add_enpassant_move(move: move_t, moves: move_score_t[]) {
-    let score = ENPASS_BONUS + CAPTURE_BONUS;
+    const score = ENPASS_BONUS + CAPTURE_BONUS;
     moves.push({ move: move, score: score });
 }
 function add_white_pawn_capture_move(from: board_.SQUARES, to: board_.SQUARES, cap: board_.PIECES, moves: move_score_t[]) {
@@ -377,12 +377,12 @@ function add_black_pawn_move(from: board_.SQUARES, to: board_.SQUARES, moves: mo
 }
 
 export function generate_all_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.OFF_BOARD) {
-    let moves = [] as move_score_t[];
-    let turn = board.turn;
+    const moves = [] as move_score_t[];
+    const turn = board.turn;
     if (turn === board_.COLORS.WHITE) {
         //-- generate white pawn moves
         for (let p = 0; p < board.number_pieces[board_.PIECES.WHITEPAWN]; p++) {
-            let sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.WHITEPAWN, p)];
+            const sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.WHITEPAWN, p)];
             if (square === board_.SQUARES.OFF_BOARD || square === sq) {
                 //-- forward move
                 if ((board.pieces[sq + 10] === board_.PIECES.EMPTY) && !only_capture) {
@@ -434,7 +434,7 @@ export function generate_all_moves(board: board_.board_t, only_capture = false, 
     else {
         //generate black pawn moves
         for (let p = 0; p < board.number_pieces[board_.PIECES.BLACKPAWN]; p++) {
-            let sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.BLACKPAWN, p)];
+            const sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.BLACKPAWN, p)];
             if (square === board_.SQUARES.OFF_BOARD || square === sq) {
                 //-- forward move
                 if ((board.pieces[sq - 10] === board_.PIECES.EMPTY) && !only_capture) {
@@ -486,11 +486,11 @@ export function generate_all_moves(board: board_.board_t, only_capture = false, 
     let p = slider[i++];
     while (p !== -1) {
         for (let pceNum = 0; pceNum < board.number_pieces[p]; ++pceNum) {
-            let sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
+            const sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
             if (square === board_.SQUARES.OFF_BOARD || square === sq) {
                 if (board_.SQUARE_ON_BOARD(sq)) {
                     for (let i = 0; i < number_directions[p]; i++) {
-                        let dir = pieces_directions[p][i];
+                        const dir = pieces_directions[p][i];
                         let to_square = sq + dir;
                         while (board_.SQUARE_ON_BOARD(to_square)) {
                             if (board.pieces[to_square] !== board_.PIECES.EMPTY) {
@@ -515,12 +515,12 @@ export function generate_all_moves(board: board_.board_t, only_capture = false, 
     p = nonslider[i++];
     while (p !== -1) {
         for (let pceNum = 0; pceNum < board.number_pieces[p]; ++pceNum) {
-            let sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
+            const sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
             if (square === board_.SQUARES.OFF_BOARD || square === sq) {
                 if (board_.SQUARE_ON_BOARD(sq)) {
                     for (let i = 0; i < number_directions[p]; i++) {
-                        let dir = pieces_directions[p][i];
-                        let to_square = sq + dir;
+                        const dir = pieces_directions[p][i];
+                        const to_square = sq + dir;
 
                         if (!board_.SQUARE_ON_BOARD(to_square)) {
                             continue;
@@ -544,8 +544,8 @@ export function generate_all_moves(board: board_.board_t, only_capture = false, 
 }
 
 export function generate_legal_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.OFF_BOARD) {
-    let moves = generate_all_moves(board, only_capture, square);
-    let rlt = [] as move_score_t[];
+    const moves = generate_all_moves(board, only_capture, square);
+    const rlt = [] as move_score_t[];
     let move: move_score_t;
     for (move of moves) {
         if (!make_move(move.move, board)) {
@@ -563,8 +563,8 @@ export function generate_legal_moves(board: board_.board_t, only_capture = false
 ****************************************************************************/
 export function clear_pieces(sq: board_.SQUARES, board: board_.board_t) {
     if (board_.SQUARE_ON_BOARD(sq)) {
-        let pce = board.pieces[sq];
-        let col = util_.get_color_piece[pce];
+        const pce = board.pieces[sq];
+        const col = util_.get_color_piece[pce];
         let index;
         let t_pceNum = -1;
 
@@ -602,8 +602,8 @@ export function clear_pieces(sq: board_.SQUARES, board: board_.board_t) {
 
 export function add_piece(sq: board_.SQUARES, pce: board_.PIECES, board: board_.board_t) {
     if (board_.SQUARE_ON_BOARD(sq) && board_.IS_VALID_PIECE(pce)) {
-        let col = util_.get_color_piece[pce];
-        let poly_piece = util_.get_poly_piece[pce];
+        const col = util_.get_color_piece[pce];
+        const poly_piece = util_.get_poly_piece[pce];
 
         board.pieces[sq] = pce;
 
@@ -634,8 +634,8 @@ export function move_piece(from: board_.SQUARES, to: board_.SQUARES, board: boar
     let rcd = false;
     if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
         //console.log(`board entering move_piece: ${board_.board_to_ascii(board)}`)
-        let pce = board.pieces[from];
-        let col = util_.get_color_piece[pce];
+        const pce = board.pieces[from];
+        const col = util_.get_color_piece[pce];
 
         board.pieces[from] = board_.PIECES.EMPTY;
         board.pieces[to] = pce;
@@ -657,7 +657,7 @@ export function move_piece(from: board_.SQUARES, to: board_.SQUARES, board: boar
                 break;
             }
         }
-        let pce_ind = hash_.random_piece + util_.get_poly_piece[pce] * 64;
+        const pce_ind = hash_.random_piece + util_.get_poly_piece[pce] * 64;
         board.current_polyglot_key ^= hash_.random64_poly[pce_ind + board_.SQ64(from)] ^ hash_.random64_poly[pce_ind + board_.SQ64(to)];
     }
     return rcd;
@@ -666,14 +666,14 @@ export function move_piece(from: board_.SQUARES, to: board_.SQUARES, board: boar
 export function make_move(move: move_t, board: board_.board_t) {
     //console.log(`board entering make move: ${board_.board_to_ascii(board)}`)
     if (move === NO_MOVE) return false
-    let from = FROM_SQUARE(move);
-    let to = TO_SQUARE(move);
+    const from = FROM_SQUARE(move);
+    const to = TO_SQUARE(move);
 
-    let me = board.turn;
-    let opp = me ^ 1;
+    const me = board.turn;
+    const opp = me ^ 1;
 
     // initialise undo
-    let undo = {} as board_.undo_t;
+    const undo = {} as board_.undo_t;
     undo.current_polyglot_key = board.current_polyglot_key;
 
     undo.turn = board.turn;
@@ -692,8 +692,8 @@ export function make_move(move: move_t, board: board_.board_t) {
     board.turn = opp;
     board.current_polyglot_key ^= hash_.random64_poly[hash_.random_turn];
 
-    let old_right = board.castling_right;
-    let new_right = old_right & util_.castle_permission[from] & util_.castle_permission[to];
+    const old_right = board.castling_right;
+    const new_right = old_right & util_.castle_permission[from] & util_.castle_permission[to];
 
     board.castling_right = new_right;
     board.current_polyglot_key ^= util_.castle64_hash[old_right ^ new_right]; //hack
@@ -752,7 +752,7 @@ export function make_move(move: move_t, board: board_.board_t) {
         }
     }
 
-    let captured = CAPTURED(move);
+    const captured = CAPTURED(move);
     board.half_moves++;
     if (captured !== board_.PIECES.EMPTY) {
         clear_pieces(to, board);
@@ -763,7 +763,7 @@ export function make_move(move: move_t, board: board_.board_t) {
     move_piece(from, to, board);
     //console.log(`board after move_piece: ${board_.board_to_ascii(board)}`)
 
-    let prPce = PROMOTED(move);
+    const prPce = PROMOTED(move);
     if (prPce !== board_.PIECES.EMPTY) {
         clear_pieces(to, board);
         add_piece(to, prPce, board);
@@ -786,9 +786,9 @@ export function take_move(board: board_.board_t) {
     board.ply--;
     board.full_moves -= (board.turn === board_.COLORS.WHITE) ? 1 : 0;
 
-    let move = board.move_history[board.history_ply].move;
-    let from = FROM_SQUARE(move);
-    let to = TO_SQUARE(move);
+    const move = board.move_history[board.history_ply].move;
+    const from = FROM_SQUARE(move);
+    const to = TO_SQUARE(move);
 
     board.turn ^= 1;
 
@@ -813,7 +813,7 @@ export function take_move(board: board_.board_t) {
         board.king_square[board.turn] = from;
     }
 
-    let captured = CAPTURED(move);
+    const captured = CAPTURED(move);
     if (captured !== board_.PIECES.EMPTY) {
         add_piece(to, captured, board);
     }

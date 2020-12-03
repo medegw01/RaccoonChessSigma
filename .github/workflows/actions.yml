@@ -13,6 +13,18 @@ jobs:
     steps:
       - name: Setup repo
         uses: actions/checkout@v2
+      - name: Test using Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+      - run: npm install
+      - run: npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
+      - name: Run EsLinter
+        run: npm run lint:cli
+      - name: Fix lint error
+        if: ${{ failure() }}
+        run: echo "npm run lint-and-fix"
+
   sanitize:
     name: Check for forbidden words
     runs-on: ubuntu-latest
@@ -29,6 +41,28 @@ jobs:
     steps:
       - name: Setup repo
         uses: actions/checkout@v2
+      - name: Install jq
+        run: sudo apt-get install jq
+      - name: Test using Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+      - run: npm install
+      - run: npm i -D typescript jest ts-jest @types/jest
+      - name: Run Test
+        run: npm run test:cli
+      - name: Check coverage
+        run: |
+          total=$(jq '(.total.lines.pct + .total.statements.pct + .total.functions.pct  + .total.branches.pct)/4' coverage/coverage-summary.json)
+          TOTAL_APPROX=$(jq -n "$total | floor")
+          if [ ${TOTAL_APPROX} -lt ${THRESHOLD} ]
+          then
+            echo Coverage: ${TOTAL_APPROX}%, but threshold is set to ${THRESHOLD}%
+            exit 1
+          fi
+        env:
+          THRESHOLD: 60
+
   malware_security_scan:
     name: Malware Scanner
     runs-on: ubuntu-latest
@@ -46,4 +80,3 @@ jobs:
     steps:
       - name: Setup repo
         uses: actions/checkout@v2
-  
