@@ -46,7 +46,7 @@ jobs:
       - name: Test using Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: "12.x"
+          node-version: "15.x"
       - run: npm install
       - run: npm i -D typescript jest ts-jest @types/jest
       - name: Run Test
