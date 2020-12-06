@@ -62,10 +62,10 @@ jobs:
           functions=$(jq -n "$(jq '.total.functions.pct' coverage/coverage-summary.json) | floor")
           branches=$(jq -n "$(jq '.total.branches.pct' coverage/coverage-summary.json) | floor")
 
-          [ ${lines} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Line Coverage: ${lines}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
-          [ ${statements} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Statements Coverage: ${statements}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
-          [ ${functions} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Function Coverage: ${functions}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
-          [ ${branches} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Branches Coverage: ${branches}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${lines} -lt ${THRESHOLD} ] && echo === "Failed Lines Coverage${NEWLINE}Got ${lines}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${statements} -lt ${THRESHOLD} ] && echo === "Failed Statements Coverage${NEWLINE}Got ${statements}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${functions} -lt ${THRESHOLD} ] && echo === "Failed Functions Coverage${NEWLINE}Got ${functions}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${branches} -lt ${THRESHOLD} ] && echo === "Failed Branches Coverage${NEWLINE}Got ${branches}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
 
           [ "${fail_checks}" == "0" ] && echo === Passes Coverage
           exit ${fail_checks}
