@@ -6,17 +6,20 @@ This document steps through the deployment and configuration of RaccoonChessSigm
 
 The following are prerequisites for building and deploying:
 
-- [TypeScript](https://www.typescriptlang.org/) - JavaScript that scales
+- [TypeScript >= 3.2](https://www.typescriptlang.org/) - JavaScript that scales. We need at least version
 - [Jest](https://jestjs.io/) - Delightful JavaScript Testing
 - [ts-jest](https://kulshekhar.github.io/ts-jest) - Jest processor for TypeScript
+- Either:
+  - [nodejs >= 13.x](https://github.com/nodesource/distributions)
+  - [yarn](https://github.com/yarnpkg/yarn)
 
 #### yarn
 
-`yarn add -D typescript jest ts-jest @types/jest`
+`yarn add -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`
 
 #### npm
 
-`npm i -D typescript jest ts-jest @types/jest`
+`npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`
 
 ### Building RaccoonChessSigma
 
@@ -32,8 +35,8 @@ Document how to test project if need be
 
 #### npm
 
-`npm t` or `npx jest`
+`npm run test`
 
 #### yarn
 
-`yarn test` or `yarn jest`
+`yarn test`

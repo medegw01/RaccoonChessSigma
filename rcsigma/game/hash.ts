@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as board_ from './board'
 import * as util_ from '../util'
 
@@ -208,7 +213,7 @@ export const random64_poly: bigint[] = [ //-- http://hgm.nubati.net/book_format.
 
 function pawn_cp(board: board_.board_t) {
     let sqWithPawn = 0;
-    let targetPce = (board.turn === board_.COLORS.WHITE) ? board_.PIECES.WHITEPAWN : board_.PIECES.BLACKPAWN;
+    const targetPce = (board.turn === board_.COLORS.WHITE) ? board_.PIECES.WHITEPAWN : board_.PIECES.BLACKPAWN;
     if (board.enpassant !== board_.SQUARES.OFF_SQUARE) {
         if (board.turn === board_.COLORS.WHITE) {
             sqWithPawn = board.enpassant - 10;
@@ -216,9 +221,7 @@ function pawn_cp(board: board_.board_t) {
             sqWithPawn = board.enpassant + 10;
         }
 
-        if (board.pieces[sqWithPawn + 1] === targetPce) {
-            return true;
-        } else if (board.pieces[sqWithPawn - 1] === targetPce) {
+        if (board.pieces[sqWithPawn + 1] === targetPce || board.pieces[sqWithPawn - 1] === targetPce) {
             return true;
         }
     }

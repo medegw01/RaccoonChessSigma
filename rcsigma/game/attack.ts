@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as board_ from './board'
 import * as util_ from '../util'
 
@@ -7,16 +12,16 @@ const bishop_direction = [-9, -11, 11, 9];
 const king_direction = [-1, -10, 1, 10, -9, -11, 11, 9];
 
 function pinned_direction(color: board_.COLORS, sq: board_.SQUARES, board: board_.board_t) {
-    let pce = board.pieces[sq];
+    const pce = board.pieces[sq];
     let tmp_sq, tmp_pce;
     if (pce === board_.PIECES.EMPTY) return 0;
-    let sign = (+(color === board_.COLORS.WHITE) ^ +(util_.is_white_piece[pce])) ? -1 : 1;
-    let king_sq = board.king_square[color];
-    let king_r = util_.ranks_board[king_sq];
-    let king_f = util_.files_board[king_sq];
+    const sign = (+(color === board_.COLORS.WHITE) ^ +(util_.is_white_piece[pce])) ? -1 : 1;
+    const king_sq = board.king_square[color];
+    const king_r = util_.ranks_board[king_sq];
+    const king_f = util_.files_board[king_sq];
 
-    let pce_r = util_.ranks_board[sq];
-    let pce_f = util_.files_board[sq];
+    const pce_r = util_.ranks_board[sq];
+    const pce_f = util_.files_board[sq];
 
     if (sq === king_sq) return 0;
     function look(dir: number, rtn: number, pce_checker: boolean[]) {
@@ -102,10 +107,10 @@ const DIR = {//-- white pov
 };
 
 function get_direction(from: board_.SQUARES, to: board_.SQUARES) {
-    let from_r = util_.ranks_board[from];
-    let from_f = util_.files_board[from];
-    let to_f = util_.files_board[to];
-    let to_r = util_.ranks_board[to];
+    const from_r = util_.ranks_board[from];
+    const from_f = util_.files_board[from];
+    const to_f = util_.files_board[to];
+    const to_r = util_.ranks_board[to];
     if (from === to) return DIR.SAME;
     else if (from_r === to_r) return (from_f > to_f) ? DIR.LEFT : DIR.RIGHT;
     else if (from_f === to_f) return (from_r > to_r) ? DIR.DOWN : DIR.UP;
@@ -127,13 +132,13 @@ function diagonal_attack(color: board_.COLORS, sq: board_.SQUARES, mj_pce_checke
 }
 
 function bishop_xray_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.board_t, b_sq = board_.SQUARES.OFF_BOARD, xray = true) {
-    let mj = (xray) ? util_.is_bishop_or_queen : util_.is_color_bishop[color];
+    const mj = (xray) ? util_.is_bishop_or_queen : util_.is_color_bishop[color];
     if (b_sq !== board_.SQUARES.OFF_BOARD) {//-- determine direction
-        let b = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEBISHOP : board_.PIECES.BLACKBISHOP;
+        const b = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEBISHOP : board_.PIECES.BLACKBISHOP;
         if (b !== board.pieces[b_sq]) return 0;
-        let dir = get_direction(sq, b_sq);
+        const dir = get_direction(sq, b_sq);
         if (dir >= DIR.UP_LEFT && dir < DIR.SAME) {
-            let dir_tmp = [9, 11, -11, -9][dir - 4];
+            const dir_tmp = [9, 11, -11, -9][dir - 4];
             return (same_diagonal(sq, b_sq)) ? walker(color, sq + dir_tmp, dir_tmp, mj, util_.is_bishop, board, b_sq) : 0;
         }
         return 0;
@@ -142,13 +147,13 @@ function bishop_xray_attack(color: board_.COLORS, sq: board_.SQUARES, board: boa
 }
 
 function rook_xray_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.board_t, r_sq = board_.SQUARES.OFF_BOARD, xray = true) {
-    let mj = (xray) ? util_.is_rook_or_queen : util_.is_color_rook[color];
+    const mj = (xray) ? util_.is_rook_or_queen : util_.is_color_rook[color];
     if (r_sq !== board_.SQUARES.OFF_BOARD) {
-        let r = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEROOK : board_.PIECES.BLACKROOK;
+        const r = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEROOK : board_.PIECES.BLACKROOK;
         if (r !== board.pieces[r_sq]) return 0;
-        let dir = get_direction(sq, r_sq);
+        const dir = get_direction(sq, r_sq);
         if (dir < DIR.UP_LEFT) {
-            let dir_tmp = [10, -10, -1, 1][dir];
+            const dir_tmp = [10, -10, -1, 1][dir];
             return walker(color, sq + dir_tmp, dir_tmp, mj, util_.is_rook, board, r_sq);
         }
         return 0;
@@ -158,7 +163,7 @@ function rook_xray_attack(color: board_.COLORS, sq: board_.SQUARES, board: board
 function queen_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.board_t, q_sq = board_.SQUARES.OFF_BOARD) {
     if (q_sq !== board_.SQUARES.OFF_BOARD) {//-- determine direction
         if (!util_.is_color_queen[color][board.pieces[q_sq]]) return 0;
-        let dir = get_direction(sq, q_sq);
+        const dir = get_direction(sq, q_sq);
         let dir_tmp;
         if (dir >= DIR.UP_LEFT && dir < DIR.SAME) {
             dir_tmp = [9, 11, -11, -9][dir - 4];
@@ -197,8 +202,8 @@ function knight_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.b
 
 function pawn_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.board_t, p_sq = board_.SQUARES.OFF_BOARD) {
     let v = 0;
-    let pce = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEPAWN : board_.PIECES.BLACKPAWN;
-    let sg = (color === board_.COLORS.WHITE) ? -1 : 1;
+    const pce = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEPAWN : board_.PIECES.BLACKPAWN;
+    const sg = (color === board_.COLORS.WHITE) ? -1 : 1;
     if (p_sq !== board_.SQUARES.OFF_BOARD) {
         if (pce !== board.pieces[p_sq]) return 0;
         return +((p_sq === (sq + (sg * 11))) || (p_sq === (sq + (sg * 9))));
@@ -210,20 +215,18 @@ function pawn_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.boa
 function king_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.board_t, k_sq = board_.SQUARES.OFF_BOARD) {
     let tmp_sq, i, pce;
     let v = 0;
-    let k = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEKING : board_.PIECES.BLACKKING;
+    const k = (color === board_.COLORS.WHITE) ? board_.PIECES.WHITEKING : board_.PIECES.BLACKKING;
     if (k_sq !== board_.SQUARES.OFF_BOARD && (k !== board.pieces[k_sq])) return 0;
     for (i = 0; i < 8; i++) {
         tmp_sq = sq + king_direction[i];
         pce = board.pieces[tmp_sq];
-        if (board_.SQUARE_ON_BOARD(tmp_sq)) {
-            if (tmp_sq === k_sq || k === pce) return ++v;
-        }
+        if (board_.SQUARE_ON_BOARD(tmp_sq) && (tmp_sq === k_sq || k === pce)) return ++v;
     }
     return 0;
 }
 
 
-export function attack(square: board_.SQUARES, color: board_.COLORS, board: board_.board_t) {
+export function attack(square: board_.SQUARES, color: board_.COLORS, board: board_.board_t): number {
     let v = 0;
     v += pawn_attack(color, square, board);
     v += king_attack(color, square, board);
@@ -235,7 +238,7 @@ export function attack(square: board_.SQUARES, color: board_.COLORS, board: boar
 }
 
 // function will be replaced by attack() WHEN attack is OPTIMIZED soon
-export function is_square_attacked(square: board_.SQUARES, turn: board_.COLORS, board: board_.board_t) {
+export function is_square_attacked(square: board_.SQUARES, turn: board_.COLORS, board: board_.board_t): boolean {
     let piece, direction, tmp_square;
     // pawns
     if (turn === board_.COLORS.WHITE) {

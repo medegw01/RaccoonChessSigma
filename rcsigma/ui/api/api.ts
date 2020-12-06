@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as util_ from '../../util'
 import * as board_ from '../../game/board'
 import * as perft_ from '../../game/perft'
@@ -19,6 +24,7 @@ class Raccoon {
 
     public constructor(config?: raccoon_config_t) {
         util_.initialize_game();
+
         this.board = {
             pieces: new Array<board_.PIECES>(util_.BOARD_SQUARE_NUM),
             king_square: new Array<board_.SQUARES>(2),
@@ -46,52 +52,51 @@ class Raccoon {
             piece_list: new Array<board_.SQUARES>(13 * 10),
             move_history: new Array<board_.undo_t>(util_.MAX_MOVES),
         };
-
-
         //this.eval_fn = ((typeof config !== 'undefined') && ('evaluate_fn' in config)) ? config.evaluate_fn! : rc_eval_.raccoon_evaluate;
         this.start_fen = ((typeof config !== 'undefined') && ('start_fen' in config)) ? config.start_fen! : util_.START_FEN;
         //this.book_path = ((typeof config !== 'undefined') && ('book_path' in config)) ? config.book_path! : "No book path provided";
-
         board_.fen_to_board(this.start_fen, this.board)
     }
 
-    public load(fen: string) {
+    public load(fen: string): { value: boolean, error: string } {
         try {
             board_.fen_to_board(fen, this.board);
         }
         catch (err) {
-            return { value: false, error: err.message }
+            if (err instanceof Error) {
+                return { value: false, error: err.message }
+            } else {
+                return { value: false, error: "Unknown error" }
+            }
+
         }
         return { value: true, error: "No error!" }
     }
 
-    public fen() {
+    public fen(): string {
         return board_.board_to_fen(this.board);
     }
 
-    public polyglot(by_move = false) {
+    public polyglot(by_move = false): bigint {
         if (by_move) {
             return this.board.current_polyglot_key;
         }
         return hash_.polyglot_key(this.board);
     }
 
-    public perft(depth: number) {
+    public perft(depth: number): bigint {
         return perft_.perft(depth, this.board);
     }
 
-    public perft_summary(depth: number) {// TEST case TODO
+    public perft_summary(depth: number): bigint {
         return perft_.perft_summary(depth, this.board);
     }
 
-    public move(move: any) {// TEST case TODO
+    public move(move: string | { from: string, to: string, promotion: string }): move_.verbose_move_t | null {
         let mv = move_.NO_MOVE;
         if (typeof move === 'string') {
-            let maybe_smith = move_.clean_smith(move);
-            if (maybe_smith !== "") {
-                mv = move_.smith_to_move(maybe_smith, this.board);
-            }
-            else {
+            mv = move_.smith_to_move(move, this.board);
+            if (mv === move_.NO_MOVE) {
                 mv = move_.san_to_move(move, this.board);
             }
         }
@@ -109,7 +114,7 @@ class Raccoon {
         return null;
     }
 
-    public ascii() {
+    public ascii(): string {
         return board_.board_to_ascii(this.board);
     }
 }

@@ -4,7 +4,7 @@ RaccoonChessSigma consists of four microservices. Based on functionalities each 
 
 - User Interface
   - [APIs](./../rcsigma/ui/api/api.md)
-  - [UCI](./../rcsigma/ui/uci/uci.md)  
+  - [UCI](./../rcsigma/ui/uci/uci.md)
 - [Search](#search)
 - [Game](#game)
 - Evaluate
@@ -39,12 +39,12 @@ Among others, this component includes the board representation; book or database
 ## Diagram
 
 <p align="center">
-  <img width="650" src="https://github.com/medegw01/RaccoonChessSigma/blob/main/website/static/img/rcsigma%20diagram.PNG">
+  <img width="650" src="https://raw.githubusercontent.com/medegw01/RaccoonChessSigma/main/website/static/img/rcsigma%20diagram.PNG">
   <br/>
 </p>
 
 ### Key
+
 ![#C4D79B](https://placehold.it/15/C4D79B/000000?text=+) — this means "something takes a lot of development (software engineering) time." <br/>
 ![#8faadc](https://placehold.it/15/8faadc/000000?text=+) — this means "requires considerable amount of computation both on CPU and on GPU." <br/>
 ![#ffe699](https://placehold.it/15/ffe699/000000?text=+) — this ia a weight file. It is a result of an effort. <br/>
-

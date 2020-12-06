@@ -1,4 +1,9 @@
 
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as board_ from './game/board'
 import * as hash_ from './game/hash'
 
@@ -16,13 +21,13 @@ export enum PHASE { MG, EG }
 
 export interface evaluation_fn { (arg: board_.board_t): number }
 
-export function ASSERT(condition: any, msg?: string): asserts condition {
+export function ASSERT(condition: boolean, msg?: string): asserts condition {
     if (!condition) {
         throw new Error(msg)
     }
 }
 
-export function COUNT_BITS(b: board_.bitboard_t) {
+export function COUNT_BITS(b: board_.bitboard_t): number {
     let num_bits = 0;
     while (b) {
         num_bits++;
@@ -31,25 +36,26 @@ export function COUNT_BITS(b: board_.bitboard_t) {
     return num_bits;
 }
 
-export function SET_BIT(b: board_.bitboard_t, pos: number) {
+export function SET_BIT(b: board_.bitboard_t, pos: number): bigint {
     return (b | 1n << BigInt(pos))
 }
 
-export function CLEAR_BIT(b: board_.bitboard_t, pos: number) {
+export function CLEAR_BIT(b: board_.bitboard_t, pos: number): bigint {
     return (b & ~(1n << BigInt(pos)))
 }
 
-export function ISKthBIT_SET(b: board_.bitboard_t, k: number) { return ((b >> BigInt(k)) & 1n) === 1n }
+export function ISKthBIT_SET(b: board_.bitboard_t, k: number): boolean { return ((b >> BigInt(k)) & 1n) === 1n }
 
 //===========================================================//
 // Game Globals
 //===========================================================//
-export let square64_to_square120 = new Array<number>(64);
-export let square120_to_square64 = new Array<number>(BOARD_SQUARE_NUM);
-export let castle_permission = new Array<number>(120);
+export const square64_to_square120 = new Array<number>(64);
+export const square120_to_square64 = new Array<number>(BOARD_SQUARE_NUM);
+export const castle_permission = new Array<number>(120);
 
-export let piece_to_ascii = ".PBNRQKpbnrqk";
-export let castle64_hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
+export const piece_to_ascii = ".PBNRQKpbnrqk";
+export const piece_to_unicode = [".", "♙", "♗", "♘", "♖", "♕", "♔", "♟", "♝", "♞", "♜", "♛", "♚"]
+export const castle64_hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
 
 export const is_big_piece = [false, false, true, true, true, true, true, false, true, true, true, true, true];
 export const is_major_piece = [false, false, false, false, true, true, true, false, false, false, true, true, true];
@@ -120,19 +126,19 @@ export const flip = [
     0, 1, 2, 3, 4, 5, 6, 7,
 ];
 
-export let files_board = new Array(BOARD_SQUARE_NUM);
-export let ranks_board = new Array(BOARD_SQUARE_NUM);
+export const files_board = new Array<number>(BOARD_SQUARE_NUM);
+export const ranks_board = new Array<number>(BOARD_SQUARE_NUM);
 
 // functions
 // Export each of these functions so that you can test each of them individually 
 function initialize_files_rank_array() {
     for (let i = 0; i < BOARD_SQUARE_NUM; i++) {
         files_board[i] = board_.SQUARES.OFF_BOARD;
-        ranks_board[i] = board_.SQUARES;
+        ranks_board[i] = board_.SQUARES.OFF_BOARD;
     }
     for (let rank = board_.RANKS.FIRST_RANK; rank <= board_.RANKS.EIGHTH_RANK; ++rank) {
         for (let file = board_.FILES.A_FILE; file <= board_.FILES.H_FILE; ++file) {
-            let square_120 = board_.FILE_RANK_TO_SQUARE(file, rank);
+            const square_120 = board_.FILE_RANK_TO_SQUARE(file, rank);
             files_board[square_120] = file;
             ranks_board[square_120] = rank;
         }
@@ -150,7 +156,7 @@ function initialize_square120_to_square64() {
 
     for (rank = board_.RANKS.FIRST_RANK; rank <= board_.RANKS.EIGHTH_RANK; ++rank) {
         for (file = board_.FILES.A_FILE; file <= board_.FILES.H_FILE; file++) {
-            let sq = board_.FILE_RANK_TO_SQUARE(file, rank);
+            const sq = board_.FILE_RANK_TO_SQUARE(file, rank);
             square64_to_square120[sq_64] = sq;
             square120_to_square64[sq] = sq_64;
             sq_64++;
@@ -179,18 +185,13 @@ function initialize_hash_key() {
     castle_permission[board_.SQUARES.A8] &= ~board_.CASTLING.BLACK_CASTLE_OOO;
 }
 
-
-// You can have this where you bring everything together in another file.
-// However, this seems to be central to your game and should not be in a util file 
-// Util is basicaly utility and should be something that I can export to another differnt
-// project not about chess altogether. 
-export function initialize_game() {
+export function initialize_game(): void {
     initialize_square120_to_square64();
     initialize_hash_key();
     initialize_files_rank_array();
 }
 
-export function get_time_ms() {
+export function get_time_ms(): number {
     return new Date().getTime();
 }
 

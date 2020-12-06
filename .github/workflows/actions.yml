@@ -1,4 +1,4 @@
-name: Quality Gate
+name: CLI Build
 
 on:
   push:
@@ -8,13 +8,25 @@ on:
 
 jobs:
   code_check:
-    name: Elinting
+    name: Linting and TypeScript Security
     runs-on: ubuntu-latest
     steps:
       - name: Setup repo
         uses: actions/checkout@v2
+      - name: Test using Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "15.x"
+      - run: npm install
+      - run: npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
+      - name: Run EsLinter
+        run: npm run lint:cli
+      - name: Fix lint error
+        if: ${{ failure() }}
+        run: echo "npm run lint-and-fix"
+
   sanitize:
-    name: Check for forbidden words
+    name: Forbidden Word Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
@@ -24,13 +36,44 @@ jobs:
         with:
           args: /github/workspace
   test:
-    name: Run Go unit tests and check package coverage
+    name: Test and Code Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Setup repo
         uses: actions/checkout@v2
+      - name: Install jq
+        run: sudo apt-get install jq
+      - name: Test using Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "15.x"
+      - run: npm install
+      - run: npm i -D typescript jest ts-jest @types/jest
+      - name: Run Test
+        run: npm run test:cli
+      - name: Check coverage
+        run: |
+          NEWLINE=$'\n'
+          fail_checks=0
+          echo === Coverage...
+
+          lines=$(jq -n "$(jq '.total.lines.pct' coverage/coverage-summary.json) | floor")
+          statements=$(jq -n "$(jq '.total.statements.pct' coverage/coverage-summary.json) | floor")
+          functions=$(jq -n "$(jq '.total.functions.pct' coverage/coverage-summary.json) | floor")
+          branches=$(jq -n "$(jq '.total.branches.pct' coverage/coverage-summary.json) | floor")
+
+          [ ${lines} -lt ${THRESHOLD} ] && echo === "Failed Lines Coverage${NEWLINE}Got ${lines}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${statements} -lt ${THRESHOLD} ] && echo === "Failed Statements Coverage${NEWLINE}Got ${statements}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${functions} -lt ${THRESHOLD} ] && echo === "Failed Functions Coverage${NEWLINE}Got ${functions}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${branches} -lt ${THRESHOLD} ] && echo === "Failed Branches Coverage${NEWLINE}Got ${branches}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+
+          [ "${fail_checks}" == "0" ] && echo === Passes Coverage
+          exit ${fail_checks}
+        env:
+          THRESHOLD: 90
+
   malware_security_scan:
-    name: Malware Scanner
+    name: Malware Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
@@ -40,10 +83,4 @@ jobs:
         with:
           directories: .
           options: -ri
-  ts_security_scan:
-    name: TypeScript security
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup repo
-        uses: actions/checkout@v2
-  
+
