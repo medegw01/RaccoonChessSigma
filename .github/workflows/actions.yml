@@ -26,7 +26,7 @@ jobs:
         run: echo "npm run lint-and-fix"
 
   sanitize:
-    name: Check for forbidden words
+    name: Forbidden Word Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
@@ -36,7 +36,7 @@ jobs:
         with:
           args: /github/workspace
   test:
-    name: Run Go unit tests and check package coverage
+    name: Test and Code Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Setup repo
@@ -73,7 +73,7 @@ jobs:
           THRESHOLD: 90
 
   malware_security_scan:
-    name: Malware Scanner
+    name: Malware Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
