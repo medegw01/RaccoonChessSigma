@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as board_ from './board'
 import * as util_ from '../util'
 
@@ -215,9 +220,7 @@ function king_attack(color: board_.COLORS, sq: board_.SQUARES, board: board_.boa
     for (i = 0; i < 8; i++) {
         tmp_sq = sq + king_direction[i];
         pce = board.pieces[tmp_sq];
-        if (board_.SQUARE_ON_BOARD(tmp_sq)) {
-            if (tmp_sq === k_sq || k === pce) return ++v;
-        }
+        if (board_.SQUARE_ON_BOARD(tmp_sq) && (tmp_sq === k_sq || k === pce)) return ++v;
     }
     return 0;
 }
@@ -235,7 +238,7 @@ export function attack(square: board_.SQUARES, color: board_.COLORS, board: boar
 }
 
 // function will be replaced by attack() WHEN attack is OPTIMIZED soon
-export function is_square_attacked(square: board_.SQUARES, turn: board_.COLORS, board: board_.board_t) {
+export function is_square_attacked(square: board_.SQUARES, turn: board_.COLORS, board: board_.board_t): boolean {
     let piece, direction, tmp_square;
     // pawns
     if (turn === board_.COLORS.WHITE) {

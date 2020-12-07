@@ -1,9 +1,14 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as board_ from '../game/board'
 import * as move_ from '../game/move'
 
 /*****************************************************************************
   * OPENING BOOK
-  ****************************************************************************/
+****************************************************************************/
 let book_file: DataView;
 let book_size: number;
 type entry_t = {
@@ -14,7 +19,7 @@ type entry_t = {
     learn: number;
 }
 
-export function book_open(arrayBuffer: ArrayBufferLike) {
+export function book_open(arrayBuffer: ArrayBufferLike): boolean {
     book_file = new DataView(arrayBuffer);
     book_size = Math.floor(book_file.byteLength / 16);
     return book_file !== null;
@@ -71,7 +76,7 @@ function my_random(n: number) {
     return Math.floor(Math.random() * (n));
 }
 
-export function book_move(board: board_.board_t) {
+export function book_move(board: board_.board_t): move_.move_t {
     if (book_file !== null && book_size !== 0) {
         let best_move_poly = move_.NO_MOVE;
         let best_score = 0;
@@ -112,7 +117,7 @@ export type noobprobe_t = {
 }
 interface noobprobe_callback { (arg: string): void }
 
-export function fetch_noob(action: string, params: noobprobe_t[], board: board_.board_t, callback: noobprobe_callback) {
+export function fetch_noob(action: string, params: noobprobe_t[], board: board_.board_t, callback: noobprobe_callback): void {
     //http://www.chessdb.cn/cdb.php?action=[ACTION]{&[OPTION1]=[VALUE1]...&[OPTIONn]=[VALUEn]}
     const fen = board_.board_to_fen(board);
     let params_str = "";

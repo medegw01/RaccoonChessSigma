@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as util_ from '../util'
 import * as hash_ from './hash'
 import * as move_ from './move'
@@ -103,18 +108,18 @@ export type board_t = {
 /*****************************************************************************
  * MACRO
  ****************************************************************************/
-export function FILE_RANK_TO_SQUARE(file: number, rank: number) { return ((21 + (file)) + ((rank) * 10)); }
-export function SQ64(SQ120: number) { return (util_.square120_to_square64[(SQ120)]); }
-export function SQ120(square_64: number) { return (util_.square64_to_square120[(square_64)]); }
-export function FLIP64(sq: SQUARES) { return (util_.flip[(sq)]) }
+export function FILE_RANK_TO_SQUARE(file: number, rank: number): number { return ((21 + (file)) + ((rank) * 10)); }
+export function SQ64(SQ120: number): number { return (util_.square120_to_square64[(SQ120)]); }
+export function SQ120(square_64: number): number { return (util_.square64_to_square120[(square_64)]); }
+export function FLIP64(sq: SQUARES): number { return (util_.flip[(sq)]) }
 
-export function SQUARE_ON_BOARD(sq: SQUARES) { return (util_.files_board[(sq)] !== SQUARES.OFF_BOARD); }
-export function IS_VALID_PIECE(pce: PIECES) { return ((pce) >= PIECES.WHITEPAWN && (pce) <= PIECES.BLACKKING) }
+export function SQUARE_ON_BOARD(sq: SQUARES): boolean { return (util_.files_board[(sq)] !== SQUARES.OFF_BOARD); }
+export function IS_VALID_PIECE(pce: PIECES): boolean { return ((pce) >= PIECES.WHITEPAWN && (pce) <= PIECES.BLACKKING) }
 //function IS_VALID_TURN(turn: COLORS) { return ((turn) == COLORS.WHITE || (turn) == COLORS.BLACK) }
 //function IS_VALID_FILE_RANK(fr: number) { return ((fr) >= 0 && (fr) <= 7) }
 
-export function SQUARE_COLOR(sq: SQUARES) { return (util_.ranks_board[(sq)] + util_.files_board[(sq)]) % 2 === 0 ? COLORS.BLACK : COLORS.WHITE; }
-export function PIECE_INDEX(piece: number, piece_num: number) { return (piece * 10 + piece_num) }
+export function SQUARE_COLOR(sq: SQUARES): COLORS { return (util_.ranks_board[(sq)] + util_.files_board[(sq)]) % 2 === 0 ? COLORS.BLACK : COLORS.WHITE; }
+export function PIECE_INDEX(piece: number, piece_num: number): number { return (piece * 10 + piece_num) }
 
 
 /*****************************************************************************
@@ -210,7 +215,7 @@ function check_board(position: board_t) {
     util_.ASSERT(position.pieces[position.king_square[COLORS.BLACK]] == PIECES.BLACKKING, `BoardErr: Wrong Black king square`);
 }
 
-export function reset_board(board: board_t) {
+export function reset_board(board: board_t): void {
     for (let i = 0; i < util_.BOARD_SQUARE_NUM; i++) {
         board.pieces[i] = PIECES.OFF_BOARD_PIECE;
     }
@@ -273,8 +278,8 @@ function update_list_material(board: board_t) {
     }
 }
 
-export function mirror_board(board: board_t) {
-    const tempPiecesArray = new Array(64);
+export function mirror_board(board: board_t): void {
+    const tempPiecesArray = new Array<PIECES>(64);
     const tempSide = board.turn ^ 1;
     const SwapPiece = [
         PIECES.EMPTY,
@@ -295,8 +300,8 @@ export function mirror_board(board: board_t) {
     let tempCastlePerm = 0;
     let tempEnPas = SQUARES.OFF_SQUARE;
 
-    let sq;
-    let tp;
+    let sq: SQUARES;
+    let tp: PIECES;
 
     if (board.castling_right & CASTLING.WHITE_CASTLE_OO) tempCastlePerm |= CASTLING.BLACK_CASTLE_OO;
     if (board.castling_right & CASTLING.WHITE_CASTLE_OOO) tempCastlePerm |= CASTLING.BLACK_CASTLE_OOO;
@@ -361,7 +366,7 @@ export function board_to_ascii(board: board_t): string {
 }
 
 //-- square
-export function square_to_algebraic(square: SQUARES) {
+export function square_to_algebraic(square: SQUARES): string {
     const file = 'a'.charCodeAt(0) + util_.files_board[square];
     const rank = '1'.charCodeAt(0) + util_.ranks_board[square];
     return String.fromCharCode(file) + String.fromCharCode(rank);
@@ -370,7 +375,7 @@ export function square_to_algebraic(square: SQUARES) {
 /*****************************************************************************
  * FEN
  ****************************************************************************/
-export function fen_to_board(fen: string, board: board_t) {
+export function fen_to_board(fen: string, board: board_t): void {
     let rank = RANKS.EIGHTH_RANK;
     let file = FILES.A_FILE;
     const n = fen.length;
@@ -489,12 +494,16 @@ export function fen_to_board(fen: string, board: board_t) {
         check_board(board)
     }
     catch (err) {
-        util_.ASSERT(false, `FenErr: Cannot not parse fen due to ${err}`);
+        if (err instanceof Error) {
+            util_.ASSERT(false, `FenErr: Cannot not parse fen due to ${err.message}`);
+        } else {
+            util_.ASSERT(false, "FenErr: Unknown Error occurred");
+        }
     }
 
 }
 
-export function board_to_fen(board: board_t) {
+export function board_to_fen(board: board_t): string {
     let fen_str = "";
     let empty = 0;
 

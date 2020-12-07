@@ -1,4 +1,4 @@
-name: Quality Gate
+name: CLI Build
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       - name: Test using Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: "12.x"
+          node-version: "15.x"
       - run: npm install
       - run: npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
       - name: Run EsLinter
@@ -53,15 +53,24 @@ jobs:
         run: npm run test:cli
       - name: Check coverage
         run: |
-          total=$(jq '(.total.lines.pct + .total.statements.pct + .total.functions.pct  + .total.branches.pct)/4' coverage/coverage-summary.json)
-          TOTAL_APPROX=$(jq -n "$total | floor")
-          if [ ${TOTAL_APPROX} -lt ${THRESHOLD} ]
-          then
-            echo Coverage: ${TOTAL_APPROX}%, but threshold is set to ${THRESHOLD}%
-            exit 1
-          fi
+          NEWLINE=$'\n'
+          fail_checks=0
+          echo === Coverage...
+
+          lines=$(jq -n "$(jq '.total.lines.pct' coverage/coverage-summary.json) | floor")
+          statements=$(jq -n "$(jq '.total.statements.pct' coverage/coverage-summary.json) | floor")
+          functions=$(jq -n "$(jq '.total.functions.pct' coverage/coverage-summary.json) | floor")
+          branches=$(jq -n "$(jq '.total.branches.pct' coverage/coverage-summary.json) | floor")
+
+          [ ${lines} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Line Coverage: ${lines}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${statements} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Statements Coverage: ${statements}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${functions} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Function Coverage: ${functions}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${branches} -lt ${THRESHOLD} ] && echo === "Failed Coverage${NEWLINE}Branches Coverage: ${branches}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+
+          [ "${fail_checks}" == "0" ] && echo === Passes Coverage
+          exit ${fail_checks}
         env:
-          THRESHOLD: 60
+          THRESHOLD: 90
 
   malware_security_scan:
     name: Malware Scanner

@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as board_ from './board'
 import * as util_ from '../util'
 
@@ -216,9 +221,7 @@ function pawn_cp(board: board_.board_t) {
             sqWithPawn = board.enpassant + 10;
         }
 
-        if (board.pieces[sqWithPawn + 1] === targetPce) {
-            return true;
-        } else if (board.pieces[sqWithPawn - 1] === targetPce) {
+        if (board.pieces[sqWithPawn + 1] === targetPce || board.pieces[sqWithPawn - 1] === targetPce) {
             return true;
         }
     }

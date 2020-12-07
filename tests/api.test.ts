@@ -1,6 +1,12 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2020 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as api from '../rcsigma/ui/api/api'
 
 describe("Game Tests", () => {
+    const start_fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     describe("Perft", () => {
         let game: api.Raccoon;
         let nodes: bigint
@@ -10,17 +16,17 @@ describe("Game Tests", () => {
         });
 
         it("Fen: start_fen; depth: 1", function () {
-            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            game.load(start_fen);
             nodes = game.perft(1);
             expect(nodes).toBe(BigInt("20"));
         });
         it('Fen: start_fen; depth: 2', function () {
-            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            game.load(start_fen);
             nodes = game.perft(2);
             expect(nodes).toBe(BigInt("400"));
         });
         it('Fen: start_fen; depth: 4', function () {
-            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            game.load(start_fen);
             nodes = game.perft(4);
             expect(nodes).toBe(BigInt("197281"));
         });
@@ -47,7 +53,6 @@ describe("Game Tests", () => {
     });
     describe("Poly Keys", function () {
         let game: api.Raccoon;
-        const start_fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
         beforeEach(() => {
             game = new api.Raccoon();
         });
@@ -154,20 +159,21 @@ describe("Game Tests", () => {
             expect(result.value).toBe(false)
             expect(game.fen()).toBe('8/8/8/8/8/8/8/8 w - - 0 1');
         });
-        it("Success: No Enpass; fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", function () {
-            const result = game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+        it("Success: No Enpass; fen: start_fen", function () {
+            const result = game.load(start_fen);
             expect(result.value).toBe(true)
-            expect(game.fen()).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            expect(game.fen()).toBe(start_fen);
         });
         it("Success: No Castling; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2", function () {
             const result = game.load('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
             expect(result.value).toBe(true)
             expect(game.fen()).toBe('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
         });
-        it("Success: With EnPass; fen: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", function () {
-            const result = game.load('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1');
+        it("Success: With EnPass; fen: start_e2e4_fen", function () {
+            const start_e2e4_fen = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1';
+            const result = game.load(start_e2e4_fen);
             expect(result.value).toBe(true)
-            expect(game.fen()).toBe('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1');
+            expect(game.fen()).toBe(start_e2e4_fen);
         });
         it("Failure: Empty fen provided; fen: ", function () {
             const result = game.load("");

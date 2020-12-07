@@ -1,14 +1,16 @@
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/medegw01/RaccoonChessSigma/Quality%20Gate)](https://github.com/medegw01/RaccoonChessSigma/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/medegw01/RaccoonChessSigma/blob/main/LICENSE)
-[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/medegw01/RaccoonChessSigma?include_prereleases&label=latest&style=flat)](https://github.com/medegw01/RaccoonChessSigma/releases/latest)
-
-# RaccoonChessSigma
-
+<h1 align="center">RaccoonChessSigma</h1>
 <p align="center">
   <img width="300" src="https://raw.githubusercontent.com/medegw01/RaccoonChessSigma/main/website/static/img/rcsigma%20logo.png">
   <br/>
   ♔ ♕ ♖ ♗ ♘ ♙<br/>
   TypeScript Chess Library and Engine
+</p>
+<p align="center">
+    <a href="https://github.com/medegw01/RaccoonChessSigma/actions" ><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/medegw01/RaccoonChessSigma/CLI%20Build?label=CI%20build&style=flat"></a>
+    <a href="https://github.com/medegw01/RaccoonChessSigma/blob/main/LICENSE" ><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
+    <a href="https://github.com/medegw01/RaccoonChessSigma/releases/latest" ><img alt="GitHub release (latest by date including pre-releases)" src="https://img.shields.io/github/v/release/medegw01/RaccoonChessSigma?include_prereleases&label=latest&style=flat"></a>
+    <a href="http://www.typescriptlang.org/" ><img alt="TypeScript" src="https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg"></a> 
+    <a href="https://github.com/facebook/jest" ><img alt="tested with jest" src="https://img.shields.io/badge/tested_with-jest-99424f.svg"></a>    
 </p>
 
 [RaccoonChessSigma](httSp://rcsigma.org/) is a free, powerful chess engine written in TypeScript. It is primarily inspired by [Vice](https://www.youtube.com/watch?v=bGAfaepBco4&list=PLZ1QII7yudbc-Ky058TEaOstZHVbT-2hg), [Stockfish](https://stockfishchess.org/), [LeelaChessZero](https://lczero.org/), and a number of open source projects and aims to serve as both reference for other authors and a high-end engine.
