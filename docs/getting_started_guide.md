@@ -13,6 +13,8 @@ The following are prerequisites for building and deploying:
   - [nodejs >= 13.x](https://github.com/nodesource/distributions)
   - [yarn](https://github.com/yarnpkg/yarn)
 
+The above requirements can be installed as follows:
+
 #### yarn
 
 `yarn add -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`
@@ -31,12 +33,8 @@ Document how to deploy project if need be
 
 ### Testing RaccoonChessSigma
 
-Document how to test project if need be
-
-#### npm
-
-`npm run test`
-
-#### yarn
-
-`yarn test`
+Assuming the perquisites have been installed, from the root directory where the repo was cloned, the unit tests and coverage can be executed as follows:
+| | npm | yarn |
+|-------------|---------------------|-------------------|
+| Unit Test | `npm run test` | `yarn test` |
+| Coverage | `npm run coverage` | `yarn coverage` |

@@ -23,6 +23,7 @@ export type verbose_move_t = {
     pieces: string;
     flag: string;
     san: string;
+    smith: string;
     captured?: string;
     promoted?: string;
 }
@@ -74,28 +75,30 @@ function PROMOTED(move: move_t) { return (((move) >> 20) & 0xF); }
 ****************************************************************************/
 export function smith_to_move(smith: string, board: board_.board_t): move_t {
     const cleaned_smith = clean_smith(smith);
-    if (cleaned_smith[1].charCodeAt(0) > '8'.charCodeAt(0) || cleaned_smith[1].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
-    if (cleaned_smith[3].charCodeAt(0) > '8'.charCodeAt(0) || cleaned_smith[3].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
-    if (cleaned_smith[0].charCodeAt(0) > 'h'.charCodeAt(0) || cleaned_smith[0].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
-    if (cleaned_smith[2].charCodeAt(0) > 'h'.charCodeAt(0) || cleaned_smith[2].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
+    if (cleaned_smith != "") {
+        if (cleaned_smith[1].charCodeAt(0) > '8'.charCodeAt(0) || cleaned_smith[1].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
+        if (cleaned_smith[3].charCodeAt(0) > '8'.charCodeAt(0) || cleaned_smith[3].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
+        if (cleaned_smith[0].charCodeAt(0) > 'h'.charCodeAt(0) || cleaned_smith[0].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
+        if (cleaned_smith[2].charCodeAt(0) > 'h'.charCodeAt(0) || cleaned_smith[2].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
 
-    const from = board_.FILE_RANK_TO_SQUARE(smith[0].charCodeAt(0) - 'a'.charCodeAt(0), smith[1].charCodeAt(0) - '1'.charCodeAt(0));
-    const to = board_.FILE_RANK_TO_SQUARE(smith[2].charCodeAt(0) - 'a'.charCodeAt(0), smith[3].charCodeAt(0) - '1'.charCodeAt(0));
+        const from = board_.FILE_RANK_TO_SQUARE(cleaned_smith[0].charCodeAt(0) - 'a'.charCodeAt(0), cleaned_smith[1].charCodeAt(0) - '1'.charCodeAt(0));
+        const to = board_.FILE_RANK_TO_SQUARE(cleaned_smith[2].charCodeAt(0) - 'a'.charCodeAt(0), cleaned_smith[3].charCodeAt(0) - '1'.charCodeAt(0));
 
-    if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
-        const moves = generate_legal_moves(board);
-        for (let i = 0; i < moves.length; i++) {
-            const move = moves[i].move;
-            if (FROM_SQUARE(move) === from && TO_SQUARE(move) === to) {
-                const promotion_piece = PROMOTED(move);
-                if (promotion_piece !== board_.PIECES.EMPTY) {
-                    if ((smith[4] === (util_.piece_to_ascii[promotion_piece]).toLowerCase())
-                        || (smith[4] === (util_.piece_to_ascii[promotion_piece]).toUpperCase())) {
-                        return move;
+        if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
+            const moves = generate_legal_moves(board);
+            for (let i = 0; i < moves.length; i++) {
+                const move = moves[i].move;
+                if (FROM_SQUARE(move) === from && TO_SQUARE(move) === to) {
+                    const promotion_piece = PROMOTED(move);
+                    if (promotion_piece !== board_.PIECES.EMPTY) {
+                        if ((cleaned_smith[4] === (util_.piece_to_ascii[promotion_piece]).toLowerCase())
+                            || (cleaned_smith[4] === (util_.piece_to_ascii[promotion_piece]).toUpperCase())) {
+                            return move;
+                        }
+                        continue;
                     }
-                    continue;
+                    return move;
                 }
-                return move;
             }
         }
     }
@@ -104,8 +107,6 @@ export function smith_to_move(smith: string, board: board_.board_t): move_t {
 
 export function move_to_smith(move: move_t): string {
     if (move != NO_MOVE) {
-
-
         const file_from = util_.files_board[FROM_SQUARE(move)];
         const rank_from = util_.ranks_board[FROM_SQUARE(move)];
 
@@ -134,46 +135,44 @@ export function move_to_smith(move: move_t): string {
 
 }
 
-export function move_to_verbose_move(move: move_t, board: board_.board_t, move_already_made = false): verbose_move_t {
-    const from = FROM_SQUARE(move);
-    const to = TO_SQUARE(move);
+export function move_to_verbose_move(move: move_t, board: board_.board_t): verbose_move_t {
     const rlt = {} as verbose_move_t;
-    rlt.from = board_.square_to_algebraic(from);
-    rlt.to = board_.square_to_algebraic(to);
-    rlt.color = "wb-"[board.turn];
-    rlt.pieces = (util_.piece_to_ascii[board.pieces[from]]).toLowerCase();
-    if ((move & MOVE_FLAG.CAPTURED) !== 0 && (move & MOVE_FLAG.PROMOTED) !== 0) {
-        rlt.flag = 'pc';
-        rlt.captured = (util_.piece_to_ascii[CAPTURED(move)]).toLowerCase();
-        rlt.promoted = (util_.piece_to_ascii[PROMOTED(move)]).toLowerCase();
-    }
-    else if ((move & MOVE_FLAG.CAPTURED) !== 0) {
-        rlt.flag = 'c';
-        rlt.captured = (util_.piece_to_ascii[CAPTURED(move)]).toLowerCase();
-    }
-    else if ((move & MOVE_FLAG.PROMOTED) !== 0) {
-        rlt.flag = 'p';
-        rlt.promoted = (util_.piece_to_ascii[PROMOTED(move)]).toLowerCase();
-    }
-    else if ((move & MOVE_FLAG.ENPASS) !== 0) {
-        rlt.flag = 'e';
-    }
-    else if ((move & MOVE_FLAG.CASTLE) !== 0) {
-        if (to === board_.SQUARES.G8 || to === board_.SQUARES.G1) {
-            rlt.flag = 'k';
-        }
-        else {
-            rlt.flag = 'q';
-        }
-    }
-    else if ((move & MOVE_FLAG.PAWN_START) !== 0) {
-        rlt.flag = 'b';
-    }
-    else {
-        rlt.flag = 'n'
-    }
+    if (move !== NO_MOVE) {
+        const from = FROM_SQUARE(move);
+        const to = TO_SQUARE(move);
+        rlt.from = board_.square_to_algebraic(from);
+        rlt.to = board_.square_to_algebraic(to);
+        rlt.color = "wb-"[board.turn];
+        rlt.pieces = (util_.piece_to_ascii[board.pieces[from]]).toLowerCase();
+        rlt.flag = "";
 
-    rlt.san = move_to_san(move, board, move_already_made);
+        if ((move & MOVE_FLAG.PROMOTED) !== 0) {
+            rlt.flag += 'p';
+            rlt.promoted = (util_.piece_to_ascii[PROMOTED(move)]).toLowerCase();
+        }
+        if ((move & MOVE_FLAG.CAPTURED) !== 0) {
+            rlt.flag += 'c';
+            rlt.captured = (util_.piece_to_ascii[CAPTURED(move)]).toLowerCase();
+        }
+        if ((move & MOVE_FLAG.ENPASS) !== 0) {
+            rlt.flag += 'e';
+        }
+        if ((move & MOVE_FLAG.CASTLE) !== 0) {
+            if (to === board_.SQUARES.G8 || to === board_.SQUARES.G1) {
+                rlt.flag += 'k';
+            }
+            else {
+                rlt.flag += 'q';
+            }
+        }
+        if ((move & MOVE_FLAG.PAWN_START) !== 0) {
+            rlt.flag += 'b';
+        }
+
+        rlt.flag += (rlt.flag === "") ? 'n' : "";
+        rlt.smith = move_to_smith(move);
+        rlt.san = move_to_san(move, board);
+    }
     return rlt
 }
 
@@ -232,7 +231,7 @@ function disambiguator(move: move_t, board: board_.board_t) {
     return diamb;
 }
 
-export function move_to_san(move: move_t, board: board_.board_t, move_already_made = false): string {
+export function move_to_san(move: move_t, board: board_.board_t, verbose = true): string {
     let san = "";
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
@@ -269,28 +268,23 @@ export function move_to_san(move: move_t, board: board_.board_t, move_already_ma
             san += board_.square_to_algebraic(to);
             if ((move & MOVE_FLAG.PROMOTED) !== 0) {
                 san += '=';
-                san += (util_.piece_to_ascii[PROMOTED(move)]).toLowerCase();
+                san += (util_.piece_to_ascii[PROMOTED(move)]).toUpperCase();
             }
+            if (verbose) {
+                if ((move & MOVE_FLAG.ENPASS) !== 0) {
+                    san += "e.p.";
+                }
+                if (make_move(move, board)) {
+                    if (state_.in_checkmate(board)) {
+                        san += "#";
+                    }
+                    else if (state_.in_check(board)) {
+                        san += "+";
+                    }
+                    take_move(board);
+                }
 
-            const check_addOn = function () {
-                const check = state_.in_check(board);
-                if (state_.in_checkmate(board)) {
-                    san += "#";
-                }
-                else if (check) {
-                    san += "+";
-                }
-                if (!check && ((move & MOVE_FLAG.ENPASS) !== 0)) {
-                    san += " e.p.";
-                }
             }
-            if (!move_already_made && make_move(move, board)) {
-                check_addOn();
-                take_move(board);
-            } else {
-                check_addOn();
-            }
-
         }
 
     }
@@ -298,17 +292,13 @@ export function move_to_san(move: move_t, board: board_.board_t, move_already_ma
 }
 
 export function san_to_move(san: string, board: board_.board_t): number {
-    const cleaned_san = stripped_san(san);
+    const cleaned_san = san.replace(/[+#]?[?!]*$/, '').replace(/e.p./, '');
     const legal = generate_legal_moves(board);
     let move: move_score_t;
     for (move of legal) {
         if (cleaned_san == move_to_san(move.move, board, false)) return move.move;
     }
     return NO_MOVE;
-}
-
-function stripped_san(move: string): string {
-    return move.replace(/=/, '').replace(/[+#]?[?!]*$/, '')
 }
 
 function clean_smith(smith: string): string {
@@ -383,11 +373,11 @@ function add_black_pawn_move(from: board_.SQUARES, to: board_.SQUARES, moves: mo
         add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.EMPTY, 0), moves);
     }
 }
-function generate_white_helper_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.OFF_BOARD) {
+function generate_white_helper_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
     //-- generate white pawn moves
     for (let p = 0; p < board.number_pieces[board_.PIECES.WHITEPAWN]; p++) {
         const sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.WHITEPAWN, p)];
-        if (square === board_.SQUARES.OFF_BOARD || square === sq) {
+        if (square === board_.SQUARES.ALL || square === sq) {
             //-- forward move
             if ((board.pieces[sq + 10] === board_.PIECES.EMPTY) && !only_capture) {
                 add_white_pawn_move(sq, sq + 10, moves);
@@ -417,7 +407,7 @@ function generate_white_helper_moves(board: board_.board_t, moves: move_score_t[
     }
 
     //-- castling
-    if (square === board_.SQUARES.OFF_BOARD || square === board.king_square[board_.COLORS.WHITE]) {
+    if (square === board_.SQUARES.ALL || square === board.king_square[board_.COLORS.WHITE]) {
         if ((((board.castling_right & board_.CASTLING.WHITE_CASTLE_OO) !== 0) && !only_capture)
             && (board.pieces[board_.SQUARES.F1] === board_.PIECES.EMPTY && board.pieces[board_.SQUARES.G1] === board_.PIECES.EMPTY)
             && (!attack_.is_square_attacked(board_.SQUARES.E1, board_.COLORS.BLACK, board) && !attack_.is_square_attacked(board_.SQUARES.F1, board_.COLORS.BLACK, board))) {
@@ -431,11 +421,11 @@ function generate_white_helper_moves(board: board_.board_t, moves: move_score_t[
         }
     }
 }
-function generate_black_helper_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.OFF_BOARD) {
+function generate_black_helper_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
     //generate black pawn moves
     for (let p = 0; p < board.number_pieces[board_.PIECES.BLACKPAWN]; p++) {
         const sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.BLACKPAWN, p)];
-        if (square === board_.SQUARES.OFF_BOARD || square === sq) {
+        if (square === board_.SQUARES.ALL || square === sq) {
             //-- forward move
             if ((board.pieces[sq - 10] === board_.PIECES.EMPTY) && !only_capture) {
                 add_black_pawn_move(sq, sq - 10, moves);
@@ -463,7 +453,7 @@ function generate_black_helper_moves(board: board_.board_t, moves: move_score_t[
     }
 
     //-- castling
-    if (square === board_.SQUARES.OFF_BOARD || square === board.king_square[board_.COLORS.BLACK]) {
+    if (square === board_.SQUARES.ALL || square === board.king_square[board_.COLORS.BLACK]) {
         if ((((board.castling_right & board_.CASTLING.BLACK_CASTLE_OO) !== 0) && !only_capture)
             && (board.pieces[board_.SQUARES.F8] === board_.PIECES.EMPTY && board.pieces[board_.SQUARES.G8] === board_.PIECES.EMPTY)
             && (!attack_.is_square_attacked(board_.SQUARES.E8, board_.COLORS.WHITE, board) && !attack_.is_square_attacked(board_.SQUARES.F8, board_.COLORS.WHITE, board))) {
@@ -480,14 +470,14 @@ function generate_black_helper_moves(board: board_.board_t, moves: move_score_t[
     }
 
 }
-function generate_slider_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.OFF_BOARD) {
+function generate_slider_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
     const turn = board.turn;
     let i = turn * 4;
     let p = slider[i++];
     while (p !== -1) {
         for (let pceNum = 0; pceNum < board.number_pieces[p]; ++pceNum) {
             const sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
-            if (square === board_.SQUARES.OFF_BOARD || square === sq && (board_.SQUARE_ON_BOARD(sq))) {
+            if (square === board_.SQUARES.ALL || square === sq && (board_.SQUARE_ON_BOARD(sq))) {
                 for (let i = 0; i < number_directions[p]; i++) {
                     const dir = pieces_directions[p][i];
                     let to_square = sq + dir;
@@ -510,14 +500,14 @@ function generate_slider_moves(board: board_.board_t, moves: move_score_t[], onl
         p = slider[i++];
     }
 }
-function generate_nonslider_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.OFF_BOARD) {
+function generate_nonslider_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
     const turn = board.turn;
     let i = turn * 3;
     let p = nonslider[i++];
     while (p !== -1) {
         for (let pceNum = 0; pceNum < board.number_pieces[p]; ++pceNum) {
             const sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
-            if (square === board_.SQUARES.OFF_BOARD || square === sq && board_.SQUARE_ON_BOARD(sq)) {
+            if (square === board_.SQUARES.ALL || square === sq && board_.SQUARE_ON_BOARD(sq)) {
                 for (let i = 0; i < number_directions[p]; i++) {
                     const dir = pieces_directions[p][i];
                     const to_square = sq + dir;
@@ -542,7 +532,7 @@ function generate_nonslider_moves(board: board_.board_t, moves: move_score_t[], 
     }
 }
 
-export function generate_all_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.OFF_BOARD): move_score_t[] {
+export function generate_all_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.ALL): move_score_t[] {
     const moves = [] as move_score_t[];
     const turn = board.turn;
 
@@ -558,7 +548,7 @@ export function generate_all_moves(board: board_.board_t, only_capture = false, 
     return moves;
 }
 
-export function generate_legal_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.OFF_BOARD): move_score_t[] {
+export function generate_legal_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.ALL): move_score_t[] {
     const moves = generate_all_moves(board, only_capture, square);
     const rlt = [] as move_score_t[];
     let move: move_score_t;
@@ -679,7 +669,6 @@ export function move_piece(from: board_.SQUARES, to: board_.SQUARES, board: boar
 }
 
 export function make_move(move: move_t, board: board_.board_t): boolean {
-    //console.log(`board entering make move: ${board_.board_to_ascii(board)}`)
     if (move === NO_MOVE) return false
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
@@ -793,8 +782,8 @@ export function make_move(move: move_t, board: board_.board_t): boolean {
     return true;
 }
 
-export function take_move(board: board_.board_t): void {
-    if (board.history_ply === 0) return;
+export function take_move(board: board_.board_t): boolean {
+    if (board.history_ply === 0) return false;
     board.history_ply--;
     board.ply--;
     board.full_moves -= (board.turn === board_.COLORS.WHITE) ? 1 : 0;
@@ -844,4 +833,5 @@ export function take_move(board: board_.board_t): void {
     board.turn = board.move_history[board.history_ply].turn;
     board.material_eg = board.move_history[board.history_ply].material_eg;
     board.material_mg = board.move_history[board.history_ply].material_mg;
+    return true;
 }

@@ -48,7 +48,7 @@ export enum SQUARES {
     A5 = 61, B5, C5, D5, E5, F5, G5, H5,
     A6 = 71, B6, C6, D6, E6, F6, G6, H6,
     A7 = 81, B7, C7, D7, E7, F7, G7, H7,
-    A8 = 91, B8, C8, D8, E8, F8, G8, H8, OFF_SQUARE, OFF_BOARD
+    A8 = 91, B8, C8, D8, E8, F8, G8, H8, OFF_SQUARE, OFF_BOARD, ALL
 }
 
 export enum CASTLING {
@@ -75,6 +75,7 @@ export type undo_t = {
 
     material_eg: number[];
     material_mg: number[];
+
 }
 
 export type board_t = {
@@ -338,29 +339,37 @@ export function mirror_board(board: board_t): void {
     update_list_material(board);
 }
 
-export function board_to_ascii(board: board_t): string {
-    let ascii_t = "\n +-----------------+\n";
+export function board_to_printable(board: board_t, parser: string[], light_square: string, dark_square: string, show_info: boolean): string {
+    let ascii_t = "   A B C D E F G H   \n";
+    ascii_t += "\n";
     for (let rank = RANKS.EIGHTH_RANK; rank >= RANKS.FIRST_RANK; --rank) {
-        ascii_t += (rank + 1).toString() + "| ";
+        ascii_t += (rank + 1).toString() + "  ";
         for (let file = FILES.A_FILE; file <= FILES.H_FILE; ++file) {
             const SQ120 = FILE_RANK_TO_SQUARE(file, rank);
             const piece = board.pieces[SQ120];
-            ascii_t += ((util_.piece_to_ascii[piece]) + " ");
+            if (piece === PIECES.EMPTY) {
+                ascii_t += (SQUARE_COLOR(SQ120) === COLORS.WHITE) ? light_square + " " : dark_square + " ";
+            } else {
+                ascii_t += ((parser[piece - 1]) + " ");
+            }
+
         }
-        ascii_t += "| \n";
+        ascii_t += " " + (rank + 1).toString() + "\n";
     }
 
-    ascii_t += " +-----------------+\n";
-    ascii_t += "   a b c d e f g h\n";
-    ascii_t += "        INFO         \n";
-    ascii_t += "turn: " + ("wb-"[board.turn]) + '\n';
-    ascii_t += "enpass: " + (board.enpassant).toString() + '\n';
-    ascii_t += "castling: "
-        + (((board.castling_right & CASTLING.WHITE_CASTLE_OO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEKING] : '')
-        + (((board.castling_right & CASTLING.WHITE_CASTLE_OOO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEQUEEN] : '')
-        + (((board.castling_right & CASTLING.BLACK_CASTLE_OO) !== 0) ? util_.piece_to_ascii[PIECES.BLACKKING] : '')
-        + (((board.castling_right & CASTLING.BLACK_CASTLE_OOO) !== 0) ? util_.piece_to_ascii[PIECES.BLACKQUEEN] : '');
-    ascii_t += ("\npoly key: 0x" + board.current_polyglot_key.toString(16) + '\n');
+    ascii_t += "\n";
+    ascii_t += "   A B C D E F G H   \n";
+    if (show_info) {
+        ascii_t += "        INFO         \n";
+        ascii_t += "turn: " + ("wb-"[board.turn]) + '\n';
+        ascii_t += "enpass: " + (board.enpassant).toString() + '\n';
+        ascii_t += "castling: "
+            + (((board.castling_right & CASTLING.WHITE_CASTLE_OO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEKING] : '')
+            + (((board.castling_right & CASTLING.WHITE_CASTLE_OOO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEQUEEN] : '')
+            + (((board.castling_right & CASTLING.BLACK_CASTLE_OO) !== 0) ? util_.piece_to_ascii[PIECES.BLACKKING] : '')
+            + (((board.castling_right & CASTLING.BLACK_CASTLE_OOO) !== 0) ? util_.piece_to_ascii[PIECES.BLACKQUEEN] : '');
+        ascii_t += ("\npoly key: 0x" + board.current_polyglot_key.toString(16) + '\n');
+    }
 
     return ascii_t;
 }
@@ -370,6 +379,13 @@ export function square_to_algebraic(square: SQUARES): string {
     const file = 'a'.charCodeAt(0) + util_.files_board[square];
     const rank = '1'.charCodeAt(0) + util_.ranks_board[square];
     return String.fromCharCode(file) + String.fromCharCode(rank);
+}
+export function algebraic_to_square(square: string): SQUARES {
+    if (square[1].charCodeAt(0) > '8'.charCodeAt(0) || square[1].charCodeAt(0) < '1'.charCodeAt(0)) return SQUARES.OFF_BOARD;
+    if (square[0].charCodeAt(0) > 'h'.charCodeAt(0) || square[0].charCodeAt(0) < 'a'.charCodeAt(0)) return SQUARES.OFF_BOARD;
+    return FILE_RANK_TO_SQUARE(
+        square[0].charCodeAt(0) - 'a'.charCodeAt(0), square[1].charCodeAt(0) - '1'.charCodeAt(0)
+    );
 }
 
 /*****************************************************************************
@@ -494,11 +510,7 @@ export function fen_to_board(fen: string, board: board_t): void {
         check_board(board)
     }
     catch (err) {
-        if (err instanceof Error) {
-            util_.ASSERT(false, `FenErr: Cannot not parse fen due to ${err.message}`);
-        } else {
-            util_.ASSERT(false, "FenErr: Unknown Error occurred");
-        }
+        util_.ASSERT(false, `FenErr: Cannot not parse fen due to ${(err as Error).message}`);
     }
 
 }

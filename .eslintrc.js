@@ -40,5 +40,6 @@ module.exports = {
     "@typescript-eslint/no-non-null-assertion": ["error"],
     "@typescript-eslint/no-explicit-any": ["error"],
     "@typescript-eslint/no-non-null-assertion": "off",
+    "sonarjs/no-duplicate-string": "off",
   },
 };
