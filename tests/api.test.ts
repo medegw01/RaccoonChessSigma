@@ -209,7 +209,7 @@ describe("Game Tests", () => {
     });
     describe("Print Board", () => {
         let game: api.Raccoon;
-        const fen_print = 'rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4';
+        const fen_print = 'rnbqkbnr/p1pppppp/8/8/P1pP3P/R7/1P2PPP1/1NBQKBNR b Kkq d3 0 5';
         beforeEach(() => {
             game = new api.Raccoon();
         });
@@ -237,16 +237,16 @@ describe("Game Tests", () => {
                 "7  p - p p p p p p  7\n" +
                 "6  - = - = - = - =  6\n" +
                 "5  = - = - = - = -  5\n" +
-                "4  P = - = - = - P  4\n" +
-                "3  R - p - = - = -  3\n" +
-                "2  - P - P P P P =  2\n" +
+                "4  P = p P - = - P  4\n" +
+                "3  R - = - = - = -  3\n" +
+                "2  - P - = P P P =  2\n" +
                 "1  = N B Q K B N R  1\n\n" +
                 "   A B C D E F G H   \n" +
                 "        INFO         \n" +
                 "turn: b\n" +
-                "enpass: 99\n" +
+                "enpass: d3\n" +
                 "castling: Kkq\n" +
-                "poly key: 0x5c3f9b829b279560\n");
+                "poly key: 0x8edef0e518b9d296\n");
             expect(game.print_board(true)).toBe(expected);
         });
         it("Fen: start_fen; UNI_CODE", function () {
@@ -262,9 +262,9 @@ describe("Game Tests", () => {
                 "7  ♟   ♟ ♟ ♟ ♟ ♟ ♟  7\n" +
                 "6    x   x   x   x  6\n" +
                 "5  x   x   x   x    5\n" +
-                "4  ♙ x   x   x   ♙  4\n" +
-                "3  ♖   ♟   x   x    3\n" +
-                "2    ♙   ♙ ♙ ♙ ♙ x  2\n" +
+                "4  ♙ x ♟ ♙   x   ♙  4\n" +
+                "3  ♖   x   x   x    3\n" +
+                "2    ♙   x ♙ ♙ ♙ x  2\n" +
                 "1  x ♘ ♗ ♕ ♔ ♗ ♘ ♖  1\n\n" +
                 "   A B C D E F G H   \n");
             expect(game.print_board(false, parser)).toBe(expected);
@@ -409,6 +409,7 @@ describe("Game Tests", () => {
         it("Success: Q-R mate", function () {
             game.load_fen('8/5r2/4K1q1/4p3/3k4/8/8/8 w - - 0 7');
             expect(game.in_checkmate()).toBe(true);
+            expect(game.game_over()).toBe(true);
             expect(game.in_check()).toBe(true);
         });
         it("Success: Q-N mate", function () {
@@ -416,27 +417,32 @@ describe("Game Tests", () => {
             expect(game.insufficient_material()).toBe(false);
             expect(game.in_checkmate()).toBe(true);
             expect(game.in_check()).toBe(true);
+            expect(game.game_over()).toBe(true);
         });
         it("Success: Pinned mate", function () {
             game.load_fen('r3k2r/ppp2p1p/2n1p1p1/8/2B2P1q/2NPb1n1/PP4PP/R2Q3K w kq - 0 8');
             expect(game.insufficient_material()).toBe(false);
             expect(game.in_checkmate()).toBe(true);
             expect(game.in_check()).toBe(true);
+            expect(game.game_over()).toBe(true);
         });
         it("Success: Pawn", function () {
             game.load_fen('8/6R1/pp1r3p/6p1/P3R1Pk/1P4P1/7K/8 b - - 0 4');
             expect(game.in_checkmate()).toBe(true);
             expect(game.in_check()).toBe(true);
+            expect(game.game_over()).toBe(true);
         });
         it("Failure: stalemate", function () {
             game.load_fen('1R6/8/8/8/8/8/7R/k6K b - - 0 1');
             expect(game.in_checkmate()).toBe(false)
             expect(game.in_check()).toBe(false);
+            expect(game.game_over()).toBe(true);
         });
         it("Failure: king can't move but other piece can", function () {
             game.load_fen('5bnr/4p1pq/4Qpkr/7p/2P2r1P/3B4/PP1PPPP1/RNB1K1NR b KQ - 0 1');
             expect(game.in_checkmate()).toBe(false);
             expect(game.in_check()).toBe(true);
+            expect(game.game_over()).toBe(false);
         });
     });
 
@@ -451,12 +457,14 @@ describe("Game Tests", () => {
             expect(game.in_stalemate()).toBe(true);
             expect(game.in_check()).toBe(false);
             expect(game.in_draw()).toBe(true);
+            expect(game.game_over()).toBe(true);
         });
         it("Success: locked in", function () {
             game.load_fen('5bnr/4p1pq/4Qpkr/7p/2P4P/8/PP1PPPP1/RNB1KBNR b KQ - 0 10');
             expect(game.in_stalemate()).toBe(true);
             expect(game.in_check()).toBe(false);
             expect(game.in_draw()).toBe(true);
+            expect(game.game_over()).toBe(true);
         });
         it("Failure: checkmate", function () {
             game.load_fen('2R5/8/8/8/3B4/8/7R/k6K b - - 0 1');
@@ -482,6 +490,7 @@ describe("Game Tests", () => {
             game.load_fen('8/8/8/8/8/8/8/k6K w - - 0 1');
             expect(game.insufficient_material()).toBe(true);
             expect(game.in_draw()).toBe(true);
+            expect(game.game_over()).toBe(true);
         });
         it("Success: 8/2N5/8/8/8/8/8/k6K w - - 0 1", function () {
             game.load_fen('8/2N5/8/8/8/8/8/k6K w - - 0 1');
@@ -522,6 +531,7 @@ describe("Game Tests", () => {
             game.load_fen('8/bB2b1B1/1b1B1b1B/8/8/8/8/1k5K w - - 0 1');
             expect(game.insufficient_material()).toBe(false);
             expect(game.in_draw()).toBe(false);
+            expect(game.game_over()).toBe(false);
         });
     });
 

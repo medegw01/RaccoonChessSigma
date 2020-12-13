@@ -30,7 +30,7 @@ class Raccoon {
             king_square: new Array<board_.SQUARES>(2),
             pawns: new Array<board_.bitboard_t>(3),
 
-            enpassant: board_.SQUARES.OFF_BOARD,
+            enpassant: board_.SQUARES.OFF_SQUARE,
             turn: board_.COLORS.BOTH,
             half_moves: 0,
             full_moves: 0,
@@ -68,6 +68,7 @@ class Raccoon {
             return { value: false, error: (err as Error).message };
         }
         this.start_fen = fen; // stores last load for reseting board
+        this.moves_history = [];
         return { value: true, error: "No error!" }
     }
     public get_fen(): string {
@@ -86,9 +87,20 @@ class Raccoon {
     }): string {
         return board_.board_to_printable(this.board, parser.pieces, parser.light_square, parser.dark_square, show_info);
     }
-    // -> get_board() 2D array of board
-    // -> clear board empty fen
-    // reset board to last oaded fen
+
+    public clear_board(): void {
+        board_.clear_board(this.board);
+        this.moves_history = [];
+    }
+
+    public get_board(): board_.position_t {
+        return board_.board_to_position_t(this.board);
+    }
+
+    public reset_board(): void {
+        board_.fen_to_board(this.start_fen, this.board);
+        this.moves_history = []; // history is overwritten 
+    }
 
 
     // Game Moves
@@ -123,8 +135,8 @@ class Raccoon {
     }
     public get_moves(option?: { square?: string, verbose?: boolean, capture_only?: boolean }): string[] | move_.verbose_move_t[] {
         const square = ((typeof option !== 'undefined') && ('square' in option)) ? board_.algebraic_to_square(option.square!) : board_.SQUARES.ALL;
-        const verbose = ((typeof option !== 'undefined') && ('verbose' in option)) ? option.verbose! : false;
-        const capture_only = ((typeof option !== 'undefined') && ('capture_only' in option)) ? option.capture_only! : false;
+        const verbose = (typeof option !== 'undefined') && ('verbose' in option) && option.verbose;
+        const capture_only = (typeof option !== 'undefined') && ('capture_only' in option) && option.capture_only;
 
         const moves_score = move_.generate_legal_moves(this.board, capture_only, square);
         let rlt_str_list: string[] = [];
@@ -140,7 +152,11 @@ class Raccoon {
         return (verbose) ? rlt_ver_list : rlt_str_list;
     }
 
-    // move history (verbose) -> history
+    public move_history(option?: { verbose: boolean }): string[] | move_.verbose_move_t[] {
+        const verbose = (typeof option !== 'undefined') && ('verbose' in option) && option.verbose;
+        const rlt_ver_list = this.moves_history;
+        return (verbose) ? rlt_ver_list : rlt_ver_list.map((verbo_move) => verbo_move.san);
+    }
 
     // Game State
     public in_check(): boolean {
@@ -161,23 +177,77 @@ class Raccoon {
     public in_draw(): boolean {
         return state_.in_draw(this.board);
     }
-    //-> gameover()
+    public game_over(): boolean {
+        return state_.game_over(this.board);
+    }
+
+
+
+    // Pieces
+    private peek_piece(square: string, remove = false): null | { piece: string, color: string } {
+        let sq = board_.algebraic_to_square(square);
+        let rlt: { piece: string, color: string };
+        if (board_.SQUARE_ON_BOARD(sq) && this.board.pieces[sq] !== board_.PIECES.EMPTY) {
+            rlt = {
+                piece: util_.piece_to_ascii[this.board.pieces[sq]],
+                color: (util_.get_color_piece[this.board.pieces[sq]] === board_.COLORS.WHITE) ? 'w' : 'b'
+            };
+            if (remove) move_.clear_pieces(sq, this.board);
+            return rlt;
+        }
+        return null;
+
+    }
+    public get_piece(square: string): null | { piece: string, color: string } {
+        return this.peek_piece(square);
+
+    }
+    public pop_piece(square: string): null | { piece: string, color: string } {
+        return this.peek_piece(square, true);
+    }
+    public set_piece(piece: { piece: string, color: string }, square: string): boolean {
+        let sq = board_.algebraic_to_square(square);
+        if (sq === board_.SQUARES.OFF_BOARD) return false;
+
+        let look = (piece.color === 'w') ? (piece.piece).toUpperCase() : (piece.piece).toLowerCase();
+        let pce = board_.PIECES.OFF_BOARD_PIECE;
+        for (let i = board_.PIECES.EMPTY; i < board_.PIECES.OFF_BOARD_PIECE; i++) {
+            if (look === util_.piece_to_ascii[i]) {
+                pce = i;
+                break;
+            }
+        }
+        if (
+            (pce !== board_.PIECES.OFF_BOARD_PIECE)
+            && ((pce === board_.PIECES.WHITEKING || pce === board_.PIECES.BLACKKING) && this.board.number_pieces[pce] > 0)
+        ) {
+            move_.add_piece(sq, pce, this.board);
+            return true;
+        }
+        return false;
+    }
+
+
+    // MICS
+    public get_turn(): string {
+
+    }
+    public square_color(square: string): null | string {
+        let sq = board_.algebraic_to_square(square);
+        if (board_.SQUARE_ON_BOARD(sq)) {
+            return ((util_.ranks_board[sq] + util_.files_board[sq]) % 2 === 0) ? "b" : "w";
+        } else {
+            return null
+        }
+
+    }
+    // pet_square_color()
+
+    // Search and Evaluation
     // evaluate_board()
     // search_board(option)
     // noob_book(noob_cmd)
-
-    // Pieces
-    // get_piece(sq) return piec in sq
-    // set_piece(p, sq)
-    // pop_piece(sq)
-
-
-    // BOOK
     // set_book(arrayBuffer)
-
-    // MICS
-    // get_turn
-    // pet_square_color()
 
     // Game debugging
     public perft(depth: number): bigint {

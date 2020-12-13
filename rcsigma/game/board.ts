@@ -106,6 +106,15 @@ export type board_t = {
     move_history: undo_t[];
 }
 
+export type position_t = {
+    board: ({ piece: string, color: string } | null)[][]; // chessboard
+    castling: [boolean, boolean, boolean, boolean];// castling right: [K, Q, k, q]
+    enpassant: string  // enpassant
+    turn: string // side to move
+    move_count: [number, number] // move counts: [half move, full, move]
+}
+
+
 /*****************************************************************************
  * MACRO
  ****************************************************************************/
@@ -216,7 +225,7 @@ function check_board(position: board_t) {
     util_.ASSERT(position.pieces[position.king_square[COLORS.BLACK]] == PIECES.BLACKKING, `BoardErr: Wrong Black king square`);
 }
 
-export function reset_board(board: board_t): void {
+export function clear_board(board: board_t): void {
     for (let i = 0; i < util_.BOARD_SQUARE_NUM; i++) {
         board.pieces[i] = PIECES.OFF_BOARD_PIECE;
     }
@@ -321,7 +330,7 @@ export function mirror_board(board: board_t): void {
     const history_ply = board.history_ply;
     const half = board.half_moves;
 
-    reset_board(board);
+    clear_board(board);
 
     for (sq = 0; sq < 64; sq++) {
         tp = SwapPiece[tempPiecesArray[sq]];
@@ -362,7 +371,7 @@ export function board_to_printable(board: board_t, parser: string[], light_squar
     if (show_info) {
         ascii_t += "        INFO         \n";
         ascii_t += "turn: " + ("wb-"[board.turn]) + '\n';
-        ascii_t += "enpass: " + (board.enpassant).toString() + '\n';
+        ascii_t += "enpass: " + ((board.enpassant === SQUARES.OFF_SQUARE) ? "-" : square_to_algebraic(board.enpassant)) + '\n';
         ascii_t += "castling: "
             + (((board.castling_right & CASTLING.WHITE_CASTLE_OO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEKING] : '')
             + (((board.castling_right & CASTLING.WHITE_CASTLE_OOO) !== 0) ? util_.piece_to_ascii[PIECES.WHITEQUEEN] : '')
@@ -372,6 +381,42 @@ export function board_to_printable(board: board_t, parser: string[], light_squar
     }
 
     return ascii_t;
+}
+
+export function board_to_position_t(board: board_t) {
+    let position = {} as position_t
+    let b: ({ piece: string, color: string } | null)[][] = [];
+    let r_str: ({ piece: string, color: string } | null)[];
+    for (let rank = RANKS.EIGHTH_RANK; rank >= RANKS.FIRST_RANK; --rank) {
+        r_str = [];
+        for (let file = FILES.A_FILE; file <= FILES.H_FILE; ++file) {
+            const p = board.pieces[FILE_RANK_TO_SQUARE(file, rank)];
+            if (p === PIECES.EMPTY) {
+                r_str.push(null);
+            } else {
+                r_str.push(
+                    {
+                        piece: util_.piece_to_ascii[p].toLowerCase(),
+                        color: util_.is_white_piece[p] ? "w" : "b"
+                    }
+                );
+            }
+
+        }
+        b.push(r_str);
+    }
+    position.board = b;
+    position.turn = "wb-"[board.turn];
+    position.enpassant = (board.enpassant === SQUARES.OFF_SQUARE) ? "-" : square_to_algebraic(board.enpassant);
+    position.move_count = [board.half_moves, board.full_moves];
+    position.castling = [
+        ((board.castling_right & CASTLING.WHITE_CASTLE_OO) !== 0),
+        ((board.castling_right & CASTLING.WHITE_CASTLE_OOO) !== 0),
+        ((board.castling_right & CASTLING.BLACK_CASTLE_OO) !== 0),
+        ((board.castling_right & CASTLING.BLACK_CASTLE_OOO) !== 0)
+    ];
+
+    return position;
 }
 
 //-- square
@@ -402,7 +447,7 @@ export function fen_to_board(fen: string, board: board_t): void {
     let i = 0;
     util_.ASSERT(n != 0, "FenErr: Empty fen provided")
 
-    reset_board(board);
+    clear_board(board);
     while ((rank >= RANKS.FIRST_RANK) && (i < n)) {
         count = 1;
         switch (fen[i]) {

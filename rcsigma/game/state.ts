@@ -47,3 +47,7 @@ export function in_draw(board: board_.board_t): boolean {
     const is_50_move = (board.half_moves >= 100 && board.ply !== 0);
     return is_50_move || insufficient_material(board) || in_threefold_repetition(board) || in_stalemate(board);
 }
+
+export function game_over(board: board_.board_t): boolean {
+    return in_checkmate(board) || in_draw(board);
+}
