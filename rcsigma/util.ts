@@ -54,7 +54,7 @@ export const square120_to_square64 = new Array<number>(BOARD_SQUARE_NUM);
 export const castle_permission = new Array<number>(120);
 
 export const piece_to_ascii = ".PBNRQKpbnrqk";
-export const piece_to_unicode = [".", "♙", "♗", "♘", "♖", "♕", "♔", "♟", "♝", "♞", "♜", "♛", "♚"]
+export const piece_to_unicode = ["░", "♙", "♗", "♘", "♖", "♕", "♔", "♟", "♝", "♞", "♜", "♛", "♚"]
 export const castle64_hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
 
 export const is_big_piece = [false, false, true, true, true, true, true, false, true, true, true, true, true];

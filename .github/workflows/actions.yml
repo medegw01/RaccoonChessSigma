@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0" # scan weekly(by sunday)
 
 jobs:
   code_check:
@@ -20,7 +23,7 @@ jobs:
       - run: npm install
       - run: npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
       - name: Run EsLinter
-        run: npm run lint:cli
+        run: npm run lint
       - name: Fix lint error
         if: ${{ failure() }}
         run: echo "npm run lint-and-fix"
@@ -48,9 +51,9 @@ jobs:
         with:
           node-version: "15.x"
       - run: npm install
-      - run: npm i -D typescript jest ts-jest @types/jest
+      - run: npm i -D typescript jest ts-jest @types/jest coveralls
       - name: Run Test
-        run: npm run test:cli
+        run: npm run coverage
       - name: Check coverage
         run: |
           NEWLINE=$'\n'
@@ -62,15 +65,22 @@ jobs:
           functions=$(jq -n "$(jq '.total.functions.pct' coverage/coverage-summary.json) | floor")
           branches=$(jq -n "$(jq '.total.branches.pct' coverage/coverage-summary.json) | floor")
 
-          [ ${lines} -lt ${THRESHOLD} ] && echo === "Failed Lines Coverage${NEWLINE}Got ${lines}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
-          [ ${statements} -lt ${THRESHOLD} ] && echo === "Failed Statements Coverage${NEWLINE}Got ${statements}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
-          [ ${functions} -lt ${THRESHOLD} ] && echo === "Failed Functions Coverage${NEWLINE}Got ${functions}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
-          [ ${branches} -lt ${THRESHOLD} ] && echo === "Failed Branches Coverage${NEWLINE}Got ${branches}%, but threshold is set to ${THRESHOLD}%" && fail_checks=1
+          [ ${lines} -lt ${THRESHOLD_LINE} ] && echo === "Failed Lines Coverage${NEWLINE}Got ${lines}%, but threshold is set to ${THRESHOLD_LINE}%" && fail_checks=1
+          [ ${statements} -lt ${THRESHOLD_STATEMENT} ] && echo === "Failed Statements Coverage${NEWLINE}Got ${statements}%, but threshold is set to ${THRESHOLD_STATEMENT}%" && fail_checks=1
+          [ ${functions} -lt ${THRESHOLD_FUNCTION} ] && echo === "Failed Functions Coverage${NEWLINE}Got ${functions}%, but threshold is set to ${THRESHOLD_FUNCTION}%" && fail_checks=1
+          [ ${branches} -lt ${THRESHOLD_BRANCH} ] && echo === "Failed Branches Coverage${NEWLINE}Got ${branches}%, but threshold is set to ${THRETHRESHOLD_BRANCHSHOLD}%" && fail_checks=1
 
           [ "${fail_checks}" == "0" ] && echo === Passes Coverage
           exit ${fail_checks}
         env:
-          THRESHOLD: 90
+          THRESHOLD_LINE: 89
+          THRESHOLD_STATEMENT: 89
+          THRESHOLD_FUNCTION: 89
+          THRESHOLD_BRANCH: 89
+      - name: Coveralls # see https://github.com/coverallsapp/github-action
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   malware_security_scan:
     name: Malware Scan
@@ -83,4 +93,24 @@ jobs:
         with:
           directories: .
           options: -ri
+  analyze:
+    name: CodeQL Analyze
+    runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: ${{ matrix.language }}
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v1
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1

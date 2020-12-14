@@ -10,7 +10,7 @@ const knight_direction = [-8, -19, -21, -12, 8, 19, 21, 12];
 const rook_direction = [-1, -10, 1, 10];
 const bishop_direction = [-9, -11, 11, 9];
 const king_direction = [-1, -10, 1, 10, -9, -11, 11, 9];
-
+/*
 function pinned_direction(color: board_.COLORS, sq: board_.SQUARES, board: board_.board_t) {
     const pce = board.pieces[sq];
     let tmp_sq, tmp_pce;
@@ -236,7 +236,7 @@ export function attack(square: board_.SQUARES, color: board_.COLORS, board: boar
     v += queen_attack(color, square, board);
     return v;
 }
-
+*/
 // function will be replaced by attack() WHEN attack is OPTIMIZED soon
 export function is_square_attacked(square: board_.SQUARES, turn: board_.COLORS, board: board_.board_t): boolean {
     let piece, direction, tmp_square;
@@ -250,7 +250,7 @@ export function is_square_attacked(square: board_.SQUARES, turn: board_.COLORS, 
             return true;
         }
     }
-    //knight and king
+    // knight and king
     for (let i = 0; i < 8; i++) {
         // check knight
         piece = board.pieces[square + knight_direction[i]];

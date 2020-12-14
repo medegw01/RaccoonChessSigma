@@ -1,3 +1,11 @@
+---
+name: Feature request
+about: Suggest an idea for this project
+title: "[FEATURE]:"
+labels: type/feature-request, needs-triage
+assignees: ""
+---
+
 <!-- IF YOU DON'T FILL IN THE TEMPLATE PROPERLY, YOUR ISSUE IS LIABLE TO BE CLOSED. If you feel tired/lazy right now, open your issue some other time. We'll wait. -->
 
 <!-- The comments between these brackets won't show up in the submitted issue (as you can see in the Preview). -->
