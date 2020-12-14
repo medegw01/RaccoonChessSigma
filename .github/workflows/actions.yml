@@ -51,7 +51,7 @@ jobs:
         with:
           node-version: "15.x"
       - run: npm install
-      - run: npm i -D typescript jest ts-jest @types/jest
+      - run: npm i -D typescript jest ts-jest @types/jest coveralls
       - name: Run Test
         run: npm run test:cli
       - name: Check coverage
@@ -77,6 +77,10 @@ jobs:
           THRESHOLD_STATEMENT: 89
           THRESHOLD_FUNCTION: 89
           THRESHOLD_BRANCH: 89
+      - name: Coveralls # see https://github.com/coverallsapp/github-action
+          uses: coverallsapp/github-action@master
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
 
   malware_security_scan:
     name: Malware Scan
