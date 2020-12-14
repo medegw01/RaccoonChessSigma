@@ -1,6 +1,6 @@
 <!-- Hey there. Thank you so much for improving RaccoonChessSigma, and filling out the details. Having roughly the same layout helps everyone considerably :)-->
 
-### What is it?
+## What is it?
 
 - [ ] Bugfix
 - [ ] Feature
@@ -25,7 +25,7 @@
 | -------- |
 |          |
 
-### Checklist:
+### Checklist
 
 - [ ] I have performed a self-review of my own code
 - [ ] I have ran either `npm run test` or `yarn test` to ensure my code does not have any formatting, vetting, linting, or security issues
