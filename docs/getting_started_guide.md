@@ -17,11 +17,11 @@ The above requirements can be installed as follows:
 
 #### yarn
 
-`yarn add -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`
+`yarn add -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`
 
 #### npm
 
-`npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`
+`npm i -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`
 
 ### Building RaccoonChessSigma
 

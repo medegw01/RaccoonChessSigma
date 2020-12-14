@@ -12,7 +12,7 @@ import * as move_ from '../../game/move'
 import * as rc0_eval_ from '../../evaluate/rc0/backend/nn'
 import * as rc_eval_ from '../../evaluate/rc/eval'
 
-class Raccoon {
+export class Raccoon {
     private board: board_.board_t;
     //private eval_fn: util_.evaluation_fn
     private start_fen: string
@@ -265,5 +265,3 @@ class Raccoon {
         return perft_.perft(depth, this.board);
     }
 }
-
-export { Raccoon }
