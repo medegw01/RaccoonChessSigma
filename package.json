@@ -32,12 +32,11 @@
     "webpack-cli": "^4.2.0"
   },
   "scripts": {
-    "build-rc-api": "webpack --entry ./rcsigma/ui/api/api.ts --output-filename raccoon-api.js",
+    "build:api": "webpack --entry ./rcsigma/ui/api/api.ts --output-path build --output-filename raccoon-api.js",
     "test": "jest",
     "coverage": "jest --coverage",
-    "test:cli": "jest --coverage --coverageReporters='json-summary'",
     "lint-and-fix": "eslint '*/**/*.{js,ts,tsx}' --fix",
-    "lint:cli": "eslint '*/**/*.{js,ts,tsx}'"
+    "lint": "eslint '*/**/*.{js,ts,tsx}'"
   },
   "author": "Michael Edegware <michael.edegware@gmail.com> (https://www.edegware.com/)",
   "license": "MIT"

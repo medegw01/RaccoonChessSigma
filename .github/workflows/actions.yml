@@ -23,7 +23,7 @@ jobs:
       - run: npm install
       - run: npm i -D typescript jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
       - name: Run EsLinter
-        run: npm run lint:cli
+        run: npm run lint
       - name: Fix lint error
         if: ${{ failure() }}
         run: echo "npm run lint-and-fix"
@@ -53,7 +53,7 @@ jobs:
       - run: npm install
       - run: npm i -D typescript jest ts-jest @types/jest coveralls
       - name: Run Test
-        run: npm run test:cli
+        run: npm run coverage
       - name: Check coverage
         run: |
           NEWLINE=$'\n'
