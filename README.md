@@ -1,6 +1,6 @@
 <h1 align="center">RaccoonChessSigma</h1>
 <p align="center">
-  <img width="300" src="https://raw.githubusercontent.com/medegw01/RaccoonChessSigma/main/website/static/img/rcsigma%20logo.png">
+  <img width="300" src="https://raw.githubusercontent.com/medegw01/RaccoonChessSigma-website/main/static/img/rcsigma%20logo.png">
   <br/>
   ♔ ♕ ♖ ♗ ♘ ♙<br/>
   TypeScript Chess Library and Engine
