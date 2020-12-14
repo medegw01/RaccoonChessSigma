@@ -5,6 +5,8 @@
 
 import * as api from '../rcsigma/ui/api/api'
 import { verbose_move_t } from '../rcsigma/game/move';
+import { position_t } from '../rcsigma/game/board';
+import { START_FEN } from '../rcsigma/util';
 
 describe("API Tests", () => {
     let game: api.Raccoon;
@@ -22,16 +24,17 @@ describe("API Tests", () => {
 
 describe("Game Tests", () => {
     const start_fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    describe("Perft", () => {
+    describe("Perft Test", () => {
         let game: api.Raccoon;
         let nodes: bigint
         beforeEach(() => {
             game = new api.Raccoon();
             nodes = 0n;
         });
-        /* 
+        /*
         see below link for perft table:
-          https://www.chessprogramming.org/Perft_Results*/
+          https://www.chessprogramming.org/Perft_Results
+        */
 
         it('Initiail Position', function () {
             game.load_fen(start_fen);
@@ -61,7 +64,7 @@ describe("Game Tests", () => {
             expect(nodes).toBe(62379n);
         });
     });
-    describe("Poly Keys", function () {
+    describe("Poly Keys Test", function () {
         let game: api.Raccoon;
         beforeEach(() => {
             game = new api.Raccoon();
@@ -159,7 +162,7 @@ describe("Game Tests", () => {
             expect(by_move).toBe(by_fen);
         });
     });
-    describe("Load Fen & Get fen", function () {
+    describe("Load Fen & Get fen Test", function () {
         let game: api.Raccoon;
         beforeEach(() => {
             game = new api.Raccoon();
@@ -207,7 +210,7 @@ describe("Game Tests", () => {
             expect(game.get_fen()).toBe('8/8/8/8/8/8/8/8 w - - 0 1');
         });
     });
-    describe("Print Board", () => {
+    describe("Print Board Test", () => {
         let game: api.Raccoon;
         const fen_print = 'rnbqkbnr/p1pppppp/8/8/P1pP3P/R7/1P2PPP1/1NBQKBNR b Kkq d3 0 5';
         beforeEach(() => {
@@ -271,7 +274,7 @@ describe("Game Tests", () => {
         });
     });
 
-    describe("Make Move & Undo Move", () => {
+    describe("Make Move & Undo Move Test", () => {
         let game: api.Raccoon;
         const test_fen = "2n1b3/1P1kr3/3p4/3N4/4N3/2R1K3/2P5/8 w - - 0 1";
         const expected_move: verbose_move_t = {
@@ -325,7 +328,7 @@ describe("Game Tests", () => {
             expect(game.undo_move()).toBe(null);
         });
     });
-    describe("Get Moves", () => {
+    describe("Get Moves Test", () => {
         let game: api.Raccoon;
         const test_fen = "Bn1K4/NP1P1k2/1N1n4/pP1P4/P1r5/8/8/8 w - - 0 1";
         const expected_str: string[] = ['Nc6', 'Nac8', 'Nbc8', 'Nxc4'].sort()
@@ -375,7 +378,7 @@ describe("Game Tests", () => {
 
         it("Pass: get all moves on board", function () {
             game.load_fen(test_fen);
-            expect(game.get_moves().sort()).toStrictEqual(expected_str); // Default in san format        
+            expect(game.get_moves().sort()).toStrictEqual(expected_str); // Default in san format
             const verbo = game.get_moves({ verbose: true });
             const verbo_sorted = (verbo as verbose_move_t[]).sort((a, b) => (a.san > b.san) ? 1 : -1);
             expect(verbo_sorted).toStrictEqual(expected_move);// verbose
@@ -400,7 +403,7 @@ describe("Game Tests", () => {
     });
 
 
-    describe("Checkmate/Check", () => {
+    describe("Checkmate/Check Test", () => {
         let game: api.Raccoon;
         beforeEach(() => {
             game = new api.Raccoon();
@@ -446,7 +449,7 @@ describe("Game Tests", () => {
         });
     });
 
-    describe("Stalemate/Not Check/Draw", () => {
+    describe("Stalemate/Not Check/Draw Test", () => {
         let game: api.Raccoon;
         beforeEach(() => {
             game = new api.Raccoon();
@@ -480,7 +483,7 @@ describe("Game Tests", () => {
         });
     });
 
-    describe("Insufficient Material/Draw", () => {
+    describe("Insufficient Material/Draw Test", () => {
         let game: api.Raccoon;
         beforeEach(() => {
             game = new api.Raccoon();
@@ -535,7 +538,7 @@ describe("Game Tests", () => {
         });
     });
 
-    describe("Threefold Repetition/Draw", () => {
+    describe("Threefold Repetition/Draw Test", () => {
         let game: api.Raccoon;
         const positions = [
             {
@@ -543,7 +546,7 @@ describe("Game Tests", () => {
                 moves: ['Nf3', 'Nf6', 'Ng1', 'Ng8', 'Nf3', 'Nf6', 'Ng1', 'Ng8']
             },
 
-            /* Fischer - Petrosian, Buenos Aires, 1971 */
+            // Fischer - Petrosian, Buenos Aires, 1971
             {
                 fen: '8/pp3p1k/2p2q1p/3r1P2/5R2/7P/P1P1QP2/7K b - - 2 30',
                 moves: ['Qe5', 'Qh5', 'Qf6', 'Qe2', 'Re5', 'Qd3', 'Rd5', 'Qe2']
@@ -555,7 +558,7 @@ describe("Game Tests", () => {
 
         it(`Success: ${positions[0].fen} `, function () {
             game.load_fen(positions[0].fen);
-            for (let move of positions[0].moves) {
+            for (const move of positions[0].moves) {
                 game.make_move(move);
             }
             expect(game.in_threefold_repetition()).toBe(true);
@@ -563,7 +566,7 @@ describe("Game Tests", () => {
         });
         it(`Success: ${positions[1].fen} `, function () {
             game.load_fen(positions[1].fen);
-            for (let move of positions[1].moves) {
+            for (const move of positions[1].moves) {
                 game.make_move(move);
             }
             expect(game.in_threefold_repetition()).toBe(true);
@@ -571,4 +574,212 @@ describe("Game Tests", () => {
         });
     });
 
+    describe("Get, Set, and Pop Piece Test", () => {
+        let game: api.Raccoon;
+        beforeEach(() => {
+            game = new api.Raccoon();
+        });
+
+        it(`Success: SET, GET, POP`, function () {
+            const piece = { type: "q", color: "w" } // white queen
+            const sq = 'd1';
+            expect(game.get_piece(sq)).toStrictEqual(piece); // white queen starts in d1 in standard chess
+            expect(game.get_piece('a8')).toStrictEqual({ type: "r", color: "b" });
+
+            game.clear_board(); // board is empty now
+            expect(game.get_piece(sq)).toBe(null); // should be null since board is empty
+            expect(game.set_piece(piece, sq)).toBe(true);
+            expect(game.pop_piece(sq)).toStrictEqual(piece); // remove and return piece
+            expect(game.get_piece(sq)).toBe(null); // should be null since board is empty
+        });
+
+        it('Failure: Set extra king', function () {
+            expect(game.set_piece({ type: "k", color: "w" }, "e4")).toBe(false);
+            expect(game.set_piece({ type: "k", color: "b" }, "e4")).toBe(false);
+            expect(game.set_piece({ type: "k", color: "w" }, "e1")).toBe(true); // no error since it' the same square as old king
+            expect(game.set_piece({ type: "k", color: "b" }, "e8")).toBe(true); // no error since it' the same square as old king
+        });
+        it('Failure: bad square, piece and color', function () {
+            const sq = "hello world"
+            expect(game.get_piece(sq)).toBe(null);
+            expect(game.pop_piece(sq)).toBe(null);
+            expect(game.get_piece(sq)).toBe(null);
+            expect(game.set_piece({ type: "k", color: "w" }, sq)).toBe(false);
+            expect(game.set_piece({ type: "x", color: "b" }, "e4")).toBe(false);// bad piece
+            expect(game.set_piece({ type: "r", color: "t" }, "e4")).toBe(false);// bad color
+        });
+    });
+
+    describe("MICS Test", () => {
+        let game: api.Raccoon;
+        beforeEach(() => {
+            game = new api.Raccoon();
+        });
+
+        it('Get Turn', function () {
+            expect(game.get_turn()).toBe('w')
+            game.make_move('e4');
+            expect(game.get_turn()).toBe('b')
+            game.clear_board(); // clear board an no one has a turn
+            expect(game.get_turn()).toBe('w')
+        });
+
+        it('Square color', function () {
+            expect(game.square_color('h8')).toBe('dark');
+            expect(game.square_color('a3')).toBe('dark');
+            expect(game.square_color('e5')).toBe('dark');
+            expect(game.square_color('g1')).toBe('dark');
+            expect(game.square_color('h1')).toBe('light');
+            expect(game.square_color('d1')).toBe('light');
+            expect(game.square_color('g8')).toBe('light');
+            expect(game.square_color('c8')).toBe('light');
+            expect(game.square_color('c9')).toBe(null); // bad square
+        });
+    });
+
+    describe("Reset and Clear board, and Move History Test", () => {
+        let game: api.Raccoon;
+        beforeEach(() => {
+            game = new api.Raccoon();
+        });
+
+        it('Clear Board & Move History', function () {
+            const empty_fen = "8/8/8/8/8/8/8/8 w - - 0 1";
+            game.clear_board();
+            expect(game.get_fen()).toBe(empty_fen);
+            expect(game.move_history()).toStrictEqual([]);
+        });
+        it('Reset Board & Move History', function () {
+            const intial_fen = "8/pp3p1k/2p2q1p/3r1P2/5R2/7P/P1P1QP2/7K b - - 2 30";
+            const moves_str = ['Qe5', 'Qh5', 'Qf6', 'Qe2', 'Re5'];
+            const moves_verbo: verbose_move_t[] = [
+                {
+                    color: "b",
+                    flag: "n",
+                    from: "f6",
+                    pieces: "q",
+                    san: "Qe5",
+                    smith: "f6e5",
+                    to: "e5",
+                },
+                {
+                    color: "w",
+                    flag: "n",
+                    from: "e2",
+                    pieces: "q",
+                    san: "Qh5",
+                    smith: "e2h5",
+                    to: "h5",
+                },
+                {
+                    color: "b",
+                    flag: "n",
+                    from: "e5",
+                    pieces: "q",
+                    san: "Qf6",
+                    smith: "e5f6",
+                    to: "f6",
+                },
+                {
+                    color: "w",
+                    flag: "n",
+                    from: "h5",
+                    pieces: "q",
+                    san: "Qe2",
+                    smith: "h5e2",
+                    to: "e2",
+                },
+                {
+                    color: "b",
+                    flag: "n",
+                    from: "d5",
+                    pieces: "r",
+                    san: "Re5",
+                    smith: "d5e5",
+                    to: "e5",
+                },
+            ];
+            game.load_fen(intial_fen);
+            for (const mv of moves_str) {
+                game.make_move(mv);
+            }
+            expect(game.move_history({ verbose: true })).toStrictEqual(moves_verbo)
+            expect(game.move_history()).toStrictEqual(moves_str);
+            game.reset_board();
+            expect(game.get_fen()).toBe(intial_fen);
+            expect(game.move_history()).toStrictEqual([]);
+            expect(game.move_history({ verbose: true })).toStrictEqual([]);
+        });
+    });
+    describe("Get Board Test", () => {
+        let game: api.Raccoon;
+        beforeEach(() => {
+            game = new api.Raccoon();
+        });
+
+        it('Get Empty Board', function () {
+            const position: position_t = {
+                board: [
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, null],
+                ],
+                turn: "w",
+                move_count: [0, 1],
+                enpassant: "-",
+                castling: [false, false, false, false]
+            };
+            game.clear_board();
+            expect(game.get_board()).toStrictEqual(position);
+        });
+        it('Get Board from start_fen', function () {
+            const P = (p: string, b: string): { type: string, color: string } => { return { type: p, color: b } };
+            const position: position_t = {
+                board: [
+                    [null, null, null, null, null, null, null, null],
+                    [P('p', 'b'), P('p', 'b'), null, null, null, P('p', 'b'), null, P('k', 'b')],
+                    [null, null, P('p', 'b'), null, null, P('q', 'b'), null, P('p', 'b')],
+                    [null, null, null, P('r', 'b'), null, P('p', 'w'), null, null],
+                    [null, null, null, null, null, null, null, null],
+                    [null, null, null, null, null, null, null, P('p', 'w')],
+                    [P('p', 'w'), null, P('p', 'w'), null, P('q', 'w'), P('p', 'w'), null, null],
+                    [P('r', 'w'), null, null, null, P('k', 'w'), null, null, P('r', 'w')]
+                ],
+                turn: "b",
+                move_count: [2, 30],
+                enpassant: "-",
+                castling: [true, true, false, false]
+            };
+            game.load_fen('8/pp3p1k/2p2q1p/3r1P2/8/7P/P1P1QP2/R3K2R b KQ - 2 30');
+            expect(game.get_board()).toStrictEqual(position);
+        });
+
+    });
+});
+
+
+describe("Evaluation Tests", () => {
+    let game: api.Raccoon;
+    beforeEach(() => {
+        game = new api.Raccoon();
+    });
+
+    it("rc: the same evaluation for white and black", function () {
+        const test_fen = '8/7K/8/8/1R6/k7/1R1p4/8 b - - 0 1';
+        game.load_fen(test_fen);
+        const eval_score = game.evaluate_board();
+        game.flip_board();
+        expect(game.evaluate_board()).toBe(eval_score);
+    });
+    it("rc0: the same evaluation for white and black", function () {
+        game.load_fen(START_FEN);
+        const eval_score = game.evaluate_board({ use_nnue: true });
+        game.flip_board();
+        expect(game.evaluate_board({ use_nnue: true })).toBe(eval_score);
+    });
 });

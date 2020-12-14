@@ -73,10 +73,10 @@ jobs:
           [ "${fail_checks}" == "0" ] && echo === Passes Coverage
           exit ${fail_checks}
         env:
-          THRESHOLD_LINE: 90
-          THRESHOLD_STATEMENT: 90
-          THRESHOLD_FUNCTION: 90
-          THRESHOLD_BRANCH: 85
+          THRESHOLD_LINE: 89
+          THRESHOLD_STATEMENT: 89
+          THRESHOLD_FUNCTION: 89
+          THRESHOLD_BRANCH: 89
 
   malware_security_scan:
     name: Malware Scan

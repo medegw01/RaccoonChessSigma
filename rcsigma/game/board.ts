@@ -106,8 +106,9 @@ export type board_t = {
     move_history: undo_t[];
 }
 
+export type piece_t = { type: string, color: string };
 export type position_t = {
-    board: ({ piece: string, color: string } | null)[][]; // chessboard
+    board: (piece_t | null)[][]; // chessboard
     castling: [boolean, boolean, boolean, boolean];// castling right: [K, Q, k, q]
     enpassant: string  // enpassant
     turn: string // side to move
@@ -247,7 +248,7 @@ export function clear_board(board: board_t): void {
         board.number_pieces[i] = 0;
     }
     board.king_square[COLORS.BLACK] = board.king_square[COLORS.WHITE] = SQUARES.OFF_SQUARE;
-    board.turn = COLORS.BOTH;
+    board.turn = COLORS.WHITE; // Generally cleard board sets turn to white
     board.enpassant = SQUARES.OFF_SQUARE;
     board.half_moves = 0;
     board.ply = 0;
@@ -383,10 +384,10 @@ export function board_to_printable(board: board_t, parser: string[], light_squar
     return ascii_t;
 }
 
-export function board_to_position_t(board: board_t) {
-    let position = {} as position_t
-    let b: ({ piece: string, color: string } | null)[][] = [];
-    let r_str: ({ piece: string, color: string } | null)[];
+export function board_to_position_t(board: board_t): position_t {
+    const position = {} as position_t
+    const b: (piece_t | null)[][] = [];
+    let r_str: (piece_t | null)[];
     for (let rank = RANKS.EIGHTH_RANK; rank >= RANKS.FIRST_RANK; --rank) {
         r_str = [];
         for (let file = FILES.A_FILE; file <= FILES.H_FILE; ++file) {
@@ -396,7 +397,7 @@ export function board_to_position_t(board: board_t) {
             } else {
                 r_str.push(
                     {
-                        piece: util_.piece_to_ascii[p].toLowerCase(),
+                        type: util_.piece_to_ascii[p].toLowerCase(),
                         color: util_.is_white_piece[p] ? "w" : "b"
                     }
                 );
