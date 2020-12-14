@@ -78,9 +78,9 @@ jobs:
           THRESHOLD_FUNCTION: 89
           THRESHOLD_BRANCH: 89
       - name: Coveralls # see https://github.com/coverallsapp/github-action
-          uses: coverallsapp/github-action@master
-          with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   malware_security_scan:
     name: Malware Scan
