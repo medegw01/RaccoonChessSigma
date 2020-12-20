@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@types/jest": "^26.0.19",
+    "@types/node": "^14.14.10",
     "@typescript-eslint/eslint-plugin": "^4.9.1",
     "@typescript-eslint/parser": "^4.9.1",
     "coveralls": "^3.1.0",
@@ -33,6 +34,7 @@
   },
   "scripts": {
     "build:api": "webpack --entry ./rcsigma/ui/api/api.ts --output-path build --output-filename raccoon-api.js",
+    "build:uci": "webpack --entry ./rcsigma/ui/uci/nodeEntrypoint.ts --target node --output-path build --output-filename raccoon-uci.js",
     "test": "jest",
     "coverage": "jest --coverage",
     "lint-and-fix": "eslint '*/**/*.{js,ts,tsx}' --fix",

@@ -4,7 +4,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import * as api from '../rcsigma/ui/api/api'
-import { verbose_move_t } from '../rcsigma/game/move';
+import { verboseMove_t } from '../rcsigma/game/move';
 import { position_t } from '../rcsigma/game/board';
 import { START_FEN } from '../rcsigma/util';
 
@@ -16,14 +16,14 @@ describe("API Tests", () => {
 
     it("Success: Constructor loads fen", function () {
         const test_fen = '8/7K/8/8/1R6/k7/1R1p4/8 b - - 0 1';
-        const game2 = new api.Raccoon({ start_fen: test_fen });
-        game.load_fen(test_fen);
-        expect(game.get_fen()).toBe(game2.get_fen());
+        const game2 = new api.Raccoon({ startFEN: test_fen });
+        game.loadFEN(test_fen);
+        expect(game.getFEN()).toBe(game2.getFEN());
     });
 });
 
 describe("Game Tests", () => {
-    const start_fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const startFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     describe("Perft Test", () => {
         let game: api.Raccoon;
         let nodes: bigint
@@ -37,29 +37,29 @@ describe("Game Tests", () => {
         */
 
         it('Initiail Position', function () {
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             nodes = game.perft(4);
             expect(nodes).toBe(197281n);
         });
 
         it('Position 2', function () {
-            game.load_fen('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1');
+            game.loadFEN('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1');
             nodes = game.perft(4);
             expect(nodes).toBe(4085603n);
         });
         it('Position 3', function () {
-            game.load_fen('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1');
+            game.loadFEN('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1');
             nodes = game.perft(4);
             expect(nodes).toBe(43238n);
         });
         it('Position 4 ', function () {
-            game.load_fen('r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 ');
+            game.loadFEN('r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 ');
             nodes = game.perft(3);
             expect(nodes).toBe(9467n);
         });
 
         it('Position 5', function () {
-            game.load_fen('rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ');
+            game.loadFEN('rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ');
             nodes = game.perft(3);
             expect(nodes).toBe(62379n);
         });
@@ -69,97 +69,97 @@ describe("Game Tests", () => {
         beforeEach(() => {
             game = new api.Raccoon();
         });
-        it("Fen: start_fen; moves: []", function () {
-            game.load_fen(start_fen);
-            const by_fen = game.get_polyglot();
-            game.load_fen(start_fen);
-            const by_move = game.get_polyglot(true);
+        it("Fen: startFEN; moves: []", function () {
+            game.loadFEN(startFEN);
+            const by_fen = game.getPolyglot();
+            game.loadFEN(startFEN);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x463b96181691fc9c"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
-        it("Fen: start_fen; moves: ['e2e4']", function () {
-            game.load_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
-            const by_fen = game.get_polyglot();
+        it("Fen: startFEN; moves: ['e2e4']", function () {
+            game.loadFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+            const by_fen = game.getPolyglot();
             const moves = ['e2e4'];
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             for (const mv of moves) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            const by_move = game.get_polyglot(true);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x823c9b50fd114196"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
-        it("Fen: start_fen; moves: ['e2e4', 'd7d5']", function () {
-            game.load_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
-            const by_fen = game.get_polyglot();
+        it("Fen: startFEN; moves: ['e2e4', 'd7d5']", function () {
+            game.loadFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
+            const by_fen = game.getPolyglot();
             const moves = ['e2e4', 'd7d5'];
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             for (const mv of moves) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            const by_move = game.get_polyglot(true);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x0756b94461c50fb0"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
-        it("Fen: start_fen; moves: ['e2e4', 'd7d5', 'e4e5']", function () {
-            game.load_fen("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2");
-            const by_fen = game.get_polyglot();
+        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5']", function () {
+            game.loadFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2");
+            const by_fen = game.getPolyglot();
             const moves = ['e2e4', 'd7d5', 'e4e5'];
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             for (const mv of moves) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            const by_move = game.get_polyglot(true);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x662fafb965db29d4"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
-        it("Fen: start_fen; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5']", function () {
-            game.load_fen("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
-            const by_fen = game.get_polyglot();
+        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5']", function () {
+            game.loadFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+            const by_fen = game.getPolyglot();
             const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5'];
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             for (const mv of moves) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            const by_move = game.get_polyglot(true);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x22a48b5a8e47ff78"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
-        it("Fen: start_fen; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7']", function () {
-            game.load_fen("rnbq1bnr/ppp1pkpp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR w - - 0 4");
-            const by_fen = game.get_polyglot();
+        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7']", function () {
+            game.loadFEN("rnbq1bnr/ppp1pkpp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR w - - 0 4");
+            const by_fen = game.getPolyglot();
             const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7'];
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             for (const mv of moves) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            const by_move = game.get_polyglot(true);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x00fdd303c946bdd9"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
-        it("Fen: start_fen; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4']", function () {
-            game.load_fen("rnbqkbnr/p1pppppp/8/8/PpP4P/8/1P1PPPP1/RNBQKBNR b KQkq c3 0 3");
-            const by_fen = game.get_polyglot();
+        it("Fen: startFEN; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4']", function () {
+            game.loadFEN("rnbqkbnr/p1pppppp/8/8/PpP4P/8/1P1PPPP1/RNBQKBNR b KQkq c3 0 3");
+            const by_fen = game.getPolyglot();
             const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4'];
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             for (const mv of moves) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            const by_move = game.get_polyglot(true);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x3c8123ea7b067637"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
-        it("Fen: start_fen; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3']", function () {
-            game.load_fen("rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4");
-            const by_fen = game.get_polyglot();
+        it("Fen: startFEN; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3']", function () {
+            game.loadFEN("rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4");
+            const by_fen = game.getPolyglot();
             const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3'];
-            game.load_fen(start_fen);
+            game.loadFEN(startFEN);
             for (const mv of moves) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            const by_move = game.get_polyglot(true);
+            const byMove = game.getPolyglot(true);
             expect(by_fen).toBe(BigInt("0x5c3f9b829b279560"));
-            expect(by_move).toBe(by_fen);
+            expect(byMove).toBe(by_fen);
         });
     });
     describe("Load Fen & Get fen Test", function () {
@@ -168,46 +168,46 @@ describe("Game Tests", () => {
             game = new api.Raccoon();
         });
 
-        it("Success: No Enpass; fen: start_fen", function () {
-            const result = game.load_fen(start_fen);
+        it("Success: No Enpass; fen: startFEN", function () {
+            const result = game.loadFEN(startFEN);
             expect(result.value).toBe(true)
-            expect(game.get_fen()).toBe(start_fen);
+            expect(game.getFEN()).toBe(startFEN);
         });
         it("Success: No Castling; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2", function () {
-            const result = game.load_fen('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
+            const result = game.loadFEN('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
             expect(result.value).toBe(true)
-            expect(game.get_fen()).toBe('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
+            expect(game.getFEN()).toBe('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
         });
         it("Success: With EnPass; fen: start_e2e4_fen", function () {
             const start_e2e4_fen = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1';
-            const result = game.load_fen(start_e2e4_fen);
+            const result = game.loadFEN(start_e2e4_fen);
             expect(result.value).toBe(true)
-            expect(game.get_fen()).toBe(start_e2e4_fen);
+            expect(game.getFEN()).toBe(start_e2e4_fen);
         });
         it("Failure: Empty fen provided; fen: ", function () {
-            const result = game.load_fen("");
+            const result = game.loadFEN("");
             expect(result.value).toBe(false)
             expect(result.error.includes("Empty fen provided")).toBe(true)
         });
         it("Failure: Illegal character 9; fen: rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", function () {
-            const result = game.load_fen('rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            const result = game.loadFEN('rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
             expect(result.value).toBe(false)
             expect(result.error.includes("Illegal character 9")).toBe(true)
         });
         it("Failure: Half move cannot be a negative integer; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - -1 2", function () {
-            const result = game.load_fen('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - -1 2');
+            const result = game.loadFEN('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - -1 2');
             expect(result.value).toBe(false)
             expect(result.error.includes("Half move cannot be")).toBe(true);
         });
         it("Failure: Full move must be greater than 0; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 10 0", function () {
-            const result = game.load_fen('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 10 0');
+            const result = game.loadFEN('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 10 0');
             expect(result.value).toBe(false)
             expect(result.error.includes("Full move must be")).toBe(true);
         });
         it("Failure: Empty Board; fen: 8/8/8/8/8/8/8/8 w - - 0 1", function () {
-            const result = game.load_fen('8/8/8/8/8/8/8/8 w - - 0 1');
+            const result = game.loadFEN('8/8/8/8/8/8/8/8 w - - 0 1');
             expect(result.value).toBe(false)
-            expect(game.get_fen()).toBe('8/8/8/8/8/8/8/8 w - - 0 1');
+            expect(game.getFEN()).toBe('8/8/8/8/8/8/8/8 w - - 0 1');
         });
     });
     describe("Print Board Test", () => {
@@ -217,7 +217,7 @@ describe("Game Tests", () => {
             game = new api.Raccoon();
         });
 
-        it("Fen: start_fen; Default, i.e ASCII", function () {
+        it("Fen: startFEN; Default, i.e ASCII", function () {
             const expected = (
                 "   A B C D E F G H   \n\n" +
                 "8  r n b q k b n r  8\n" +
@@ -229,11 +229,11 @@ describe("Game Tests", () => {
                 "2  P P P P P P P P  2\n" +
                 "1  R N B Q K B N R  1\n\n" +
                 "   A B C D E F G H   \n");
-            game.load_fen(start_fen)
-            expect(game.print_board()).toBe(expected);
+            game.loadFEN(startFEN)
+            expect(game.printBoard()).toBe(expected);
         });
-        it("Fen: start_fen; ASCII and info", function () {
-            game.load_fen(fen_print);
+        it("Fen: startFEN; ASCII and info", function () {
+            game.loadFEN(fen_print);
             const expected = (
                 "   A B C D E F G H   \n\n" +
                 "8  r n b q k b n r  8\n" +
@@ -250,10 +250,10 @@ describe("Game Tests", () => {
                 "enpass: d3\n" +
                 "castling: Kkq\n" +
                 "poly key: 0x8edef0e518b9d296\n");
-            expect(game.print_board(true)).toBe(expected);
+            expect(game.printBoard(true)).toBe(expected);
         });
-        it("Fen: start_fen; UNI_CODE", function () {
-            game.load_fen(fen_print);
+        it("Fen: startFEN; UNI_CODE", function () {
+            game.loadFEN(fen_print);
             const parser = {
                 pieces: ["♙", "♗", "♘", "♖", "♕", "♔", "♟", "♝", "♞", "♜", "♛", "♚"],
                 light_square: " ",
@@ -270,14 +270,14 @@ describe("Game Tests", () => {
                 "2    ♙   x ♙ ♙ ♙ x  2\n" +
                 "1  x ♘ ♗ ♕ ♔ ♗ ♘ ♖  1\n\n" +
                 "   A B C D E F G H   \n");
-            expect(game.print_board(false, parser)).toBe(expected);
+            expect(game.printBoard(false, parser)).toBe(expected);
         });
     });
 
     describe("Make Move & Undo Move Test", () => {
         let game: api.Raccoon;
         const test_fen = "2n1b3/1P1kr3/3p4/3N4/4N3/2R1K3/2P5/8 w - - 0 1";
-        const expected_move: verbose_move_t = {
+        const expectedMove: verboseMove_t = {
             from: "b7",
             to: "c8",
             color: "w",
@@ -293,46 +293,46 @@ describe("Game Tests", () => {
             game = new api.Raccoon();
         });
         it("Success: Legal smith move: b7c8q", function () {
-            game.load_fen(test_fen);
-            expect(game.make_move("b7c8q")).toStrictEqual(expected_move);
-            expect(game.undo_move()).toStrictEqual(expected_move);
+            game.loadFEN(test_fen);
+            expect(game.makeMove("b7c8q")).toStrictEqual(expectedMove);
+            expect(game.undoMove()).toStrictEqual(expectedMove);
         });
         it("Success: Legal verbose smith move: Pb7xc8Q", function () {
-            game.load_fen(test_fen);
-            expect(game.make_move("Pb7xc8Q")).toStrictEqual(expected_move);
-            expect(game.undo_move()).toStrictEqual(expected_move);
+            game.loadFEN(test_fen);
+            expect(game.makeMove("Pb7xc8Q")).toStrictEqual(expectedMove);
+            expect(game.undoMove()).toStrictEqual(expectedMove);
         });
         it("Success: Legal san move: bxc8=Q+", function () {
-            game.load_fen(test_fen);
-            expect(game.make_move("bxc8=Q+")).toStrictEqual(expected_move);
-            expect(game.undo_move()).toStrictEqual(expected_move);
+            game.loadFEN(test_fen);
+            expect(game.makeMove("bxc8=Q+")).toStrictEqual(expectedMove);
+            expect(game.undoMove()).toStrictEqual(expectedMove);
         });
         it("Success: Legal object move", function () {
-            game.load_fen(test_fen);
-            expect(game.make_move({ from: "b7", to: "c8", promotion: "q" })).toStrictEqual(expected_move);
-            expect(game.undo_move()).toStrictEqual(expected_move);
+            game.loadFEN(test_fen);
+            expect(game.makeMove({ from: "b7", to: "c8", promotion: "q" })).toStrictEqual(expectedMove);
+            expect(game.undoMove()).toStrictEqual(expectedMove);
         });
         it("Failure: illegal move due to wrong turn", function () {
-            game.load_fen(test_fen);
-            expect(game.make_move("d7e6")).toBe(null);// try to move black king
-            expect(game.undo_move()).toBe(null);
+            game.loadFEN(test_fen);
+            expect(game.makeMove("d7e6")).toBe(null);// try to move black king
+            expect(game.undoMove()).toBe(null);
         });
         it("Failure: illegal move due to of pin", function () {
-            game.load_fen(test_fen);
-            expect(game.make_move("e4f6")).toBe(null);// try to move white pinned piece
-            expect(game.undo_move()).toBe(null);
+            game.loadFEN(test_fen);
+            expect(game.makeMove("e4f6")).toBe(null);// try to move white pinned piece
+            expect(game.undoMove()).toBe(null);
         });
         it("Failure: illegal move due to of pin object", function () {
-            game.load_fen(test_fen);
-            expect(game.make_move({ from: "e4", to: "f6" })).toBe(null);// try to move white pinned piece
-            expect(game.undo_move()).toBe(null);
+            game.loadFEN(test_fen);
+            expect(game.makeMove({ from: "e4", to: "f6" })).toBe(null);// try to move white pinned piece
+            expect(game.undoMove()).toBe(null);
         });
     });
     describe("Get Moves Test", () => {
         let game: api.Raccoon;
         const test_fen = "Bn1K4/NP1P1k2/1N1n4/pP1P4/P1r5/8/8/8 w - - 0 1";
         const expected_str: string[] = ['Nc6', 'Nac8', 'Nbc8', 'Nxc4'].sort()
-        const expected_move: verbose_move_t[] = [
+        const expectedMove: verboseMove_t[] = [
             {
                 from: "a7",
                 to: "c6",
@@ -377,28 +377,28 @@ describe("Game Tests", () => {
         });
 
         it("Pass: get all moves on board", function () {
-            game.load_fen(test_fen);
-            expect(game.get_moves().sort()).toStrictEqual(expected_str); // Default in san format
-            const verbo = game.get_moves({ verbose: true });
-            const verbo_sorted = (verbo as verbose_move_t[]).sort((a, b) => (a.san > b.san) ? 1 : -1);
-            expect(verbo_sorted).toStrictEqual(expected_move);// verbose
+            game.loadFEN(test_fen);
+            expect(game.getMoves().sort()).toStrictEqual(expected_str); // Default in san format
+            const verbo = game.getMoves({ verbose: true });
+            const verbo_sorted = (verbo as verboseMove_t[]).sort((a, b) => (a.san > b.san) ? 1 : -1);
+            expect(verbo_sorted).toStrictEqual(expectedMove);// verbose
         });
         it("Pass: get all from a7", function () {
-            game.load_fen(test_fen);
-            expect(game.get_moves({ square: 'a7' }).sort()).toStrictEqual(['Nc6', 'Nac8'].sort());
+            game.loadFEN(test_fen);
+            expect(game.getMoves({ square: 'a7' }).sort()).toStrictEqual(['Nc6', 'Nac8'].sort());
         });
         it("Pass: capture only", function () {
-            game.load_fen(test_fen);
-            expect(game.get_moves({ capture_only: true })).toStrictEqual(['Nxc4']);
+            game.loadFEN(test_fen);
+            expect(game.getMoves({ capture_only: true })).toStrictEqual(['Nxc4']);
         });
         it("Failure: square", function () {
-            game.load_fen(test_fen);
-            expect(game.get_moves({ square: 'a2' })).toStrictEqual([]);// valid square but no move available
-            expect(game.get_moves({ square: 'a9' })).toStrictEqual([]);// invalid square
+            game.loadFEN(test_fen);
+            expect(game.getMoves({ square: 'a2' })).toStrictEqual([]);// valid square but no move available
+            expect(game.getMoves({ square: 'a9' })).toStrictEqual([]);// invalid square
         });
         it("Failure: stalemate", function () {
-            game.load_fen("5bnr/4p1pq/4Qpkr/7p/2P4P/8/PP1PPPP1/RNB1KBNR b KQ - 0 10");
-            expect(game.get_moves()).toStrictEqual([]);
+            game.loadFEN("5bnr/4p1pq/4Qpkr/7p/2P4P/8/PP1PPPP1/RNB1KBNR b KQ - 0 10");
+            expect(game.getMoves()).toStrictEqual([]);
         });
     });
 
@@ -410,42 +410,42 @@ describe("Game Tests", () => {
         });
 
         it("Success: Q-R mate", function () {
-            game.load_fen('8/5r2/4K1q1/4p3/3k4/8/8/8 w - - 0 7');
-            expect(game.in_checkmate()).toBe(true);
-            expect(game.game_over()).toBe(true);
-            expect(game.in_check()).toBe(true);
+            game.loadFEN('8/5r2/4K1q1/4p3/3k4/8/8/8 w - - 0 7');
+            expect(game.inCheckmate()).toBe(true);
+            expect(game.gameOver()).toBe(true);
+            expect(game.inCheck()).toBe(true);
         });
         it("Success: Q-N mate", function () {
-            game.load_fen('4r2r/p6p/1pnN2p1/kQp5/3pPq2/3P4/PPP3PP/R5K1 b - - 0 2');
-            expect(game.insufficient_material()).toBe(false);
-            expect(game.in_checkmate()).toBe(true);
-            expect(game.in_check()).toBe(true);
-            expect(game.game_over()).toBe(true);
+            game.loadFEN('4r2r/p6p/1pnN2p1/kQp5/3pPq2/3P4/PPP3PP/R5K1 b - - 0 2');
+            expect(game.insufficientMaterial()).toBe(false);
+            expect(game.inCheckmate()).toBe(true);
+            expect(game.inCheck()).toBe(true);
+            expect(game.gameOver()).toBe(true);
         });
         it("Success: Pinned mate", function () {
-            game.load_fen('r3k2r/ppp2p1p/2n1p1p1/8/2B2P1q/2NPb1n1/PP4PP/R2Q3K w kq - 0 8');
-            expect(game.insufficient_material()).toBe(false);
-            expect(game.in_checkmate()).toBe(true);
-            expect(game.in_check()).toBe(true);
-            expect(game.game_over()).toBe(true);
+            game.loadFEN('r3k2r/ppp2p1p/2n1p1p1/8/2B2P1q/2NPb1n1/PP4PP/R2Q3K w kq - 0 8');
+            expect(game.insufficientMaterial()).toBe(false);
+            expect(game.inCheckmate()).toBe(true);
+            expect(game.inCheck()).toBe(true);
+            expect(game.gameOver()).toBe(true);
         });
         it("Success: Pawn", function () {
-            game.load_fen('8/6R1/pp1r3p/6p1/P3R1Pk/1P4P1/7K/8 b - - 0 4');
-            expect(game.in_checkmate()).toBe(true);
-            expect(game.in_check()).toBe(true);
-            expect(game.game_over()).toBe(true);
+            game.loadFEN('8/6R1/pp1r3p/6p1/P3R1Pk/1P4P1/7K/8 b - - 0 4');
+            expect(game.inCheckmate()).toBe(true);
+            expect(game.inCheck()).toBe(true);
+            expect(game.gameOver()).toBe(true);
         });
         it("Failure: stalemate", function () {
-            game.load_fen('1R6/8/8/8/8/8/7R/k6K b - - 0 1');
-            expect(game.in_checkmate()).toBe(false)
-            expect(game.in_check()).toBe(false);
-            expect(game.game_over()).toBe(true);
+            game.loadFEN('1R6/8/8/8/8/8/7R/k6K b - - 0 1');
+            expect(game.inCheckmate()).toBe(false)
+            expect(game.inCheck()).toBe(false);
+            expect(game.gameOver()).toBe(true);
         });
         it("Failure: king can't move but other piece can", function () {
-            game.load_fen('5bnr/4p1pq/4Qpkr/7p/2P2r1P/3B4/PP1PPPP1/RNB1K1NR b KQ - 0 1');
-            expect(game.in_checkmate()).toBe(false);
-            expect(game.in_check()).toBe(true);
-            expect(game.game_over()).toBe(false);
+            game.loadFEN('5bnr/4p1pq/4Qpkr/7p/2P2r1P/3B4/PP1PPPP1/RNB1K1NR b KQ - 0 1');
+            expect(game.inCheckmate()).toBe(false);
+            expect(game.inCheck()).toBe(true);
+            expect(game.gameOver()).toBe(false);
         });
     });
 
@@ -456,30 +456,30 @@ describe("Game Tests", () => {
         });
 
         it("Success: caged", function () {
-            game.load_fen('1R6/8/8/8/8/8/7R/k6K b - - 0 1');
-            expect(game.in_stalemate()).toBe(true);
-            expect(game.in_check()).toBe(false);
-            expect(game.in_draw()).toBe(true);
-            expect(game.game_over()).toBe(true);
+            game.loadFEN('1R6/8/8/8/8/8/7R/k6K b - - 0 1');
+            expect(game.inStalemate()).toBe(true);
+            expect(game.inCheck()).toBe(false);
+            expect(game.inDraw()).toBe(true);
+            expect(game.gameOver()).toBe(true);
         });
         it("Success: locked in", function () {
-            game.load_fen('5bnr/4p1pq/4Qpkr/7p/2P4P/8/PP1PPPP1/RNB1KBNR b KQ - 0 10');
-            expect(game.in_stalemate()).toBe(true);
-            expect(game.in_check()).toBe(false);
-            expect(game.in_draw()).toBe(true);
-            expect(game.game_over()).toBe(true);
+            game.loadFEN('5bnr/4p1pq/4Qpkr/7p/2P4P/8/PP1PPPP1/RNB1KBNR b KQ - 0 10');
+            expect(game.inStalemate()).toBe(true);
+            expect(game.inCheck()).toBe(false);
+            expect(game.inDraw()).toBe(true);
+            expect(game.gameOver()).toBe(true);
         });
         it("Failure: checkmate", function () {
-            game.load_fen('2R5/8/8/8/3B4/8/7R/k6K b - - 0 1');
-            expect(game.in_stalemate()).toBe(false);
-            expect(game.in_check()).toBe(true);
-            expect(game.in_draw()).toBe(false);
+            game.loadFEN('2R5/8/8/8/3B4/8/7R/k6K b - - 0 1');
+            expect(game.inStalemate()).toBe(false);
+            expect(game.inCheck()).toBe(true);
+            expect(game.inDraw()).toBe(false);
         });
         it("Failure: king can capture R", function () {
-            game.load_fen('8/8/5k2/p4p1p/P4K1P/4r3/8/8 w - - 0 2');
-            expect(game.in_stalemate()).toBe(false);
-            expect(game.in_check()).toBe(false);
-            expect(game.in_draw()).toBe(false);
+            game.loadFEN('8/8/5k2/p4p1p/P4K1P/4r3/8/8 w - - 0 2');
+            expect(game.inStalemate()).toBe(false);
+            expect(game.inCheck()).toBe(false);
+            expect(game.inDraw()).toBe(false);
         });
     });
 
@@ -490,51 +490,51 @@ describe("Game Tests", () => {
         });
 
         it("Success: 8/8/8/8/8/8/8/k6K w - - 0 1", function () {
-            game.load_fen('8/8/8/8/8/8/8/k6K w - - 0 1');
-            expect(game.insufficient_material()).toBe(true);
-            expect(game.in_draw()).toBe(true);
-            expect(game.game_over()).toBe(true);
+            game.loadFEN('8/8/8/8/8/8/8/k6K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(true);
+            expect(game.inDraw()).toBe(true);
+            expect(game.gameOver()).toBe(true);
         });
         it("Success: 8/2N5/8/8/8/8/8/k6K w - - 0 1", function () {
-            game.load_fen('8/2N5/8/8/8/8/8/k6K w - - 0 1');
-            expect(game.insufficient_material()).toBe(true);
-            expect(game.in_draw()).toBe(true);
+            game.loadFEN('8/2N5/8/8/8/8/8/k6K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(true);
+            expect(game.inDraw()).toBe(true);
         });
         it("Success: 88/2b5/8/8/8/8/8/k6K w - - 0 1", function () {
-            game.load_fen('8/2b5/8/8/8/8/8/k6K w - - 0 1');
-            expect(game.insufficient_material()).toBe(true);
-            expect(game.in_draw()).toBe(true);
+            game.loadFEN('8/2b5/8/8/8/8/8/k6K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(true);
+            expect(game.inDraw()).toBe(true);
         });
         it("Success: 8/b7/3B4/8/8/8/8/k6K w - - 0 1", function () {
-            game.load_fen('8/b7/3B4/8/8/8/8/k6K w - - 0 1');
-            expect(game.insufficient_material()).toBe(true);
-            expect(game.in_draw()).toBe(true);
+            game.loadFEN('8/b7/3B4/8/8/8/8/k6K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(true);
+            expect(game.inDraw()).toBe(true);
         });
         it("Success: 8/b7/B7/8/8/8/8/k6K w - - 0 1", function () {
-            game.load_fen('8/b7/B7/8/8/8/8/k6K w - - 0 1');
-            expect(game.insufficient_material()).toBe(true);
-            expect(game.in_draw()).toBe(true);
+            game.loadFEN('8/b7/B7/8/8/8/8/k6K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(true);
+            expect(game.inDraw()).toBe(true);
         });
         it("Failure: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", function () {
-            game.load_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-            expect(game.insufficient_material()).toBe(false);
-            expect(game.in_draw()).toBe(false);
+            game.loadFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            expect(game.insufficientMaterial()).toBe(false);
+            expect(game.inDraw()).toBe(false);
         });
         it("Failure: 8/2p5/8/8/8/8/8/k6K w - - 0 1", function () {
-            game.load_fen('8/2p5/8/8/8/8/8/k6K w - - 0 1');
-            expect(game.insufficient_material()).toBe(false);
-            expect(game.in_draw()).toBe(false);
+            game.loadFEN('8/2p5/8/8/8/8/8/k6K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(false);
+            expect(game.inDraw()).toBe(false);
         });
         it("Failure: 8/b1B1b1B1/1b1B1b1B/8/8/8/8/1k5K w - - 0 1", function () {
-            game.load_fen('8/b1B1b1B1/1b1B1b1B/8/8/8/8/1k5K w - - 0 1');
-            expect(game.insufficient_material()).toBe(false);
-            expect(game.in_draw()).toBe(false);
+            game.loadFEN('8/b1B1b1B1/1b1B1b1B/8/8/8/8/1k5K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(false);
+            expect(game.inDraw()).toBe(false);
         });
         it("Failure: 8/bB2b1B1/1b1B1b1B/8/8/8/8/1k5K w - - 0 1", function () {
-            game.load_fen('8/bB2b1B1/1b1B1b1B/8/8/8/8/1k5K w - - 0 1');
-            expect(game.insufficient_material()).toBe(false);
-            expect(game.in_draw()).toBe(false);
-            expect(game.game_over()).toBe(false);
+            game.loadFEN('8/bB2b1B1/1b1B1b1B/8/8/8/8/1k5K w - - 0 1');
+            expect(game.insufficientMaterial()).toBe(false);
+            expect(game.inDraw()).toBe(false);
+            expect(game.gameOver()).toBe(false);
         });
     });
 
@@ -557,20 +557,20 @@ describe("Game Tests", () => {
         });
 
         it(`Success: ${positions[0].fen} `, function () {
-            game.load_fen(positions[0].fen);
+            game.loadFEN(positions[0].fen);
             for (const move of positions[0].moves) {
-                game.make_move(move);
+                game.makeMove(move);
             }
-            expect(game.in_threefold_repetition()).toBe(true);
-            expect(game.in_draw()).toBe(true);
+            expect(game.inThreefoldRepetition()).toBe(true);
+            expect(game.inDraw()).toBe(true);
         });
         it(`Success: ${positions[1].fen} `, function () {
-            game.load_fen(positions[1].fen);
+            game.loadFEN(positions[1].fen);
             for (const move of positions[1].moves) {
-                game.make_move(move);
+                game.makeMove(move);
             }
-            expect(game.in_threefold_repetition()).toBe(true);
-            expect(game.in_draw()).toBe(true);
+            expect(game.inThreefoldRepetition()).toBe(true);
+            expect(game.inDraw()).toBe(true);
         });
     });
 
@@ -583,30 +583,30 @@ describe("Game Tests", () => {
         it(`Success: SET, GET, POP`, function () {
             const piece = { type: "q", color: "w" } // white queen
             const sq = 'd1';
-            expect(game.get_piece(sq)).toStrictEqual(piece); // white queen starts in d1 in standard chess
-            expect(game.get_piece('a8')).toStrictEqual({ type: "r", color: "b" });
+            expect(game.getPiece(sq)).toStrictEqual(piece); // white queen starts in d1 in standard chess
+            expect(game.getPiece('a8')).toStrictEqual({ type: "r", color: "b" });
 
-            game.clear_board(); // board is empty now
-            expect(game.get_piece(sq)).toBe(null); // should be null since board is empty
-            expect(game.set_piece(piece, sq)).toBe(true);
-            expect(game.pop_piece(sq)).toStrictEqual(piece); // remove and return piece
-            expect(game.get_piece(sq)).toBe(null); // should be null since board is empty
+            game.clearBoard(); // board is empty now
+            expect(game.getPiece(sq)).toBe(null); // should be null since board is empty
+            expect(game.setPiece(piece, sq)).toBe(true);
+            expect(game.popPiece(sq)).toStrictEqual(piece); // remove and return piece
+            expect(game.getPiece(sq)).toBe(null); // should be null since board is empty
         });
 
         it('Failure: Set extra king', function () {
-            expect(game.set_piece({ type: "k", color: "w" }, "e4")).toBe(false);
-            expect(game.set_piece({ type: "k", color: "b" }, "e4")).toBe(false);
-            expect(game.set_piece({ type: "k", color: "w" }, "e1")).toBe(true); // no error since it' the same square as old king
-            expect(game.set_piece({ type: "k", color: "b" }, "e8")).toBe(true); // no error since it' the same square as old king
+            expect(game.setPiece({ type: "k", color: "w" }, "e4")).toBe(false);
+            expect(game.setPiece({ type: "k", color: "b" }, "e4")).toBe(false);
+            expect(game.setPiece({ type: "k", color: "w" }, "e1")).toBe(true); // no error since it' the same square as old king
+            expect(game.setPiece({ type: "k", color: "b" }, "e8")).toBe(true); // no error since it' the same square as old king
         });
         it('Failure: bad square, piece and color', function () {
             const sq = "hello world"
-            expect(game.get_piece(sq)).toBe(null);
-            expect(game.pop_piece(sq)).toBe(null);
-            expect(game.get_piece(sq)).toBe(null);
-            expect(game.set_piece({ type: "k", color: "w" }, sq)).toBe(false);
-            expect(game.set_piece({ type: "x", color: "b" }, "e4")).toBe(false);// bad piece
-            expect(game.set_piece({ type: "r", color: "t" }, "e4")).toBe(false);// bad color
+            expect(game.getPiece(sq)).toBe(null);
+            expect(game.popPiece(sq)).toBe(null);
+            expect(game.getPiece(sq)).toBe(null);
+            expect(game.setPiece({ type: "k", color: "w" }, sq)).toBe(false);
+            expect(game.setPiece({ type: "x", color: "b" }, "e4")).toBe(false);// bad piece
+            expect(game.setPiece({ type: "r", color: "t" }, "e4")).toBe(false);// bad color
         });
     });
 
@@ -617,23 +617,23 @@ describe("Game Tests", () => {
         });
 
         it('Get Turn', function () {
-            expect(game.get_turn()).toBe('w')
-            game.make_move('e4');
-            expect(game.get_turn()).toBe('b')
-            game.clear_board(); // clear board an no one has a turn
-            expect(game.get_turn()).toBe('w')
+            expect(game.getTurn()).toBe('w')
+            game.makeMove('e4');
+            expect(game.getTurn()).toBe('b')
+            game.clearBoard(); // clear board an no one has a turn
+            expect(game.getTurn()).toBe('w')
         });
 
         it('Square color', function () {
-            expect(game.square_color('h8')).toBe('dark');
-            expect(game.square_color('a3')).toBe('dark');
-            expect(game.square_color('e5')).toBe('dark');
-            expect(game.square_color('g1')).toBe('dark');
-            expect(game.square_color('h1')).toBe('light');
-            expect(game.square_color('d1')).toBe('light');
-            expect(game.square_color('g8')).toBe('light');
-            expect(game.square_color('c8')).toBe('light');
-            expect(game.square_color('c9')).toBe(null); // bad square
+            expect(game.squareColor('h8')).toBe('dark');
+            expect(game.squareColor('a3')).toBe('dark');
+            expect(game.squareColor('e5')).toBe('dark');
+            expect(game.squareColor('g1')).toBe('dark');
+            expect(game.squareColor('h1')).toBe('light');
+            expect(game.squareColor('d1')).toBe('light');
+            expect(game.squareColor('g8')).toBe('light');
+            expect(game.squareColor('c8')).toBe('light');
+            expect(game.squareColor('c9')).toBe(null); // bad square
         });
     });
 
@@ -645,14 +645,14 @@ describe("Game Tests", () => {
 
         it('Clear Board & Move History', function () {
             const empty_fen = "8/8/8/8/8/8/8/8 w - - 0 1";
-            game.clear_board();
-            expect(game.get_fen()).toBe(empty_fen);
-            expect(game.move_history()).toStrictEqual([]);
+            game.clearBoard();
+            expect(game.getFEN()).toBe(empty_fen);
+            expect(game.moveHistory()).toStrictEqual([]);
         });
         it('Reset Board & Move History', function () {
             const intial_fen = "8/pp3p1k/2p2q1p/3r1P2/5R2/7P/P1P1QP2/7K b - - 2 30";
             const moves_str = ['Qe5', 'Qh5', 'Qf6', 'Qe2', 'Re5'];
-            const moves_verbo: verbose_move_t[] = [
+            const moves_verbo: verboseMove_t[] = [
                 {
                     color: "b",
                     flag: "n",
@@ -699,16 +699,16 @@ describe("Game Tests", () => {
                     to: "e5",
                 },
             ];
-            game.load_fen(intial_fen);
+            game.loadFEN(intial_fen);
             for (const mv of moves_str) {
-                game.make_move(mv);
+                game.makeMove(mv);
             }
-            expect(game.move_history({ verbose: true })).toStrictEqual(moves_verbo)
-            expect(game.move_history()).toStrictEqual(moves_str);
-            game.reset_board();
-            expect(game.get_fen()).toBe(intial_fen);
-            expect(game.move_history()).toStrictEqual([]);
-            expect(game.move_history({ verbose: true })).toStrictEqual([]);
+            expect(game.moveHistory({ verbose: true })).toStrictEqual(moves_verbo)
+            expect(game.moveHistory()).toStrictEqual(moves_str);
+            game.resetBoard();
+            expect(game.getFEN()).toBe(intial_fen);
+            expect(game.moveHistory()).toStrictEqual([]);
+            expect(game.moveHistory({ verbose: true })).toStrictEqual([]);
         });
     });
     describe("Get Board Test", () => {
@@ -730,14 +730,14 @@ describe("Game Tests", () => {
                     [null, null, null, null, null, null, null, null],
                 ],
                 turn: "w",
-                move_count: [0, 1],
+                moveCount: [0, 1],
                 enpassant: "-",
                 castling: [false, false, false, false]
             };
-            game.clear_board();
-            expect(game.get_board()).toStrictEqual(position);
+            game.clearBoard();
+            expect(game.getBoard()).toStrictEqual(position);
         });
-        it('Get Board from start_fen', function () {
+        it('Get Board from startFEN', function () {
             const P = (p: string, b: string): { type: string, color: string } => { return { type: p, color: b } };
             const position: position_t = {
                 board: [
@@ -751,12 +751,12 @@ describe("Game Tests", () => {
                     [P('r', 'w'), null, null, null, P('k', 'w'), null, null, P('r', 'w')]
                 ],
                 turn: "b",
-                move_count: [2, 30],
+                moveCount: [2, 30],
                 enpassant: "-",
                 castling: [true, true, false, false]
             };
-            game.load_fen('8/pp3p1k/2p2q1p/3r1P2/8/7P/P1P1QP2/R3K2R b KQ - 2 30');
-            expect(game.get_board()).toStrictEqual(position);
+            game.loadFEN('8/pp3p1k/2p2q1p/3r1P2/8/7P/P1P1QP2/R3K2R b KQ - 2 30');
+            expect(game.getBoard()).toStrictEqual(position);
         });
 
     });
@@ -771,15 +771,15 @@ describe("Evaluation Tests", () => {
 
     it("rc: the same evaluation for white and black", function () {
         const test_fen = '8/7K/8/8/1R6/k7/1R1p4/8 b - - 0 1';
-        game.load_fen(test_fen);
-        const eval_score = game.evaluate_board();
-        game.flip_board();
-        expect(game.evaluate_board()).toBe(eval_score);
+        game.loadFEN(test_fen);
+        const eval_score = game.evaluateBoard();
+        game.flipBoard();
+        expect(game.evaluateBoard()).toBe(eval_score);
     });
     it("rc0: the same evaluation for white and black", function () {
-        game.load_fen(START_FEN);
-        const eval_score = game.evaluate_board({ use_nnue: true });
-        game.flip_board();
-        expect(game.evaluate_board({ use_nnue: true })).toBe(eval_score);
+        game.loadFEN(START_FEN);
+        const eval_score = game.evaluateBoard({ use_nnue: true });
+        game.flipBoard();
+        expect(game.evaluateBoard({ use_nnue: true })).toBe(eval_score);
     });
 });

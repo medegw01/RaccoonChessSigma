@@ -7,47 +7,47 @@ import * as board_ from './board'
 import * as attack_ from './attack'
 import * as move_ from './move'
 
-export function in_check(board: board_.board_t): boolean {
-    return (attack_.is_square_attacked(board.king_square[board.turn], (board.turn) ^ 1, board))
+export function inCheck(board: board_.board_t): boolean {
+    return (attack_.isSquareAttacked(board.kingSquare[board.turn], (board.turn) ^ 1, board))
 }
 
-export function in_checkmate(board: board_.board_t): boolean {
-    const check = in_check(board);
-    const moves = move_.generate_legal_moves(board);
+export function inCheckmate(board: board_.board_t): boolean {
+    const check = inCheck(board);
+    const moves = move_.generateLegalMoves(board);
     return check && moves.length === 0;
 }
 
-export function in_stalemate(board: board_.board_t): boolean {
-    const check = in_check(board);
-    const moves = move_.generate_legal_moves(board);
+export function inStalemate(board: board_.board_t): boolean {
+    const check = inCheck(board);
+    const moves = move_.generateLegalMoves(board);
     return !check && moves.length === 0;
 }
 
-export function in_threefold_repetition(board: board_.board_t): boolean {
+export function inThreefoldRepetition(board: board_.board_t): boolean {
     let count = 0;
-    for (let i = 0; i < board.history_ply; i++) {
+    for (let i = 0; i < board.historyPly; i++) {
         if (count >= 3) return true;
-        if (board.current_polyglot_key === board.move_history[i].current_polyglot_key) count++;
+        if (board.currentPolyglotKey === board.moveHistory[i].currentPolyglotKey) count++;
     }
     return count >= 2;
 }
 
-export function insufficient_material(board: board_.board_t): boolean {
-    if (board.number_pieces[board_.PIECES.WHITEPAWN] || board.number_pieces[board_.PIECES.BLACKPAWN]) return false;
-    if (board.number_pieces[board_.PIECES.WHITEQUEEN] || board.number_pieces[board_.PIECES.BLACKQUEEN]
-        || board.number_pieces[board_.PIECES.WHITEROOK] || board.number_pieces[board_.PIECES.BLACKROOK]) return false;
-    if (board.number_pieces[board_.PIECES.WHITEBISHOP] > 1 || board.number_pieces[board_.PIECES.BLACKBISHOP] > 1) return false;
-    if (board.number_pieces[board_.PIECES.WHITEKNIGHT] > 1 || board.number_pieces[board_.PIECES.BLACKKNIGHT] > 1) return false;
-    if (board.number_pieces[board_.PIECES.WHITEKNIGHT] && board.number_pieces[board_.PIECES.WHITEBISHOP]) return false;
-    if (board.number_pieces[board_.PIECES.BLACKBISHOP] && board.number_pieces[board_.PIECES.BLACKKNIGHT]) return false;
+export function insufficientMaterial(board: board_.board_t): boolean {
+    if (board.numberPieces[board_.Pieces.WHITEPAWN] || board.numberPieces[board_.Pieces.BLACKPAWN]) return false;
+    if (board.numberPieces[board_.Pieces.WHITEQUEEN] || board.numberPieces[board_.Pieces.BLACKQUEEN]
+        || board.numberPieces[board_.Pieces.WHITEROOK] || board.numberPieces[board_.Pieces.BLACKROOK]) return false;
+    if (board.numberPieces[board_.Pieces.WHITEBISHOP] > 1 || board.numberPieces[board_.Pieces.BLACKBISHOP] > 1) return false;
+    if (board.numberPieces[board_.Pieces.WHITEKNIGHT] > 1 || board.numberPieces[board_.Pieces.BLACKKNIGHT] > 1) return false;
+    if (board.numberPieces[board_.Pieces.WHITEKNIGHT] && board.numberPieces[board_.Pieces.WHITEBISHOP]) return false;
+    if (board.numberPieces[board_.Pieces.BLACKBISHOP] && board.numberPieces[board_.Pieces.BLACKKNIGHT]) return false;
     return true;
 }
 
-export function in_draw(board: board_.board_t): boolean {
-    const is_50_move = (board.half_moves >= 100 && board.ply !== 0);
-    return is_50_move || insufficient_material(board) || in_threefold_repetition(board) || in_stalemate(board);
+export function inDraw(board: board_.board_t): boolean {
+    const is_50Move = (board.halfMoves >= 100 && board.ply !== 0);
+    return is_50Move || insufficientMaterial(board) || inThreefoldRepetition(board) || inStalemate(board);
 }
 
-export function game_over(board: board_.board_t): boolean {
-    return in_checkmate(board) || in_draw(board);
+export function gameOver(board: board_.board_t): boolean {
+    return inCheckmate(board) || inDraw(board);
 }

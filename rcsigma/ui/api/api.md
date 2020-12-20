@@ -23,7 +23,7 @@ The code below will randomely plays a complete game of chess.
 let { Raccoon } = require("./raccoon-api.js");
 let raccoon = new Raccoon();
 
-while (!raccoon.game_over()) {
+while (!raccoon.gameOver()) {
   let moves = raccoon.moves();
   let move = moves[Math.floor(Math.random() * moves.length)];
   raccoon.move(move);
@@ -39,18 +39,18 @@ Although it is optional, **RaccoonChessSigma** can be configured with the follow
 
 ```js
 config = {
-  evaluate_fn: "raccoon_evaluate" /* Default */,
-  start_fen:
+  evaluateFN: "raccoonEvaluate" /* Default */,
+  startFEN:
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" /* Default */,
-  book_file: "path_to_chess_book/<book_name>.bin",
-  nnue_file: "path_to_nnue_file/<book_name>.nnue",
+  bookFile: "pathTochess_book/<book_name>.bin",
+  nnue_file: "pathTonnue_file/<book_name>.nnue",
 };
 ```
 
-- `evaluate_fn`: is the evaluation function that will be used while searching for best move. The other choice is `"raccoonZero_evaluate"`. If this is specified, you MUST also provide `nnue_file`. See [README](../../../README.md) for more information
-- `start_fen`: is the the board configuration in [Forsyth-Edwards Notation](http://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
+- `evaluateFN`: is the evaluation function that will be used while searching for best move. The other choice is `"raccoonZeroEvaluate"`. If this is specified, you MUST also provide `nnue_file`. See [README](../../../README.md) for more information
+- `startFEN`: is the the board configuration in [Forsyth-Edwards Notation](http://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
 - `book_path`: is the path to a chess book. If not provided, engine calculates opening moves instead of playing book moves.
-- `nnue_file`: is the path to the the NNUE evaluation parameters(for instance, `nn-c157e0a5755b.nnue`). ONLY provided when `evaluate_fn` is `"raccoonZero_evaluate"`
+- `nnue_file`: is the path to the the NNUE evaluation parameters(for instance, `nn-c157e0a5755b.nnue`). ONLY provided when `evaluateFN` is `"raccoonZeroEvaluate"`
 
 ### Constructor: Raccoon(config?)
 
@@ -61,8 +61,8 @@ The Raccoon() constructor takes an optional parameter which specifies the config
 let raccoon = new Raccoon();
 
 let raccoon = new Raccoon({
-  evaluate_fn: "raccoonZero_evaluate",
-  start_fen:
+  evaluateFN: "raccoonZeroEvaluate",
+  startFEN:
     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
   nnue_file: "lol.nnue",
 });

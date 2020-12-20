@@ -14,11 +14,11 @@ export function perft(depth: number, board: board_.board_t): bigint {
 
     if (depth === 0) return 1n;
 
-    const moves = move_.generate_legal_moves(board);
+    const moves = move_.generateLegalMoves(board);
     for (const move of moves) {
-        move_.make_move(move.move, board);
+        move_.makeMove(move.move, board);
         nodes += perft(depth - 1, board);
-        move_.take_move(board);
+        move_.takeMove(board);
     }
     return nodes;
 }

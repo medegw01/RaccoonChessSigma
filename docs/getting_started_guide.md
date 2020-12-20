@@ -12,10 +12,10 @@ The following are prerequisites for building and deploying:
 
 Either [nodejs >= 13.x](https://github.com/nodesource/distributions) or [yarn](https://github.com/yarnpkg/yarn) is need for developing this project. When either package manager has been installed, the above requirements can be installed by running either of the following:
 
-|      | command                                                                                                                                                                 |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| npm  | `npm i -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs`    |
-| yarn | `yarn add -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs` |
+|      | command                                                                                                                                                                             |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| npm  | `npm i -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs @types/node`    |
+| yarn | `yarn add -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs @types/node` |
 
 ### Building RaccoonChessSigma
 

@@ -11,12 +11,12 @@ import * as attack_ from './attack'
 
 export type move_t = number
 
-export type move_score_t = {
+export type moveScore_t = {
     move: move_t;
     score: number;
 }
 
-export type verbose_move_t = {
+export type verboseMove_t = {
     from: string;
     to: string;
     color: string;
@@ -39,13 +39,13 @@ const MOVE_FLAG = {
 export const NO_MOVE: move_t = 0;
 const CAPTURE_BONUS = 1000000;
 const ENPASS_BONUS = 105;
-const number_directions = [0, 0, 4, 8, 4, 8, 8, 0, 4, 8, 4, 8, 8];
+const numberDirections = [0, 0, 4, 8, 4, 8, 8, 0, 4, 8, 4, 8, 8];
 const slider = [
-    board_.PIECES.WHITEBISHOP, board_.PIECES.WHITEROOK, board_.PIECES.WHITEQUEEN, -1, board_.PIECES.BLACKBISHOP,
-    board_.PIECES.BLACKROOK, board_.PIECES.BLACKQUEEN, -1
+    board_.Pieces.WHITEBISHOP, board_.Pieces.WHITEROOK, board_.Pieces.WHITEQUEEN, -1, board_.Pieces.BLACKBISHOP,
+    board_.Pieces.BLACKROOK, board_.Pieces.BLACKQUEEN, -1
 ];
-const nonslider = [board_.PIECES.WHITEKNIGHT, board_.PIECES.WHITEKING, -1, board_.PIECES.BLACKKNIGHT, board_.PIECES.BLACKKING, -1];
-const pieces_directions = [
+const nonslider = [board_.Pieces.WHITEKNIGHT, board_.Pieces.WHITEKING, -1, board_.Pieces.BLACKKNIGHT, board_.Pieces.BLACKKING, -1];
+const piecesDirections = [
     [0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0],
     [-9, -11, 11, 9, 0, 0, 0, 0],
@@ -64,7 +64,7 @@ const pieces_directions = [
 /*****************************************************************************
  * MACRO
  ****************************************************************************/
-function MOVE(from: board_.SQUARES, to: board_.SQUARES, cap: board_.PIECES, prom: board_.PIECES, flag: number) { return ((from) | (to << 7) | (cap << 14) | (prom << 20) | (flag)); }
+function MOVE(from: board_.Squares, to: board_.Squares, cap: board_.Pieces, prom: board_.Pieces, flag: number) { return ((from) | (to << 7) | (cap << 14) | (prom << 20) | (flag)); }
 function FROM_SQUARE(move: move_t) { return ((move) & 0x7F); }
 function TO_SQUARE(move: move_t) { return (((move) >> 7) & 0x7F); }
 function CAPTURED(move: move_t) { return (((move) >> 14) & 0xF); }
@@ -73,26 +73,26 @@ function PROMOTED(move: move_t) { return (((move) >> 20) & 0xF); }
 /*****************************************************************************
  * MOVE PARSER
 ****************************************************************************/
-export function smith_to_move(smith: string, board: board_.board_t): move_t {
-    const cleaned_smith = clean_smith(smith);
-    if (cleaned_smith != "") {
-        if (cleaned_smith[1].charCodeAt(0) > '8'.charCodeAt(0) || cleaned_smith[1].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
-        if (cleaned_smith[3].charCodeAt(0) > '8'.charCodeAt(0) || cleaned_smith[3].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
-        if (cleaned_smith[0].charCodeAt(0) > 'h'.charCodeAt(0) || cleaned_smith[0].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
-        if (cleaned_smith[2].charCodeAt(0) > 'h'.charCodeAt(0) || cleaned_smith[2].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
+export function smithToMove(smith: string, board: board_.board_t): move_t {
+    const cleanedSmith = cleanSmith(smith);
+    if (cleanedSmith != "") {
+        if (cleanedSmith[1].charCodeAt(0) > '8'.charCodeAt(0) || cleanedSmith[1].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
+        if (cleanedSmith[3].charCodeAt(0) > '8'.charCodeAt(0) || cleanedSmith[3].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
+        if (cleanedSmith[0].charCodeAt(0) > 'h'.charCodeAt(0) || cleanedSmith[0].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
+        if (cleanedSmith[2].charCodeAt(0) > 'h'.charCodeAt(0) || cleanedSmith[2].charCodeAt(0) < 'a'.charCodeAt(0)) return NO_MOVE;
 
-        const from = board_.FILE_RANK_TO_SQUARE(cleaned_smith[0].charCodeAt(0) - 'a'.charCodeAt(0), cleaned_smith[1].charCodeAt(0) - '1'.charCodeAt(0));
-        const to = board_.FILE_RANK_TO_SQUARE(cleaned_smith[2].charCodeAt(0) - 'a'.charCodeAt(0), cleaned_smith[3].charCodeAt(0) - '1'.charCodeAt(0));
+        const from = board_.FILE_RANK_TO_SQUARE(cleanedSmith[0].charCodeAt(0) - 'a'.charCodeAt(0), cleanedSmith[1].charCodeAt(0) - '1'.charCodeAt(0));
+        const to = board_.FILE_RANK_TO_SQUARE(cleanedSmith[2].charCodeAt(0) - 'a'.charCodeAt(0), cleanedSmith[3].charCodeAt(0) - '1'.charCodeAt(0));
 
         if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
-            const moves = generate_legal_moves(board);
+            const moves = generateLegalMoves(board);
             for (let i = 0; i < moves.length; i++) {
                 const move = moves[i].move;
                 if (FROM_SQUARE(move) === from && TO_SQUARE(move) === to) {
-                    const promotion_piece = PROMOTED(move);
-                    if (promotion_piece !== board_.PIECES.EMPTY) {
-                        if ((cleaned_smith[4] === (util_.piece_to_ascii[promotion_piece]).toLowerCase())
-                            || (cleaned_smith[4] === (util_.piece_to_ascii[promotion_piece]).toUpperCase())) {
+                    const promotionPiece = PROMOTED(move);
+                    if (promotionPiece !== board_.Pieces.EMPTY) {
+                        if ((cleanedSmith[4] === (util_.pieceToAscii[promotionPiece]).toLowerCase())
+                            || (cleanedSmith[4] === (util_.pieceToAscii[promotionPiece]).toUpperCase())) {
                             return move;
                         }
                         continue;
@@ -105,26 +105,26 @@ export function smith_to_move(smith: string, board: board_.board_t): move_t {
     return NO_MOVE;
 }
 
-export function move_to_smith(move: move_t): string {
+export function moveToSmith(move: move_t): string {
     if (move != NO_MOVE) {
-        const file_from = util_.files_board[FROM_SQUARE(move)];
-        const rank_from = util_.ranks_board[FROM_SQUARE(move)];
+        const fileFrom = util_.filesBoard[FROM_SQUARE(move)];
+        const rankFrom = util_.ranksBoard[FROM_SQUARE(move)];
 
-        const file_to = util_.files_board[TO_SQUARE(move)];
-        const rank_to = util_.ranks_board[TO_SQUARE(move)];
+        const fileTo = util_.filesBoard[TO_SQUARE(move)];
+        const rankTo = util_.ranksBoard[TO_SQUARE(move)];
 
         const promoted = PROMOTED(move);
-        let rlt = (String.fromCharCode('a'.charCodeAt(0) + file_from) + String.fromCharCode('1'.charCodeAt(0)
-            + rank_from) + String.fromCharCode('a'.charCodeAt(0) + file_to) + String.fromCharCode('1'.charCodeAt(0)
-                + rank_to)
+        let rlt = (String.fromCharCode('a'.charCodeAt(0) + fileFrom) + String.fromCharCode('1'.charCodeAt(0)
+            + rankFrom) + String.fromCharCode('a'.charCodeAt(0) + fileTo) + String.fromCharCode('1'.charCodeAt(0)
+                + rankTo)
         );
         if (promoted) {
             let tmp = 'q';
-            if (util_.is_knight[promoted]) {
+            if (util_.isKnight[promoted]) {
                 tmp = 'n';
-            } else if (util_.is_rook_or_queen[promoted] && !util_.is_bishop_or_queen[promoted]) {
+            } else if (util_.isRookOrQueen[promoted] && !util_.isBishopOrQueen[promoted]) {
                 tmp = 'r';
-            } else if (!util_.is_rook_or_queen[promoted] && util_.is_bishop_or_queen[promoted]) {
+            } else if (!util_.isRookOrQueen[promoted] && util_.isBishopOrQueen[promoted]) {
                 tmp = 'b';
             }
             rlt += tmp;
@@ -135,30 +135,30 @@ export function move_to_smith(move: move_t): string {
 
 }
 
-export function move_to_verbose_move(move: move_t, board: board_.board_t): verbose_move_t {
-    const rlt = {} as verbose_move_t;
+export function moveToVerboseMove(move: move_t, board: board_.board_t): verboseMove_t {
+    const rlt = {} as verboseMove_t;
     if (move !== NO_MOVE) {
         const from = FROM_SQUARE(move);
         const to = TO_SQUARE(move);
-        rlt.from = board_.square_to_algebraic(from);
-        rlt.to = board_.square_to_algebraic(to);
+        rlt.from = board_.squareToAlgebraic(from);
+        rlt.to = board_.squareToAlgebraic(to);
         rlt.color = "wb-"[board.turn];
-        rlt.pieces = (util_.piece_to_ascii[board.pieces[from]]).toLowerCase();
+        rlt.pieces = (util_.pieceToAscii[board.pieces[from]]).toLowerCase();
         rlt.flag = "";
 
         if ((move & MOVE_FLAG.PROMOTED) !== 0) {
             rlt.flag += 'p';
-            rlt.promoted = (util_.piece_to_ascii[PROMOTED(move)]).toLowerCase();
+            rlt.promoted = (util_.pieceToAscii[PROMOTED(move)]).toLowerCase();
         }
         if ((move & MOVE_FLAG.CAPTURED) !== 0) {
             rlt.flag += 'c';
-            rlt.captured = (util_.piece_to_ascii[CAPTURED(move)]).toLowerCase();
+            rlt.captured = (util_.pieceToAscii[CAPTURED(move)]).toLowerCase();
         }
         if ((move & MOVE_FLAG.ENPASS) !== 0) {
             rlt.flag += 'e';
         }
         if ((move & MOVE_FLAG.CASTLE) !== 0) {
-            if (to === board_.SQUARES.G8 || to === board_.SQUARES.G1) {
+            if (to === board_.Squares.G8 || to === board_.Squares.G1) {
                 rlt.flag += 'k';
             }
             else {
@@ -170,8 +170,8 @@ export function move_to_verbose_move(move: move_t, board: board_.board_t): verbo
         }
 
         rlt.flag += (rlt.flag === "") ? 'n' : "";
-        rlt.smith = move_to_smith(move);
-        rlt.san = move_to_san(move, board);
+        rlt.smith = moveToSmith(move);
+        rlt.san = moveToSan(move, board);
     }
     return rlt
 }
@@ -179,7 +179,7 @@ export function move_to_verbose_move(move: move_t, board: board_.board_t): verbo
 function disambiguator(move: move_t, board: board_.board_t) {
     let diamb = "";
 
-    const moves = generate_all_moves(board);
+    const moves = generateAllMoves(board);
 
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
@@ -189,19 +189,19 @@ function disambiguator(move: move_t, board: board_.board_t) {
     let same_rank = 0;
     let same_file = 0;
 
-    let i, tmp_move, tmp_from, tmp_to, tmp_piece;
+    let i, tmpMove, tmpFrom, tmpTo, tmpPiece;
 
     for (i = 0; i < moves.length; ++i) {
-        tmp_move = moves[i].move;
-        tmp_from = FROM_SQUARE(tmp_move);
-        tmp_to = TO_SQUARE(tmp_move);
-        tmp_piece = board.pieces[tmp_from];
+        tmpMove = moves[i].move;
+        tmpFrom = FROM_SQUARE(tmpMove);
+        tmpTo = TO_SQUARE(tmpMove);
+        tmpPiece = board.pieces[tmpFrom];
 
         //-- http://cfajohnson.com/chess/SAN/
-        if (piece === tmp_piece && from !== tmp_from && to === tmp_to) {
+        if (piece === tmpPiece && from !== tmpFrom && to === tmpTo) {
             ambiguities++;
-            if (util_.ranks_board[from] === util_.ranks_board[tmp_from]) same_rank++;
-            if (util_.files_board[from] === util_.files_board[tmp_from]) same_file++;
+            if (util_.ranksBoard[from] === util_.ranksBoard[tmpFrom]) same_rank++;
+            if (util_.filesBoard[from] === util_.filesBoard[tmpFrom]) same_file++;
         }
     }
     if (ambiguities > 0) {
@@ -219,19 +219,19 @@ function disambiguator(move: move_t, board: board_.board_t) {
               Ndxf3, as the case may be.
          */
         if (same_rank > 0 && same_file > 0) {
-            diamb += board_.square_to_algebraic(FROM_SQUARE(move));
+            diamb += board_.squareToAlgebraic(FROM_SQUARE(move));
         }
         else if (same_file > 0) {
-            diamb += board_.square_to_algebraic(from).charAt(1);
+            diamb += board_.squareToAlgebraic(from).charAt(1);
         }
         else {
-            diamb += board_.square_to_algebraic(from).charAt(0);
+            diamb += board_.squareToAlgebraic(from).charAt(0);
         }
     }
     return diamb;
 }
 
-export function move_to_san(move: move_t, board: board_.board_t, verbose = true): string {
+export function moveToSan(move: move_t, board: board_.board_t, verbose = true): string {
     let san = "";
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
@@ -239,49 +239,49 @@ export function move_to_san(move: move_t, board: board_.board_t, verbose = true)
     if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
         if ((move & MOVE_FLAG.CASTLE) !== 0) {//--castling move
             switch (to) {
-                case board_.SQUARES.C1:
+                case board_.Squares.C1:
                     san = "O-O-O";
                     break;
-                case board_.SQUARES.C8:
+                case board_.Squares.C8:
                     san = "O-O-O";
                     break;
-                case board_.SQUARES.G1:
+                case board_.Squares.G1:
                     san = "O-O";
                     break;
-                case board_.SQUARES.G8:
+                case board_.Squares.G8:
                     san = "O-O";
                     break;
                 default: break;
             }
         } else {
             const diam = disambiguator(move, board);
-            if (!util_.is_pawn[board.pieces[from]]) {
-                san += (util_.piece_to_ascii[board.pieces[from]]).toUpperCase();
+            if (!util_.isPawn[board.pieces[from]]) {
+                san += (util_.pieceToAscii[board.pieces[from]]).toUpperCase();
                 san += diam;
             }
             if ((move & (MOVE_FLAG.CAPTURED | MOVE_FLAG.ENPASS)) !== 0) {
-                if (util_.is_pawn[board.pieces[from]]) {
-                    san += String.fromCharCode('a'.charCodeAt(0) + util_.files_board[from]);
+                if (util_.isPawn[board.pieces[from]]) {
+                    san += String.fromCharCode('a'.charCodeAt(0) + util_.filesBoard[from]);
                 }
                 san += 'x';
             }
-            san += board_.square_to_algebraic(to);
+            san += board_.squareToAlgebraic(to);
             if ((move & MOVE_FLAG.PROMOTED) !== 0) {
                 san += '=';
-                san += (util_.piece_to_ascii[PROMOTED(move)]).toUpperCase();
+                san += (util_.pieceToAscii[PROMOTED(move)]).toUpperCase();
             }
             if (verbose) {
                 if ((move & MOVE_FLAG.ENPASS) !== 0) {
                     san += "e.p.";
                 }
-                if (make_move(move, board)) {
-                    if (state_.in_checkmate(board)) {
+                if (makeMove(move, board)) {
+                    if (state_.inCheckmate(board)) {
                         san += "#";
                     }
-                    else if (state_.in_check(board)) {
+                    else if (state_.inCheck(board)) {
                         san += "+";
                     }
-                    take_move(board);
+                    takeMove(board);
                 }
 
             }
@@ -291,17 +291,17 @@ export function move_to_san(move: move_t, board: board_.board_t, verbose = true)
     return san;
 }
 
-export function san_to_move(san: string, board: board_.board_t): number {
+export function sanToMove(san: string, board: board_.board_t): number {
     const cleaned_san = san.replace(/[+#]?[?!]*$/, '').replace(/e.p./, '');
-    const legal = generate_legal_moves(board);
-    let move: move_score_t;
+    const legal = generateLegalMoves(board);
+    let move: moveScore_t;
     for (move of legal) {
-        if (cleaned_san == move_to_san(move.move, board, false)) return move.move;
+        if (cleaned_san == moveToSan(move.move, board, false)) return move.move;
     }
     return NO_MOVE;
 }
 
-function clean_smith(smith: string): string {
+function cleanSmith(smith: string): string {
     let rlt = "";
     const pattern = /([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?/;
     const matches = pattern.exec(smith);
@@ -319,87 +319,87 @@ function clean_smith(smith: string): string {
 /*****************************************************************************
 * MOVE GENERATION
 ****************************************************************************/
-function add_quiet_move(move: move_t, moves: move_score_t[]) {
+function addQuietMove(move: move_t, moves: moveScore_t[]) {
     moves.push({ move: move, score: 0 });
 }
-function add_capture_move(move: move_t, moves: move_score_t[]) {
+function addCaptureMove(move: move_t, moves: moveScore_t[]) {
     moves.push({ move: move, score: CAPTURE_BONUS });
 }
-function add_enpassant_move(move: move_t, moves: move_score_t[]) {
+function addEnpassantMove(move: move_t, moves: moveScore_t[]) {
     const score = ENPASS_BONUS + CAPTURE_BONUS;
     moves.push({ move: move, score: score });
 }
-function add_white_pawn_capture_move(from: board_.SQUARES, to: board_.SQUARES, cap: board_.PIECES, moves: move_score_t[]) {
-    if (util_.ranks_board[from] == board_.RANKS.SEVENTH_RANK) {
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.WHITEQUEEN, 0), moves);
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.WHITEROOK, 0), moves);
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.WHITEBISHOP, 0), moves);
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.WHITEKNIGHT, 0), moves);
+function addWhitePawCaptureMove(from: board_.Squares, to: board_.Squares, cap: board_.Pieces, moves: moveScore_t[]) {
+    if (util_.ranksBoard[from] == board_.Ranks.SEVENTH_RANK) {
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.WHITEQUEEN, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.WHITEROOK, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.WHITEBISHOP, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.WHITEKNIGHT, 0), moves);
     }
     else {
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.EMPTY, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.EMPTY, 0), moves);
     }
 }
-function add_white_pawn_move(from: board_.SQUARES, to: board_.SQUARES, moves: move_score_t[]) {
-    if (util_.ranks_board[from] == board_.RANKS.SEVENTH_RANK) {
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.WHITEQUEEN, 0), moves);
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.WHITEROOK, 0), moves);
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.WHITEBISHOP, 0), moves);
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.WHITEKNIGHT, 0), moves);
+function addWhitePawnMove(from: board_.Squares, to: board_.Squares, moves: moveScore_t[]) {
+    if (util_.ranksBoard[from] == board_.Ranks.SEVENTH_RANK) {
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.WHITEQUEEN, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.WHITEROOK, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.WHITEBISHOP, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.WHITEKNIGHT, 0), moves);
     }
     else {
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.EMPTY, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.EMPTY, 0), moves);
     }
 }
-function add_black_pawn_capture_move(from: board_.SQUARES, to: board_.SQUARES, cap: board_.PIECES, moves: move_score_t[]) {
-    if (util_.ranks_board[from] === board_.RANKS.SECOND_RANK) {
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.BLACKQUEEN, 0), moves);
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.BLACKROOK, 0), moves);
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.BLACKBISHOP, 0), moves);
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.BLACKKNIGHT, 0), moves);
+function addPlackPawnCaptureMove(from: board_.Squares, to: board_.Squares, cap: board_.Pieces, moves: moveScore_t[]) {
+    if (util_.ranksBoard[from] === board_.Ranks.SECOND_RANK) {
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.BLACKQUEEN, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.BLACKROOK, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.BLACKBISHOP, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.BLACKKNIGHT, 0), moves);
     }
     else {
-        add_capture_move(MOVE(from, to, cap, board_.PIECES.EMPTY, 0), moves);
+        addCaptureMove(MOVE(from, to, cap, board_.Pieces.EMPTY, 0), moves);
     }
 }
-function add_black_pawn_move(from: board_.SQUARES, to: board_.SQUARES, moves: move_score_t[]) {
-    if (util_.ranks_board[from] === board_.RANKS.SECOND_RANK) {
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.BLACKQUEEN, 0), moves);
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.BLACKROOK, 0), moves);
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.BLACKBISHOP, 0), moves);
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.BLACKKNIGHT, 0), moves);
+function addPlackPawnMove(from: board_.Squares, to: board_.Squares, moves: moveScore_t[]) {
+    if (util_.ranksBoard[from] === board_.Ranks.SECOND_RANK) {
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.BLACKQUEEN, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.BLACKROOK, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.BLACKBISHOP, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.BLACKKNIGHT, 0), moves);
     }
     else {
-        add_quiet_move(MOVE(from, to, board_.PIECES.EMPTY, board_.PIECES.EMPTY, 0), moves);
+        addQuietMove(MOVE(from, to, board_.Pieces.EMPTY, board_.Pieces.EMPTY, 0), moves);
     }
 }
-function generate_white_helper_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
+function generateWhiteHelperMoves(board: board_.board_t, moves: moveScore_t[], onlyCapture = false, square = board_.Squares.ALL) {
     //-- generate white pawn moves
-    for (let p = 0; p < board.number_pieces[board_.PIECES.WHITEPAWN]; p++) {
-        const sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.WHITEPAWN, p)];
-        if (square === board_.SQUARES.ALL || square === sq) {
+    for (let p = 0; p < board.numberPieces[board_.Pieces.WHITEPAWN]; p++) {
+        const sq = board.pieceList[board_.PIECE_INDEX(board_.Pieces.WHITEPAWN, p)];
+        if (square === board_.Squares.ALL || square === sq) {
             //-- forward move
-            if ((board.pieces[sq + 10] === board_.PIECES.EMPTY) && !only_capture) {
-                add_white_pawn_move(sq, sq + 10, moves);
+            if ((board.pieces[sq + 10] === board_.Pieces.EMPTY) && !onlyCapture) {
+                addWhitePawnMove(sq, sq + 10, moves);
 
-                if (util_.ranks_board[sq] === board_.RANKS.SECOND_RANK && board.pieces[sq + 20] === board_.PIECES.EMPTY) {
-                    add_quiet_move(MOVE(sq, sq + 20, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.PAWN_START), moves);
+                if (util_.ranksBoard[sq] === board_.Ranks.SECOND_RANK && board.pieces[sq + 20] === board_.Pieces.EMPTY) {
+                    addQuietMove(MOVE(sq, sq + 20, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.PAWN_START), moves);
                 }
             }
             //-- capture move
-            if (board_.SQUARE_ON_BOARD(sq + 9) && util_.get_color_piece[board.pieces[sq + 9]] === board_.COLORS.BLACK) {
-                add_white_pawn_capture_move(sq, sq + 9, board.pieces[sq + 9], moves);
+            if (board_.SQUARE_ON_BOARD(sq + 9) && util_.getColorPiece[board.pieces[sq + 9]] === board_.Colors.BLACK) {
+                addWhitePawCaptureMove(sq, sq + 9, board.pieces[sq + 9], moves);
             }
-            if (board_.SQUARE_ON_BOARD(sq + 11) && util_.get_color_piece[board.pieces[sq + 11]] === board_.COLORS.BLACK) {
-                add_white_pawn_capture_move(sq, sq + 11, board.pieces[sq + 11], moves);
+            if (board_.SQUARE_ON_BOARD(sq + 11) && util_.getColorPiece[board.pieces[sq + 11]] === board_.Colors.BLACK) {
+                addWhitePawCaptureMove(sq, sq + 11, board.pieces[sq + 11], moves);
             }
 
-            if (board.enpassant !== board_.SQUARES.OFF_SQUARE) {
+            if (board.enpassant !== board_.Squares.OFF_SQUARE) {
                 if (sq + 9 === board.enpassant) {
-                    add_enpassant_move(MOVE(sq, sq + 9, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.ENPASS), moves);
+                    addEnpassantMove(MOVE(sq, sq + 9, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.ENPASS), moves);
                 }
                 if (sq + 11 === board.enpassant) {
-                    add_enpassant_move(MOVE(sq, sq + 11, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.ENPASS), moves);
+                    addEnpassantMove(MOVE(sq, sq + 11, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.ENPASS), moves);
                 }
             }
         }
@@ -407,89 +407,89 @@ function generate_white_helper_moves(board: board_.board_t, moves: move_score_t[
     }
 
     //-- castling
-    if (square === board_.SQUARES.ALL || square === board.king_square[board_.COLORS.WHITE]) {
-        if ((((board.castling_right & board_.CASTLING.WHITE_CASTLE_OO) !== 0) && !only_capture)
-            && (board.pieces[board_.SQUARES.F1] === board_.PIECES.EMPTY && board.pieces[board_.SQUARES.G1] === board_.PIECES.EMPTY)
-            && (!attack_.is_square_attacked(board_.SQUARES.E1, board_.COLORS.BLACK, board) && !attack_.is_square_attacked(board_.SQUARES.F1, board_.COLORS.BLACK, board))) {
-            add_quiet_move(MOVE(board_.SQUARES.E1, board_.SQUARES.G1, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.CASTLE), moves);
+    if (square === board_.Squares.ALL || square === board.kingSquare[board_.Colors.WHITE]) {
+        if ((((board.castlingRight & board_.Castling.WHITE_CASTLE_OO) !== 0) && !onlyCapture)
+            && (board.pieces[board_.Squares.F1] === board_.Pieces.EMPTY && board.pieces[board_.Squares.G1] === board_.Pieces.EMPTY)
+            && (!attack_.isSquareAttacked(board_.Squares.E1, board_.Colors.BLACK, board) && !attack_.isSquareAttacked(board_.Squares.F1, board_.Colors.BLACK, board))) {
+            addQuietMove(MOVE(board_.Squares.E1, board_.Squares.G1, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.CASTLE), moves);
         }
-        if ((((board.castling_right & board_.CASTLING.WHITE_CASTLE_OOO) !== 0) && !only_capture)
-            && (board.pieces[board_.SQUARES.D1] === board_.PIECES.EMPTY && board.pieces[board_.SQUARES.C1] === board_.PIECES.EMPTY
-                && board.pieces[board_.SQUARES.B1] === board_.PIECES.EMPTY)
-            && (!attack_.is_square_attacked(board_.SQUARES.E1, board_.COLORS.BLACK, board) && !attack_.is_square_attacked(board_.SQUARES.D1, board_.COLORS.BLACK, board))) {
-            add_quiet_move(MOVE(board_.SQUARES.E1, board_.SQUARES.C1, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.CASTLE), moves);
+        if ((((board.castlingRight & board_.Castling.WHITE_CASTLE_OOO) !== 0) && !onlyCapture)
+            && (board.pieces[board_.Squares.D1] === board_.Pieces.EMPTY && board.pieces[board_.Squares.C1] === board_.Pieces.EMPTY
+                && board.pieces[board_.Squares.B1] === board_.Pieces.EMPTY)
+            && (!attack_.isSquareAttacked(board_.Squares.E1, board_.Colors.BLACK, board) && !attack_.isSquareAttacked(board_.Squares.D1, board_.Colors.BLACK, board))) {
+            addQuietMove(MOVE(board_.Squares.E1, board_.Squares.C1, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.CASTLE), moves);
         }
     }
 }
-function generate_black_helper_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
+function generateBlackHelperMoves(board: board_.board_t, moves: moveScore_t[], onlyCapture = false, square = board_.Squares.ALL) {
     //generate black pawn moves
-    for (let p = 0; p < board.number_pieces[board_.PIECES.BLACKPAWN]; p++) {
-        const sq = board.piece_list[board_.PIECE_INDEX(board_.PIECES.BLACKPAWN, p)];
-        if (square === board_.SQUARES.ALL || square === sq) {
+    for (let p = 0; p < board.numberPieces[board_.Pieces.BLACKPAWN]; p++) {
+        const sq = board.pieceList[board_.PIECE_INDEX(board_.Pieces.BLACKPAWN, p)];
+        if (square === board_.Squares.ALL || square === sq) {
             //-- forward move
-            if ((board.pieces[sq - 10] === board_.PIECES.EMPTY) && !only_capture) {
-                add_black_pawn_move(sq, sq - 10, moves);
-                if (util_.ranks_board[sq] === board_.RANKS.SEVENTH_RANK && board.pieces[sq - 20] === board_.PIECES.EMPTY) {
-                    add_quiet_move(MOVE(sq, sq - 20, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.PAWN_START), moves);
+            if ((board.pieces[sq - 10] === board_.Pieces.EMPTY) && !onlyCapture) {
+                addPlackPawnMove(sq, sq - 10, moves);
+                if (util_.ranksBoard[sq] === board_.Ranks.SEVENTH_RANK && board.pieces[sq - 20] === board_.Pieces.EMPTY) {
+                    addQuietMove(MOVE(sq, sq - 20, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.PAWN_START), moves);
                 }
             }
             //-- capture move
-            if (board_.SQUARE_ON_BOARD(sq - 9) && util_.get_color_piece[board.pieces[sq - 9]] === board_.COLORS.WHITE) {
-                add_black_pawn_capture_move(sq, sq - 9, board.pieces[sq - 9], moves);
+            if (board_.SQUARE_ON_BOARD(sq - 9) && util_.getColorPiece[board.pieces[sq - 9]] === board_.Colors.WHITE) {
+                addPlackPawnCaptureMove(sq, sq - 9, board.pieces[sq - 9], moves);
             }
-            if (board_.SQUARE_ON_BOARD(sq - 11) && util_.get_color_piece[board.pieces[sq - 11]] === board_.COLORS.WHITE) {
-                add_black_pawn_capture_move(sq, sq - 11, board.pieces[sq - 11], moves);
+            if (board_.SQUARE_ON_BOARD(sq - 11) && util_.getColorPiece[board.pieces[sq - 11]] === board_.Colors.WHITE) {
+                addPlackPawnCaptureMove(sq, sq - 11, board.pieces[sq - 11], moves);
             }
 
-            if (board.enpassant !== board_.SQUARES.OFF_SQUARE) {
+            if (board.enpassant !== board_.Squares.OFF_SQUARE) {
                 if (sq - 9 === board.enpassant) {
-                    add_enpassant_move(MOVE(sq, sq - 9, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.ENPASS), moves);
+                    addEnpassantMove(MOVE(sq, sq - 9, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.ENPASS), moves);
                 }
                 if (sq - 11 === board.enpassant) {
-                    add_enpassant_move(MOVE(sq, sq - 11, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.ENPASS), moves);
+                    addEnpassantMove(MOVE(sq, sq - 11, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.ENPASS), moves);
                 }
             }
         }
     }
 
     //-- castling
-    if (square === board_.SQUARES.ALL || square === board.king_square[board_.COLORS.BLACK]) {
-        if ((((board.castling_right & board_.CASTLING.BLACK_CASTLE_OO) !== 0) && !only_capture)
-            && (board.pieces[board_.SQUARES.F8] === board_.PIECES.EMPTY && board.pieces[board_.SQUARES.G8] === board_.PIECES.EMPTY)
-            && (!attack_.is_square_attacked(board_.SQUARES.E8, board_.COLORS.WHITE, board) && !attack_.is_square_attacked(board_.SQUARES.F8, board_.COLORS.WHITE, board))) {
-            add_quiet_move(MOVE(board_.SQUARES.E8, board_.SQUARES.G8, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.CASTLE), moves);
+    if (square === board_.Squares.ALL || square === board.kingSquare[board_.Colors.BLACK]) {
+        if ((((board.castlingRight & board_.Castling.BLACK_CASTLE_OO) !== 0) && !onlyCapture)
+            && (board.pieces[board_.Squares.F8] === board_.Pieces.EMPTY && board.pieces[board_.Squares.G8] === board_.Pieces.EMPTY)
+            && (!attack_.isSquareAttacked(board_.Squares.E8, board_.Colors.WHITE, board) && !attack_.isSquareAttacked(board_.Squares.F8, board_.Colors.WHITE, board))) {
+            addQuietMove(MOVE(board_.Squares.E8, board_.Squares.G8, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.CASTLE), moves);
         }
-        if ((((board.castling_right & board_.CASTLING.BLACK_CASTLE_OOO) !== 0) && !only_capture)
-            && (board.pieces[board_.SQUARES.D8] === board_.PIECES.EMPTY && board.pieces[board_.SQUARES.C8] === board_.PIECES.EMPTY
-                && board.pieces[board_.SQUARES.B8] === board_.PIECES.EMPTY)
-            && (!attack_.is_square_attacked(board_.SQUARES.E8, board_.COLORS.WHITE, board) && !attack_.is_square_attacked(board_.SQUARES.D8, board_.COLORS.WHITE, board))) {
-            add_quiet_move(MOVE(board_.SQUARES.E8, board_.SQUARES.C8, board_.PIECES.EMPTY, board_.PIECES.EMPTY, MOVE_FLAG.CASTLE), moves);
+        if ((((board.castlingRight & board_.Castling.BLACK_CASTLE_OOO) !== 0) && !onlyCapture)
+            && (board.pieces[board_.Squares.D8] === board_.Pieces.EMPTY && board.pieces[board_.Squares.C8] === board_.Pieces.EMPTY
+                && board.pieces[board_.Squares.B8] === board_.Pieces.EMPTY)
+            && (!attack_.isSquareAttacked(board_.Squares.E8, board_.Colors.WHITE, board) && !attack_.isSquareAttacked(board_.Squares.D8, board_.Colors.WHITE, board))) {
+            addQuietMove(MOVE(board_.Squares.E8, board_.Squares.C8, board_.Pieces.EMPTY, board_.Pieces.EMPTY, MOVE_FLAG.CASTLE), moves);
 
 
         }
     }
 
 }
-function generate_slider_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
+function generateSliderMoves(board: board_.board_t, moves: moveScore_t[], onlyCapture = false, square = board_.Squares.ALL) {
     const turn = board.turn;
     let i = turn * 4;
     let p = slider[i++];
     while (p !== -1) {
-        for (let pceNum = 0; pceNum < board.number_pieces[p]; ++pceNum) {
-            const sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
-            if (square === board_.SQUARES.ALL || square === sq && (board_.SQUARE_ON_BOARD(sq))) {
-                for (let i = 0; i < number_directions[p]; i++) {
-                    const dir = pieces_directions[p][i];
+        for (let pceNum = 0; pceNum < board.numberPieces[p]; ++pceNum) {
+            const sq = board.pieceList[board_.PIECE_INDEX(p, pceNum)];
+            if (square === board_.Squares.ALL || square === sq && (board_.SQUARE_ON_BOARD(sq))) {
+                for (let i = 0; i < numberDirections[p]; i++) {
+                    const dir = piecesDirections[p][i];
                     let to_square = sq + dir;
                     while (board_.SQUARE_ON_BOARD(to_square)) {
-                        if (board.pieces[to_square] !== board_.PIECES.EMPTY) {
-                            if (util_.get_color_piece[board.pieces[to_square]] === (turn ^ 1)) {
-                                add_capture_move(MOVE(sq, to_square, board.pieces[to_square], board_.PIECES.EMPTY, 0), moves);
+                        if (board.pieces[to_square] !== board_.Pieces.EMPTY) {
+                            if (util_.getColorPiece[board.pieces[to_square]] === (turn ^ 1)) {
+                                addCaptureMove(MOVE(sq, to_square, board.pieces[to_square], board_.Pieces.EMPTY, 0), moves);
                             }
                             break;
                         }
-                        if (!only_capture) {
-                            add_quiet_move(MOVE(sq, to_square, board_.PIECES.EMPTY, board_.PIECES.EMPTY, 0), moves);
+                        if (!onlyCapture) {
+                            addQuietMove(MOVE(sq, to_square, board_.Pieces.EMPTY, board_.Pieces.EMPTY, 0), moves);
                         }
                         to_square += dir;
                     }
@@ -500,29 +500,29 @@ function generate_slider_moves(board: board_.board_t, moves: move_score_t[], onl
         p = slider[i++];
     }
 }
-function generate_nonslider_moves(board: board_.board_t, moves: move_score_t[], only_capture = false, square = board_.SQUARES.ALL) {
+function generateNonsliderMoves(board: board_.board_t, moves: moveScore_t[], onlyCapture = false, square = board_.Squares.ALL) {
     const turn = board.turn;
     let i = turn * 3;
     let p = nonslider[i++];
     while (p !== -1) {
-        for (let pceNum = 0; pceNum < board.number_pieces[p]; ++pceNum) {
-            const sq = board.piece_list[board_.PIECE_INDEX(p, pceNum)];
-            if (square === board_.SQUARES.ALL || square === sq && board_.SQUARE_ON_BOARD(sq)) {
-                for (let i = 0; i < number_directions[p]; i++) {
-                    const dir = pieces_directions[p][i];
+        for (let pceNum = 0; pceNum < board.numberPieces[p]; ++pceNum) {
+            const sq = board.pieceList[board_.PIECE_INDEX(p, pceNum)];
+            if (square === board_.Squares.ALL || square === sq && board_.SQUARE_ON_BOARD(sq)) {
+                for (let i = 0; i < numberDirections[p]; i++) {
+                    const dir = piecesDirections[p][i];
                     const to_square = sq + dir;
 
                     if (!board_.SQUARE_ON_BOARD(to_square)) {
                         continue;
                     }
-                    if (board.pieces[to_square] !== board_.PIECES.EMPTY) {
-                        if (util_.get_color_piece[board.pieces[to_square]] === (turn ^ 1)) {
-                            add_capture_move(MOVE(sq, to_square, board.pieces[to_square], board_.PIECES.EMPTY, 0), moves);
+                    if (board.pieces[to_square] !== board_.Pieces.EMPTY) {
+                        if (util_.getColorPiece[board.pieces[to_square]] === (turn ^ 1)) {
+                            addCaptureMove(MOVE(sq, to_square, board.pieces[to_square], board_.Pieces.EMPTY, 0), moves);
                         }
                         continue;
                     }
-                    if (!only_capture) {
-                        add_quiet_move(MOVE(sq, to_square, board_.PIECES.EMPTY, board_.PIECES.EMPTY, 0), moves);
+                    if (!onlyCapture) {
+                        addQuietMove(MOVE(sq, to_square, board_.Pieces.EMPTY, board_.Pieces.EMPTY, 0), moves);
                     }
                 }
 
@@ -532,32 +532,32 @@ function generate_nonslider_moves(board: board_.board_t, moves: move_score_t[], 
     }
 }
 
-export function generate_all_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.ALL): move_score_t[] {
-    const moves = [] as move_score_t[];
+export function generateAllMoves(board: board_.board_t, onlyCapture = false, square = board_.Squares.ALL): moveScore_t[] {
+    const moves = [] as moveScore_t[];
     const turn = board.turn;
 
-    if (turn === board_.COLORS.WHITE) {
-        generate_white_helper_moves(board, moves, only_capture, square);
+    if (turn === board_.Colors.WHITE) {
+        generateWhiteHelperMoves(board, moves, onlyCapture, square);
     } else {
-        generate_black_helper_moves(board, moves, only_capture, square);
+        generateBlackHelperMoves(board, moves, onlyCapture, square);
     }
 
-    generate_slider_moves(board, moves, only_capture, square);
-    generate_nonslider_moves(board, moves, only_capture, square);
+    generateSliderMoves(board, moves, onlyCapture, square);
+    generateNonsliderMoves(board, moves, onlyCapture, square);
 
     return moves;
 }
 
-export function generate_legal_moves(board: board_.board_t, only_capture = false, square = board_.SQUARES.ALL): move_score_t[] {
-    const moves = generate_all_moves(board, only_capture, square);
-    const rlt = [] as move_score_t[];
-    let move: move_score_t;
+export function generateLegalMoves(board: board_.board_t, onlyCapture = false, square = board_.Squares.ALL): moveScore_t[] {
+    const moves = generateAllMoves(board, onlyCapture, square);
+    const rlt = [] as moveScore_t[];
+    let move: moveScore_t;
     for (move of moves) {
-        if (!make_move(move.move, board)) {
+        if (!makeMove(move.move, board)) {
             continue;
         }
         rlt.push(move);
-        take_move(board);
+        takeMove(board);
     }
     return rlt;
 
@@ -566,109 +566,109 @@ export function generate_legal_moves(board: board_.board_t, only_capture = false
 /*****************************************************************************
 * MOVE MAKE
 ****************************************************************************/
-export function clear_pieces(sq: board_.SQUARES, board: board_.board_t): void {
+export function clearPieces(sq: board_.Squares, board: board_.board_t): void {
     if (board_.SQUARE_ON_BOARD(sq)) {
         const pce = board.pieces[sq];
-        const col = util_.get_color_piece[pce];
+        const col = util_.getColorPiece[pce];
         let index;
         let t_pceNum = -1;
 
-        board.pieces[sq] = board_.PIECES.EMPTY;
+        board.pieces[sq] = board_.Pieces.EMPTY;
 
-        board.material_mg[col] -= util_.get_value_piece[util_.PHASE.MG][pce];
-        board.material_eg[col] -= util_.get_value_piece[util_.PHASE.EG][pce];
+        board.materialMg[col] -= util_.getValuePiece[util_.Phase.MG][pce];
+        board.materialEg[col] -= util_.getValuePiece[util_.Phase.EG][pce];
 
-        if (util_.is_big_piece[pce]) {
-            board.number_big_pieces[col]--;
-            if (util_.is_major_piece[pce]) {
-                board.number_major_pieces[col]--;
+        if (util_.isBigPiece[pce]) {
+            board.numberBigPieces[col]--;
+            if (util_.isMajorPiece[pce]) {
+                board.numberMajorPieces[col]--;
             } else {
-                board.number_minor_pieces[col]--;
+                board.numberMinorPieces[col]--;
             }
         }
         else {
             board.pawns[col] = util_.CLEAR_BIT(board.pawns[col], board_.SQ64(sq));
-            board.pawns[board_.COLORS.BOTH] = util_.CLEAR_BIT(board.pawns[board_.COLORS.BOTH], board_.SQ64(sq));
+            board.pawns[board_.Colors.BOTH] = util_.CLEAR_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(sq));
         }
 
-        for (index = 0; index < board.number_pieces[pce]; ++index) {
-            if (board.piece_list[board_.PIECE_INDEX(pce, index)] === sq) {
+        for (index = 0; index < board.numberPieces[pce]; ++index) {
+            if (board.pieceList[board_.PIECE_INDEX(pce, index)] === sq) {
                 t_pceNum = index;
                 break;
             }
         }
 
-        board.number_pieces[pce]--;
-        board.piece_list[board_.PIECE_INDEX(pce, t_pceNum)] = board.piece_list[board_.PIECE_INDEX(pce, board.number_pieces[pce])];
-        board.current_polyglot_key ^= (hash_.random64_poly[hash_.random_piece + (util_.get_poly_piece[pce]) * 64 + board_.SQ64(sq)]);
+        board.numberPieces[pce]--;
+        board.pieceList[board_.PIECE_INDEX(pce, t_pceNum)] = board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce])];
+        board.currentPolyglotKey ^= (hash_.random64Poly[hash_.randomPiece + (util_.getPolyPiece[pce]) * 64 + board_.SQ64(sq)]);
 
     }
 }
 
-export function add_piece(sq: board_.SQUARES, pce: board_.PIECES, board: board_.board_t): void {
+export function addPiece(sq: board_.Squares, pce: board_.Pieces, board: board_.board_t): void {
     if (board_.SQUARE_ON_BOARD(sq) && board_.IS_VALID_PIECE(pce)) {
-        const col = util_.get_color_piece[pce];
-        const poly_piece = util_.get_poly_piece[pce];
+        const col = util_.getColorPiece[pce];
+        const polyPiece = util_.getPolyPiece[pce];
 
         board.pieces[sq] = pce;
 
-        if (util_.is_big_piece[pce]) {
-            board.number_big_pieces[col]++;
-            if (util_.is_major_piece[pce]) {
-                board.number_major_pieces[col]++;
+        if (util_.isBigPiece[pce]) {
+            board.numberBigPieces[col]++;
+            if (util_.isMajorPiece[pce]) {
+                board.numberMajorPieces[col]++;
             } else {
-                board.number_minor_pieces[col]++;
+                board.numberMinorPieces[col]++;
             }
         }
         else {
             board.pawns[col] = util_.SET_BIT(board.pawns[col], board_.SQ64(sq));
-            board.pawns[board_.COLORS.BOTH] = util_.SET_BIT(board.pawns[board_.COLORS.BOTH], board_.SQ64(sq));
+            board.pawns[board_.Colors.BOTH] = util_.SET_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(sq));
         }
 
-        board.material_eg[col] += util_.get_value_piece[util_.PHASE.EG][pce];
-        board.material_mg[col] += util_.get_value_piece[util_.PHASE.MG][pce];
+        board.materialEg[col] += util_.getValuePiece[util_.Phase.EG][pce];
+        board.materialMg[col] += util_.getValuePiece[util_.Phase.MG][pce];
 
-        board.piece_list[board_.PIECE_INDEX(pce, board.number_pieces[pce]++)] = sq;
+        board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce]++)] = sq;
 
-        board.current_polyglot_key ^= hash_.random64_poly[hash_.random_piece + (poly_piece) * 64 + board_.SQ64(sq)];
+        board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomPiece + (polyPiece) * 64 + board_.SQ64(sq)];
 
     }
 }
 
-export function move_piece(from: board_.SQUARES, to: board_.SQUARES, board: board_.board_t): boolean {
+export function movePiece(from: board_.Squares, to: board_.Squares, board: board_.board_t): boolean {
     let rcd = false;
     if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
-        //console.log(`board entering move_piece: ${board_.board_to_ascii(board)}`)
+        //console.log(`board entering movePiece: ${board_.boardToascii(board)}`)
         const pce = board.pieces[from];
-        const col = util_.get_color_piece[pce];
+        const col = util_.getColorPiece[pce];
 
-        board.pieces[from] = board_.PIECES.EMPTY;
+        board.pieces[from] = board_.Pieces.EMPTY;
         board.pieces[to] = pce;
 
 
-        if (!util_.is_big_piece[pce]) {
+        if (!util_.isBigPiece[pce]) {
             // -- clear
             board.pawns[col] = util_.CLEAR_BIT(board.pawns[col], board_.SQ64(from));
-            board.pawns[board_.COLORS.BOTH] = util_.CLEAR_BIT(board.pawns[board_.COLORS.BOTH], board_.SQ64(from));
+            board.pawns[board_.Colors.BOTH] = util_.CLEAR_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(from));
             //-- set
             board.pawns[col] = util_.SET_BIT(board.pawns[col], board_.SQ64(to));
-            board.pawns[board_.COLORS.BOTH] = util_.SET_BIT(board.pawns[board_.COLORS.BOTH], board_.SQ64(to));
+            board.pawns[board_.Colors.BOTH] = util_.SET_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(to));
         }
 
-        for (let index = 0; index < board.number_pieces[pce]; ++index) {
-            if (board.piece_list[board_.PIECE_INDEX(pce, index)] === from) {
-                board.piece_list[board_.PIECE_INDEX(pce, index)] = to;
+        for (let index = 0; index < board.numberPieces[pce]; ++index) {
+            if (board.pieceList[board_.PIECE_INDEX(pce, index)] === from) {
+                board.pieceList[board_.PIECE_INDEX(pce, index)] = to;
                 rcd = true;
                 break;
             }
         }
-        const pce_ind = hash_.random_piece + util_.get_poly_piece[pce] * 64;
-        board.current_polyglot_key ^= hash_.random64_poly[pce_ind + board_.SQ64(from)] ^ hash_.random64_poly[pce_ind + board_.SQ64(to)];
+        const pce_ind = hash_.randomPiece + util_.getPolyPiece[pce] * 64;
+        board.currentPolyglotKey ^= hash_.random64Poly[pce_ind + board_.SQ64(from)] ^ hash_.random64Poly[pce_ind + board_.SQ64(to)];
     }
     return rcd;
 }
 
-export function make_move(move: move_t, board: board_.board_t): boolean {
+export function makeMove(move: move_t, board: board_.board_t): boolean {
     if (move === NO_MOVE) return false
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
@@ -678,160 +678,160 @@ export function make_move(move: move_t, board: board_.board_t): boolean {
 
     // initialise undo
     const undo = {} as board_.undo_t;
-    undo.current_polyglot_key = board.current_polyglot_key;
+    undo.currentPolyglotKey = board.currentPolyglotKey;
 
     undo.turn = board.turn;
     undo.move = move;
 
-    undo.half_moves = board.half_moves;
-    undo.history_ply = board.history_ply;
+    undo.halfMoves = board.halfMoves;
+    undo.historyPly = board.historyPly;
     undo.ply = board.ply;
 
     undo.enpassant = board.enpassant;
-    undo.castling_right = board.castling_right;
-    undo.material_eg = board.material_eg;
-    undo.material_mg = board.material_mg;
+    undo.castlingRight = board.castlingRight;
+    undo.materialEg = board.materialEg;
+    undo.materialMg = board.materialMg;
 
     // update board
     board.turn = opp;
-    board.current_polyglot_key ^= hash_.random64_poly[hash_.random_turn];
+    board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomTurn];
 
-    const old_right = board.castling_right;
-    const new_right = old_right & util_.castle_permission[from] & util_.castle_permission[to];
+    const old_right = board.castlingRight;
+    const new_right = old_right & util_.castlePermission[from] & util_.castlePermission[to];
 
-    board.castling_right = new_right;
-    board.current_polyglot_key ^= util_.castle64_hash[old_right ^ new_right]; //hack
+    board.castlingRight = new_right;
+    board.currentPolyglotKey ^= util_.castle64Hash[old_right ^ new_right]; //hack
 
-    if (board.enpassant !== board_.SQUARES.OFF_SQUARE) {
-        board.current_polyglot_key ^= hash_.random64_poly[hash_.random_enpass + util_.files_board[board.enpassant]];
-        board.enpassant = board_.SQUARES.OFF_SQUARE;
+    if (board.enpassant !== board_.Squares.OFF_SQUARE) {
+        board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomEnpass + util_.filesBoard[board.enpassant]];
+        board.enpassant = board_.Squares.OFF_SQUARE;
     }
 
-    board.move_history[board.history_ply] = undo;
-    board.history_ply++;
+    board.moveHistory[board.historyPly] = undo;
+    board.historyPly++;
     board.ply++;
-    board.full_moves += (me === board_.COLORS.BLACK) ? 1 : 0;
+    board.fullMoves += (me === board_.Colors.BLACK) ? 1 : 0;
 
-    if (util_.is_pawn[board.pieces[from]]) {
-        board.half_moves = 0;
+    if (util_.isPawn[board.pieces[from]]) {
+        board.halfMoves = 0;
         if ((move & MOVE_FLAG.ENPASS) !== 0) {
-            if (me === board_.COLORS.WHITE) {
-                clear_pieces(to - 10, board);
+            if (me === board_.Colors.WHITE) {
+                clearPieces(to - 10, board);
             } else {
-                clear_pieces(to + 10, board);
+                clearPieces(to + 10, board);
             }
         }
 
         else if (((move & MOVE_FLAG.PAWN_START) !== 0)
-            && ((board_.SQUARE_ON_BOARD(to - 1) && util_.is_color_pawn[opp][board.pieces[to - 1]])
-                || (board_.SQUARE_ON_BOARD(to + 1) && util_.is_color_pawn[opp][board.pieces[to + 1]]))) {
-            if (me === board_.COLORS.WHITE) {
+            && ((board_.SQUARE_ON_BOARD(to - 1) && util_.isColorPawn[opp][board.pieces[to - 1]])
+                || (board_.SQUARE_ON_BOARD(to + 1) && util_.isColorPawn[opp][board.pieces[to + 1]]))) {
+            if (me === board_.Colors.WHITE) {
                 board.enpassant = from + 10;
             } else {
                 board.enpassant = from - 10;
             }
-            board.current_polyglot_key ^= hash_.random64_poly[hash_.random_enpass + util_.files_board[board.enpassant]];
+            board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomEnpass + util_.filesBoard[board.enpassant]];
         }
 
     }
     else if ((move & MOVE_FLAG.CASTLE) !== 0) {
         switch (to) {
-            case board_.SQUARES.C1:
-                move_piece(board_.SQUARES.A1, board_.SQUARES.D1, board);
+            case board_.Squares.C1:
+                movePiece(board_.Squares.A1, board_.Squares.D1, board);
                 break;
-            case board_.SQUARES.C8:
-                move_piece(board_.SQUARES.A8, board_.SQUARES.D8, board);
+            case board_.Squares.C8:
+                movePiece(board_.Squares.A8, board_.Squares.D8, board);
                 break;
-            case board_.SQUARES.G1:
-                move_piece(board_.SQUARES.H1, board_.SQUARES.F1, board);
+            case board_.Squares.G1:
+                movePiece(board_.Squares.H1, board_.Squares.F1, board);
                 break;
-            case board_.SQUARES.G8:
-                move_piece(board_.SQUARES.H8, board_.SQUARES.F8, board);
+            case board_.Squares.G8:
+                movePiece(board_.Squares.H8, board_.Squares.F8, board);
                 break;
             default:
-                board.current_polyglot_key = undo.current_polyglot_key;
+                board.currentPolyglotKey = undo.currentPolyglotKey;
                 return false;
         }
     }
 
     const captured = CAPTURED(move);
-    board.half_moves++;
-    if (captured !== board_.PIECES.EMPTY) {
-        clear_pieces(to, board);
-        board.half_moves = 0;
+    board.halfMoves++;
+    if (captured !== board_.Pieces.EMPTY) {
+        clearPieces(to, board);
+        board.halfMoves = 0;
     }
 
-    //console.log(`board before move_piece: ${board_.board_to_ascii(board)}`)
-    move_piece(from, to, board);
-    //console.log(`board after move_piece: ${board_.board_to_ascii(board)}`)
+    //console.log(`board before movePiece: ${board_.boardToascii(board)}`)
+    movePiece(from, to, board);
+    //console.log(`board after movePiece: ${board_.boardToascii(board)}`)
 
     const prPce = PROMOTED(move);
-    if (prPce !== board_.PIECES.EMPTY) {
-        clear_pieces(to, board);
-        add_piece(to, prPce, board);
+    if (prPce !== board_.Pieces.EMPTY) {
+        clearPieces(to, board);
+        addPiece(to, prPce, board);
     }
 
-    if (util_.is_king[board.pieces[to]]) {
-        board.king_square[me] = to;
+    if (util_.isKing[board.pieces[to]]) {
+        board.kingSquare[me] = to;
     }
 
-    if (attack_.is_square_attacked(board.king_square[me], opp, board)) {
-        take_move(board);
+    if (attack_.isSquareAttacked(board.kingSquare[me], opp, board)) {
+        takeMove(board);
         return false;
     }
     return true;
 }
 
-export function take_move(board: board_.board_t): boolean {
-    if (board.history_ply === 0) return false;
-    board.history_ply--;
+export function takeMove(board: board_.board_t): boolean {
+    if (board.historyPly === 0) return false;
+    board.historyPly--;
     board.ply--;
-    board.full_moves -= (board.turn === board_.COLORS.WHITE) ? 1 : 0;
+    board.fullMoves -= (board.turn === board_.Colors.WHITE) ? 1 : 0;
 
-    const move = board.move_history[board.history_ply].move;
+    const move = board.moveHistory[board.historyPly].move;
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
 
     board.turn ^= 1;
 
     if ((MOVE_FLAG.ENPASS & move) !== 0) {
-        if (board.turn === board_.COLORS.WHITE) {
-            add_piece(to - 10, board_.PIECES.BLACKPAWN, board);
+        if (board.turn === board_.Colors.WHITE) {
+            addPiece(to - 10, board_.Pieces.BLACKPAWN, board);
         } else {
-            add_piece(to + 10, board_.PIECES.WHITEPAWN, board);
+            addPiece(to + 10, board_.Pieces.WHITEPAWN, board);
         }
     } else if ((MOVE_FLAG.CASTLE & move) !== 0) {
         switch (to) {
-            case board_.SQUARES.C1: move_piece(board_.SQUARES.D1, board_.SQUARES.A1, board); break;
-            case board_.SQUARES.C8: move_piece(board_.SQUARES.D8, board_.SQUARES.A8, board); break;
-            case board_.SQUARES.G1: move_piece(board_.SQUARES.F1, board_.SQUARES.H1, board); break;
-            case board_.SQUARES.G8: move_piece(board_.SQUARES.F8, board_.SQUARES.H8, board); break;
+            case board_.Squares.C1: movePiece(board_.Squares.D1, board_.Squares.A1, board); break;
+            case board_.Squares.C8: movePiece(board_.Squares.D8, board_.Squares.A8, board); break;
+            case board_.Squares.G1: movePiece(board_.Squares.F1, board_.Squares.H1, board); break;
+            case board_.Squares.G8: movePiece(board_.Squares.F8, board_.Squares.H8, board); break;
             default: break;
         }
     }
-    move_piece(to, from, board);
+    movePiece(to, from, board);
 
-    if (util_.is_king[board.pieces[from]]) {
-        board.king_square[board.turn] = from;
+    if (util_.isKing[board.pieces[from]]) {
+        board.kingSquare[board.turn] = from;
     }
 
     const captured = CAPTURED(move);
-    if (captured !== board_.PIECES.EMPTY) {
-        add_piece(to, captured, board);
+    if (captured !== board_.Pieces.EMPTY) {
+        addPiece(to, captured, board);
     }
 
-    if (PROMOTED(move) !== board_.PIECES.EMPTY) {
-        clear_pieces(from, board);
-        add_piece(from, (util_.get_color_piece[PROMOTED(move)] === board_.COLORS.WHITE ? board_.PIECES.WHITEPAWN : board_.PIECES.BLACKPAWN), board);
+    if (PROMOTED(move) !== board_.Pieces.EMPTY) {
+        clearPieces(from, board);
+        addPiece(from, (util_.getColorPiece[PROMOTED(move)] === board_.Colors.WHITE ? board_.Pieces.WHITEPAWN : board_.Pieces.BLACKPAWN), board);
     }
 
-    board.current_polyglot_key = board.move_history[board.history_ply].current_polyglot_key; //Hack
-    board.turn = board.move_history[board.history_ply].turn;
-    board.castling_right = board.move_history[board.history_ply].castling_right;
-    board.half_moves = board.move_history[board.history_ply].half_moves;
-    board.enpassant = board.move_history[board.history_ply].enpassant;
-    board.turn = board.move_history[board.history_ply].turn;
-    board.material_eg = board.move_history[board.history_ply].material_eg;
-    board.material_mg = board.move_history[board.history_ply].material_mg;
+    board.currentPolyglotKey = board.moveHistory[board.historyPly].currentPolyglotKey; //Hack
+    board.turn = board.moveHistory[board.historyPly].turn;
+    board.castlingRight = board.moveHistory[board.historyPly].castlingRight;
+    board.halfMoves = board.moveHistory[board.historyPly].halfMoves;
+    board.enpassant = board.moveHistory[board.historyPly].enpassant;
+    board.turn = board.moveHistory[board.historyPly].turn;
+    board.materialEg = board.moveHistory[board.historyPly].materialEg;
+    board.materialMg = board.moveHistory[board.historyPly].materialMg;
     return true;
 }
