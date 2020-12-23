@@ -21,6 +21,7 @@ enum Phase { MG, EG }
 interface evaluationFN { (arg: board_.board_t): number }
 
 const isOfType = <T>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
     varToBeChecked: any,
     propertyToCheckFor: keyof T
 ): varToBeChecked is T =>

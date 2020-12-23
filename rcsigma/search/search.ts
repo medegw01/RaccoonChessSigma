@@ -17,11 +17,15 @@ export type info_t = {
 
     stopSearch: () => boolean;
     isPonderhit: () => boolean;
+    uci_stop: boolean;
+    uci_ponderhit: boolean;
+    uci_quit: boolean;
 
 
     ponder: boolean;
     searchMoves: string[];
 
+    // UCI Options
     multiPV: number;
     analyzingMode: boolean;
     opponent: string;
@@ -39,7 +43,7 @@ function search(board: board_.board_t, info: info_t, stdoutFn: (msg: string) => 
         bestMove = book_.bookMove(board);
         stdoutFn(`found ${bestMove.toString()}`);
     }
-    let bestMoveStr = move_.moveToSmith(bestMove);
+    const bestMoveStr = move_.moveToSmith(bestMove);
     stdoutFn('bestmove ' + bestMoveStr);
 }
 

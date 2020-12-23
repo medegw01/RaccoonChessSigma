@@ -21,7 +21,9 @@ type searchParam_t = {
 util_.initializeGame();
 
 if (isMainThread) {
+    // eslint-disable-next-line prefer-const
     let position = board_.newBoard();
+    // eslint-disable-next-line prefer-const
     let info = {} as search_.info_t;
 
     info.useBook = false;
@@ -49,22 +51,26 @@ if (isMainThread) {
         output: process.stdout,
     }).on("line", (line: string) => {
         if (line) {
+            info.uci_ponderhit = false;
+            info.uci_quit = false;
+            info.uci_stop = false;
+
             sharedArray[0] = 0; // set stop to false
             sharedArray[1] = 0; // set ponderhit to false
 
-            if (line === "quit" || line === "exit") {
-                worker.terminate();
+            const report = uci_.uciParser(
+                line, position, info,
+                (msg: string): void => {
+                    process.stdout.write(msg + '\n');
+                });
+
+            if (info.uci_quit || line === "exit") {
                 process.exit();
-            } else if (line === "stop") {
+            } else if (info.uci_stop) {
                 sharedArray[0] = 1;
-            } else if (line == "ponderhit") {
+            } else if (info.uci_ponderhit) {
                 sharedArray[1] = 1;
             } else {
-                const report = uci_.uciParser(
-                    line, position, info,
-                    (msg: string): void => {
-                        process.stdout.write(msg + '\n');
-                    });
                 if (report.run_search) {
                     worker.postMessage({
                         position: position,
