@@ -91,13 +91,16 @@ function uciParser(data: string, position: board_.board_t, info: search_.info_t,
         info.uci_ponderhit = true;
     } else if (token === 'ucinewgame') {
         board_.fenToBoard(util_.START_FEN, position);
-    } else if (token === "print") {// for debugging
-        const parser = {
-            pieces: ["P", "B", "N", "R", "Q", "K", "p", "b", "n", "r", "q", "k"],
-            light_square: "-",
-            dark_square: "="
-        }
-        stdoutFn(board_.boardToPrintable(position, parser.pieces, parser.light_square, parser.dark_square, true));
+    } else if (token === "display") {// for debugging
+        const piece = {
+            white: '\u001b[0;97m',
+            black: '\u001b[0;90m',
+        };
+        const square = {
+            dark: '\u001b[42m',
+            light: '\u001b[47m',
+        };
+        stdoutFn(board_.boardToANSI(position, piece.white, piece.black, square.light, square.dark, true));
     } else if (token === "uci") {
         uci_print(info, stdoutFn);
     } else if (token === "isready") {

@@ -9,14 +9,14 @@ import * as state_ from './state'
 import * as hash_ from './hash'
 import * as attack_ from './attack'
 
-export type move_t = number
+type move_t = number
 
-export type moveScore_t = {
+type moveScore_t = {
     move: move_t;
     score: number;
 }
 
-export type verboseMove_t = {
+type verboseMove_t = {
     from: string;
     to: string;
     color: string;
@@ -36,7 +36,7 @@ const MOVE_FLAG = {
     PROMOTED: 0xF00000,
 };
 
-export const NO_MOVE: move_t = 0;
+const NO_MOVE: move_t = 0;
 const CAPTURE_BONUS = 1000000;
 const ENPASS_BONUS = 105;
 const numberDirections = [0, 0, 4, 8, 4, 8, 8, 0, 4, 8, 4, 8, 8];
@@ -73,7 +73,7 @@ function PROMOTED(move: move_t) { return (((move) >> 20) & 0xF); }
 /*****************************************************************************
  * MOVE PARSER
 ****************************************************************************/
-export function smithToMove(smith: string, board: board_.board_t): move_t {
+function smithToMove(smith: string, board: board_.board_t): move_t {
     const cleanedSmith = cleanSmith(smith);
     if (cleanedSmith != "") {
         if (cleanedSmith[1].charCodeAt(0) > '8'.charCodeAt(0) || cleanedSmith[1].charCodeAt(0) < '1'.charCodeAt(0)) return NO_MOVE;
@@ -105,7 +105,7 @@ export function smithToMove(smith: string, board: board_.board_t): move_t {
     return NO_MOVE;
 }
 
-export function moveToSmith(move: move_t): string {
+function moveToSmith(move: move_t): string {
     if (move != NO_MOVE) {
         const fileFrom = util_.filesBoard[FROM_SQUARE(move)];
         const rankFrom = util_.ranksBoard[FROM_SQUARE(move)];
@@ -135,7 +135,7 @@ export function moveToSmith(move: move_t): string {
 
 }
 
-export function moveToVerboseMove(move: move_t, board: board_.board_t): verboseMove_t {
+function moveToVerboseMove(move: move_t, board: board_.board_t): verboseMove_t {
     const rlt = {} as verboseMove_t;
     if (move !== NO_MOVE) {
         const from = FROM_SQUARE(move);
@@ -231,7 +231,7 @@ function disambiguator(move: move_t, board: board_.board_t) {
     return diamb;
 }
 
-export function moveToSan(move: move_t, board: board_.board_t, verbose = true): string {
+function moveToSan(move: move_t, board: board_.board_t, verbose = true): string {
     let san = "";
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
@@ -291,7 +291,7 @@ export function moveToSan(move: move_t, board: board_.board_t, verbose = true): 
     return san;
 }
 
-export function sanToMove(san: string, board: board_.board_t): number {
+function sanToMove(san: string, board: board_.board_t): number {
     const cleaned_san = san.replace(/[+#]?[?!]*$/, '').replace(/e.p./, '');
     const legal = generateLegalMoves(board);
     let move: moveScore_t;
@@ -532,7 +532,7 @@ function generateNonsliderMoves(board: board_.board_t, moves: moveScore_t[], onl
     }
 }
 
-export function generateAllMoves(board: board_.board_t, onlyCapture = false, square = board_.Squares.ALL): moveScore_t[] {
+function generateAllMoves(board: board_.board_t, onlyCapture = false, square = board_.Squares.ALL): moveScore_t[] {
     const moves = [] as moveScore_t[];
     const turn = board.turn;
 
@@ -548,7 +548,7 @@ export function generateAllMoves(board: board_.board_t, onlyCapture = false, squ
     return moves;
 }
 
-export function generateLegalMoves(board: board_.board_t, onlyCapture = false, square = board_.Squares.ALL): moveScore_t[] {
+function generateLegalMoves(board: board_.board_t, onlyCapture = false, square = board_.Squares.ALL): moveScore_t[] {
     const moves = generateAllMoves(board, onlyCapture, square);
     const rlt = [] as moveScore_t[];
     let move: moveScore_t;
@@ -566,7 +566,7 @@ export function generateLegalMoves(board: board_.board_t, onlyCapture = false, s
 /*****************************************************************************
 * MOVE MAKE
 ****************************************************************************/
-export function clearPieces(sq: board_.Squares, board: board_.board_t): void {
+function clearPieces(sq: board_.Squares, board: board_.board_t): void {
     if (board_.SQUARE_ON_BOARD(sq)) {
         const pce = board.pieces[sq];
         const col = util_.getColorPiece[pce];
@@ -605,7 +605,7 @@ export function clearPieces(sq: board_.Squares, board: board_.board_t): void {
     }
 }
 
-export function addPiece(sq: board_.Squares, pce: board_.Pieces, board: board_.board_t): void {
+function addPiece(sq: board_.Squares, pce: board_.Pieces, board: board_.board_t): void {
     if (board_.SQUARE_ON_BOARD(sq) && board_.IS_VALID_PIECE(pce)) {
         const col = util_.getColorPiece[pce];
         const polyPiece = util_.getPolyPiece[pce];
@@ -635,7 +635,7 @@ export function addPiece(sq: board_.Squares, pce: board_.Pieces, board: board_.b
     }
 }
 
-export function movePiece(from: board_.Squares, to: board_.Squares, board: board_.board_t): boolean {
+function movePiece(from: board_.Squares, to: board_.Squares, board: board_.board_t): boolean {
     let rcd = false;
     if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
         //console.log(`board entering movePiece: ${board_.boardToascii(board)}`)
@@ -668,7 +668,7 @@ export function movePiece(from: board_.Squares, to: board_.Squares, board: board
     return rcd;
 }
 
-export function makeMove(move: move_t, board: board_.board_t): boolean {
+function makeMove(move: move_t, board: board_.board_t): boolean {
     if (move === NO_MOVE) return false
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
@@ -782,7 +782,7 @@ export function makeMove(move: move_t, board: board_.board_t): boolean {
     return true;
 }
 
-export function takeMove(board: board_.board_t): boolean {
+function takeMove(board: board_.board_t): boolean {
     if (board.historyPly === 0) return false;
     board.historyPly--;
     board.ply--;
@@ -834,4 +834,25 @@ export function takeMove(board: board_.board_t): boolean {
     board.materialEg = board.moveHistory[board.historyPly].materialEg;
     board.materialMg = board.moveHistory[board.historyPly].materialMg;
     return true;
+}
+
+export {
+    move_t,
+    moveScore_t,
+    verboseMove_t,
+
+    NO_MOVE,
+
+    smithToMove,
+    moveToSmith,
+    moveToVerboseMove,
+    moveToSan,
+    sanToMove,
+    generateAllMoves,
+    generateLegalMoves,
+    clearPieces,
+    addPiece,
+    movePiece,
+    makeMove,
+    takeMove
 }

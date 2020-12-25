@@ -56,12 +56,24 @@ export class Raccoon {
         }
         return hash_.polyglotKey(this.board);
     }
-    public printBoard(show_info = false, parser = {
+    public boardASCII(show_info = false, config = {
         pieces: ["P", "B", "N", "R", "Q", "K", "p", "b", "n", "r", "q", "k"],
         light_square: "-",
         dark_square: "="
     }): string {
-        return board_.boardToPrintable(this.board, parser.pieces, parser.light_square, parser.dark_square, show_info);
+        return board_.boardToASCII(this.board, config.pieces, config.light_square, config.dark_square, show_info);
+    }
+    public boardANSI(show_info = false, color_config = {
+        piece: {
+            white: '\u001b[0;97m',
+            black: '\u001b[0;90m',
+        },
+        square: {
+            dark: '\u001b[42m',
+            light: '\u001b[47m',
+        }
+    }): string {
+        return board_.boardToANSI(this.board, color_config.piece.white, color_config.piece.black, color_config.square.light, color_config.square.dark, show_info);
     }
     public clearBoard(): void {
         board_.clearBoard(this.board);

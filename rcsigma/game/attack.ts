@@ -238,7 +238,7 @@ export function attack(square: board_.Squares, color: board_.Colors, board: boar
 }
 */
 // function will be replaced by attack() WHEN attack is OPTIMIZED soon
-export function isSquareAttacked(square: board_.Squares, turn: board_.Colors, board: board_.board_t): boolean {
+function isSquareAttacked(square: board_.Squares, turn: board_.Colors, board: board_.board_t): boolean {
     let piece, direction, tmp_square;
     // pawns
     if (turn === board_.Colors.WHITE) {
@@ -291,4 +291,8 @@ export function isSquareAttacked(square: board_.Squares, turn: board_.Colors, bo
         }
     }
     return false;
+}
+
+export {
+    isSquareAttacked
 }

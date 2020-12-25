@@ -6,12 +6,12 @@
 import * as board_ from './board'
 import * as util_ from '../util'
 
-export const randomPiece = 0;
-export const randomCastle = 768;
-export const randomEnpass = 772;
-export const randomTurn = 780;
+const randomPiece = 0;
+const randomCastle = 768;
+const randomEnpass = 772;
+const randomTurn = 780;
 
-export const random64Poly: bigint[] = [ //-- http://hgm.nubati.net/book_format.html
+const random64Poly: bigint[] = [ //-- http://hgm.nubati.net/book_format.html
     BigInt("0x9D39247E33776D41"), BigInt("0x2AF7398005AAA5C7"), BigInt("0x44DB015024623547"), BigInt("0x9C15F73E62A76AE2"),
     BigInt("0x75834465489C0C89"), BigInt("0x3290AC3A203001BF"), BigInt("0x0FBBAD1F61042279"), BigInt("0xE83A908FF2FB60CA"),
     BigInt("0x0D7E765D58755C10"), BigInt("0x1A083822CEAFE02D"), BigInt("0x9605D5F0E25EC3B0"), BigInt("0xD021FF5CD13A2ED5"),
@@ -228,7 +228,7 @@ function pawnCP(board: board_.board_t) {
     return false;
 }
 
-export function polyglotKey(board: board_.board_t): board_.bitboard_t {
+function polyglotKey(board: board_.board_t): board_.bitboard_t {
     let sq, rank = 0, file = 0;
     let finalKey = 0n, piece = board_.Pieces.EMPTY, polyPiece = 0;
 
@@ -258,4 +258,14 @@ export function polyglotKey(board: board_.board_t): board_.bitboard_t {
         finalKey ^= random64Poly[randomTurn];
     }
     return finalKey;
+}
+
+export {
+    randomPiece,
+    randomCastle,
+    randomEnpass,
+    randomTurn,
+    random64Poly,
+
+    polyglotKey
 }

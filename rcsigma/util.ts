@@ -60,7 +60,11 @@ const square120ToSquare64 = new Array<number>(BOARD_SQUARE_NUM);
 const castlePermission = new Array<number>(120);
 
 const pieceToAscii = ".PBNRQKpbnrqk";
-const pieceToUnicode = ["░", "♙", "♗", "♘", "♖", "♕", "♔", "♟", "♝", "♞", "♜", "♛", "♚"]
+const pieceToUnicode = [
+    ' ',
+    '\u265f', '\u265d', '\u265e', '\u265c', '\u265b', '\u265a',
+    '\u265f', '\u265d', '\u265e', '\u265c', '\u265b', '\u265a'
+];
 const castle64Hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
 
 const isBigPiece = [false, false, true, true, true, true, true, false, true, true, true, true, true];

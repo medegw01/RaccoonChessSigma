@@ -9,7 +9,7 @@ import * as move_ from './move'
 /*****************************************************************************
  * PERFT -- debugging
  ****************************************************************************/
-export function perft(depth: number, board: board_.board_t): bigint {
+function perft(depth: number, board: board_.board_t): bigint {
     let nodes = 0n;
 
     if (depth === 0) return 1n;
@@ -21,4 +21,8 @@ export function perft(depth: number, board: board_.board_t): bigint {
         move_.takeMove(board);
     }
     return nodes;
+}
+
+export {
+    perft
 }

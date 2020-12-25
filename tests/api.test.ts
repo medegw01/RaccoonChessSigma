@@ -230,7 +230,7 @@ describe("Game Tests", () => {
                 "1  R N B Q K B N R  1\n\n" +
                 "   A B C D E F G H   \n");
             game.loadFEN(startFEN)
-            expect(game.printBoard()).toBe(expected);
+            expect(game.boardASCII()).toBe(expected);
         });
         it("Fen: startFEN; ASCII and info", function () {
             game.loadFEN(fen_print);
@@ -250,11 +250,11 @@ describe("Game Tests", () => {
                 "enpass: d3\n" +
                 "castling: Kkq\n" +
                 "poly key: 0x8edef0e518b9d296\n");
-            expect(game.printBoard(true)).toBe(expected);
+            expect(game.boardASCII(true)).toBe(expected);
         });
         it("Fen: startFEN; UNI_CODE", function () {
             game.loadFEN(fen_print);
-            const parser = {
+            const config = {
                 pieces: ["♙", "♗", "♘", "♖", "♕", "♔", "♟", "♝", "♞", "♜", "♛", "♚"],
                 light_square: " ",
                 dark_square: "x"
@@ -270,7 +270,7 @@ describe("Game Tests", () => {
                 "2    ♙   x ♙ ♙ ♙ x  2\n" +
                 "1  x ♘ ♗ ♕ ♔ ♗ ♘ ♖  1\n\n" +
                 "   A B C D E F G H   \n");
-            expect(game.printBoard(false, parser)).toBe(expected);
+            expect(game.boardASCII(false, config)).toBe(expected);
         });
     });
 

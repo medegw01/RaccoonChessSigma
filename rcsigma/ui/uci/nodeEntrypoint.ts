@@ -51,6 +51,9 @@ if (isMainThread) {
         output: process.stdout,
     }).on("line", (line: string) => {
         if (line) {
+            if (info.uci_quit || line === "exit") {
+                process.exit();
+            }
             info.uci_ponderhit = false;
             info.uci_quit = false;
             info.uci_stop = false;
@@ -61,12 +64,11 @@ if (isMainThread) {
             const report = uci_.uciParser(
                 line, position, info,
                 (msg: string): void => {
-                    process.stdout.write(msg + '\n');
+                    console.log(msg);
+                    //process.stdout.write(msg + '\n');
                 });
 
-            if (info.uci_quit || line === "exit") {
-                process.exit();
-            } else if (info.uci_stop) {
+            if (info.uci_stop) {
                 sharedArray[0] = 1;
             } else if (info.uci_ponderhit) {
                 sharedArray[1] = 1;

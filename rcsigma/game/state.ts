@@ -7,23 +7,23 @@ import * as board_ from './board'
 import * as attack_ from './attack'
 import * as move_ from './move'
 
-export function inCheck(board: board_.board_t): boolean {
+function inCheck(board: board_.board_t): boolean {
     return (attack_.isSquareAttacked(board.kingSquare[board.turn], (board.turn) ^ 1, board))
 }
 
-export function inCheckmate(board: board_.board_t): boolean {
+function inCheckmate(board: board_.board_t): boolean {
     const check = inCheck(board);
     const moves = move_.generateLegalMoves(board);
     return check && moves.length === 0;
 }
 
-export function inStalemate(board: board_.board_t): boolean {
+function inStalemate(board: board_.board_t): boolean {
     const check = inCheck(board);
     const moves = move_.generateLegalMoves(board);
     return !check && moves.length === 0;
 }
 
-export function inThreefoldRepetition(board: board_.board_t): boolean {
+function inThreefoldRepetition(board: board_.board_t): boolean {
     let count = 0;
     for (let i = 0; i < board.historyPly; i++) {
         if (count >= 3) return true;
@@ -32,7 +32,7 @@ export function inThreefoldRepetition(board: board_.board_t): boolean {
     return count >= 2;
 }
 
-export function insufficientMaterial(board: board_.board_t): boolean {
+function insufficientMaterial(board: board_.board_t): boolean {
     if (board.numberPieces[board_.Pieces.WHITEPAWN] || board.numberPieces[board_.Pieces.BLACKPAWN]) return false;
     if (board.numberPieces[board_.Pieces.WHITEQUEEN] || board.numberPieces[board_.Pieces.BLACKQUEEN]
         || board.numberPieces[board_.Pieces.WHITEROOK] || board.numberPieces[board_.Pieces.BLACKROOK]) return false;
@@ -43,11 +43,21 @@ export function insufficientMaterial(board: board_.board_t): boolean {
     return true;
 }
 
-export function inDraw(board: board_.board_t): boolean {
+function inDraw(board: board_.board_t): boolean {
     const is_50Move = (board.halfMoves >= 100 && board.ply !== 0);
     return is_50Move || insufficientMaterial(board) || inThreefoldRepetition(board) || inStalemate(board);
 }
 
-export function gameOver(board: board_.board_t): boolean {
+function gameOver(board: board_.board_t): boolean {
     return inCheckmate(board) || inDraw(board);
+}
+
+export {
+    gameOver,
+    inDraw,
+    insufficientMaterial,
+    inThreefoldRepetition,
+    inStalemate,
+    inCheckmate,
+    inCheck,
 }
