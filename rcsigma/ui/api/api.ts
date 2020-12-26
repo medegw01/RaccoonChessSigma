@@ -65,11 +65,11 @@ export class Raccoon {
     }
     public boardANSI(show_info = false, color_config = {
         piece: {
-            white: '\u001b[0;97m',
-            black: '\u001b[0;90m',
+            white: '\u001b[30m',
+            black: '\u001b[30m',
         },
         square: {
-            dark: '\u001b[42m',
+            dark: '\u001b[41m',
             light: '\u001b[47m',
         }
     }): string {

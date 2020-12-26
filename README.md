@@ -38,18 +38,7 @@ By following the [Getting Started Guide](./docs/getting_started_guide.md), a use
 ## Development
 
 TODO
-<details>
-<summary>Run on node.js</summary>
 
-<p></p>
-
-Running code using threads.js in node works out of the box.
-
-Note that we wrap the native `Worker`, so `new Worker("./foo/bar")` will resolve the path relative to the module that calls it, not relative to the current working directory.
-
-That aligns it with the behavior when bundling the code with webpack or parcel.
-
-</details>
 ## Architecture
 
 To understand project, it's imperative you understand [RaccoonChessSigma architecture](./docs/architecture.md).

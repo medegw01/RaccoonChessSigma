@@ -81,3 +81,54 @@ raccoon.load("8/b7/B7/8/8/8/8/k6K w - - 0 1");
 raccoon.load("8/T7/B7/8/8/8/8/k6K w - - 0 1");
 // => {value: false, error: "Illegal character T"}
 ```
+
+#### ANSI Color
+
+[MORE INFO](https://github.com/drudru/ansi_up)
+
+<details>
+   <summary>Ansi Square Color Table</summary>
+   <ul>
+      <li>Background Black: \u001b[40m</li>
+      <li>Background Red: \u001b[41m</li>
+      <li>Background Green: \u001b[42m</li>
+      <li>Background Yellow: \u001b[43m</li>
+      <li>Background Blue: \u001b[44m</li>
+      <li>Background Magenta: \u001b[45m</li>
+      <li>Background Cyan: \u001b[46m</li>
+      <li>Background White: \u001b[47m</li>
+   </ul>
+   <ul>
+      <li>Background Bright Black: \u001b[40;1m</li>
+      <li>Background Bright Red: \u001b[41;1m</li>
+      <li>Background  Bright Green: \u001b[42;1m</li>
+      <li>Background Bright Yellow: \u001b[43;1m</li>
+      <li>Background Bright Blue: \u001b[44;1m</li>
+      <li>Background Bright Magenta: \u001b[45;1m</li>
+      <li>Background Bright Cyan: \u001b[46;1m</li>
+      <li>Background Bright White: \u001b[47;1m</li>
+   </ul>
+</details>
+<details>
+   <summary>Ansi Piece Color Table</summary>
+   <ul>
+      <li>Black: \u001b[30m</li>
+      <li>Red: \u001b[31m</li>
+      <li>Green: \u001b[32m</li>
+      <li>Yellow: \u001b[33m</li>
+      <li>Blue: \u001b[34m</li>
+      <li>Magenta: \u001b[35m</li>
+      <li>Cyan: \u001b[36m</li>
+      <li>White: \u001b[37m</li>
+   </ul>
+   <ul>
+      <li>Bright Black: \u001b[30;1m</li>
+      <li>Bright Red: \u001b[31;1m</li>
+      <li>Bright Green: \u001b[32;1m</li>
+      <li>Bright Yellow: \u001b[33;1m</li>
+      <li>Bright Blue: \u001b[34;1m</li>
+      <li>Bright Magenta: \u001b[35;1m</li>
+      <li>Bright Cyan: \u001b[36;1m</li>
+      <li>Bright White: \u001b[37;1m</li>
+   </ul>
+</details>

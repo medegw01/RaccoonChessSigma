@@ -375,7 +375,7 @@ function mirrorBoard(board: board_t): void {
 }
 
 function getInfo(board: board_t): string {
-    let ascii_t = "        INFO         \n";
+    let ascii_t = "INFO:\n";
     ascii_t += "turn: " + (getTurn(board)) + '\n';
     ascii_t += "enpass: " + ((board.enpassant === Squares.OFF_SQUARE) ? "-" : squareToAlgebraic(board.enpassant)) + '\n';
     ascii_t += "castling: "
@@ -383,31 +383,29 @@ function getInfo(board: board_t): string {
         + (((board.castlingRight & Castling.WHITE_CASTLE_OOO) !== 0) ? util_.pieceToAscii[Pieces.WHITEQUEEN] : '')
         + (((board.castlingRight & Castling.BLACK_CASTLE_OO) !== 0) ? util_.pieceToAscii[Pieces.BLACKKING] : '')
         + (((board.castlingRight & Castling.BLACK_CASTLE_OOO) !== 0) ? util_.pieceToAscii[Pieces.BLACKQUEEN] : '');
-    ascii_t += ("\npoly key: 0x" + board.currentPolyglotKey.toString(16) + '\n');
+    ascii_t += ("\npoly key: 0x" + board.currentPolyglotKey.toString(16) + "\n");
     return ascii_t
 }
 
 function boardToANSI(board: board_t, white_piece: string, black_piece: string, light_square: string, dark_square: string, show_info: boolean): string {
-    let ansi_t = "     a  b  c  d  e  f  g  h\n";
+    let ansi_t = "    a  b  c  d  e  f  g  h\n";
     for (let rank = Ranks.EIGHTH_RANK; rank >= Ranks.FIRST_RANK; --rank) {
         ansi_t += ` ${(rank + 1).toString()} `;
         for (let file = Files.A_FILE; file <= Files.H_FILE; ++file) {
             const SQ120 = FILE_RANK_TO_SQUARE(file, rank);
             const piece = board.pieces[SQ120];
-            let value = ` ${util_.pieceToUnicode[piece]} `;
-            value = [
+            ansi_t += [
                 (SQUARE_COLOR(SQ120) === Colors.WHITE) ? light_square : dark_square,
                 (util_.isWhitePiece[piece]) ? white_piece : black_piece,
-                value,
+                ` ${util_.pieceToUnicode[piece]} `,
                 '\u001b[0m',
             ].join('');
-            ansi_t += value;
 
         }
         ansi_t += ` ${(rank + 1).toString()}\n`;
     }
 
-    ansi_t += "     a  b  c  d  e  f  g  h\n\n";
+    ansi_t += "    a  b  c  d  e  f  g  h\n\n";
 
     return (show_info) ? ansi_t + getInfo(board) : ansi_t
 }

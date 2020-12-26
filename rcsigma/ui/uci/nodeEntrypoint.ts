@@ -23,6 +23,7 @@ util_.initializeGame();
 if (isMainThread) {
     // eslint-disable-next-line prefer-const
     let position = board_.newBoard();
+    board_.fenToBoard(util_.START_FEN, position);
     // eslint-disable-next-line prefer-const
     let info = {} as search_.info_t;
 

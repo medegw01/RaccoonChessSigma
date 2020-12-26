@@ -67,13 +67,30 @@ function uci_go(token: string, info: search_.info_t, turn: string): void {
     }
     info.depth = info.mate !== 0 ? 2 * info.mate - 1 : info.depth;
 }
-
 function uci_position(position: board_.board_t, fen: string, moves: string[]): void {
     board_.fenToBoard(fen, position);
     for (let i = 0; i < moves.length; i++) {
         if (!move_.makeMove(move_.smithToMove(moves[i], position), position)) break;
     }
 
+}
+function uci_setoption(info: search_.info_t, name: string, value: string): boolean {
+    if (name === "BookFile") {
+        info.bookFile = value;
+    } else if (name === "UseBook") {
+        info.useBook = (value).includes('true');
+    } else if (name === "MultiPV") {
+        info.multiPV = parseInt(value);
+    } else if (name === "UCI_AnalyseMode") {
+        info.analyzingMode = (value).includes('true');
+    } else if (name === "Ponder") {
+        info.analyzingMode = (value).includes('true');
+    } else if (name === "UCI_Opponent") {
+        info.opponent = value;
+    } else {
+        return false;
+    }
+    return true;
 }
 
 function uciParser(data: string, position: board_.board_t, info: search_.info_t, stdoutFn: stdoutFn_t): uci_report_t {
@@ -91,13 +108,13 @@ function uciParser(data: string, position: board_.board_t, info: search_.info_t,
         info.uci_ponderhit = true;
     } else if (token === 'ucinewgame') {
         board_.fenToBoard(util_.START_FEN, position);
-    } else if (token === "display") {// for debugging
+    } else if (token === "disp") {// for debugging
         const piece = {
-            white: '\u001b[0;97m',
-            black: '\u001b[0;90m',
+            white: '\u001b[30m',
+            black: '\u001b[30m',
         };
         const square = {
-            dark: '\u001b[42m',
+            dark: '\u001b[41m',
             light: '\u001b[47m',
         };
         stdoutFn(board_.boardToANSI(position, piece.white, piece.black, square.light, square.dark, true));
@@ -113,21 +130,9 @@ function uciParser(data: string, position: board_.board_t, info: search_.info_t,
         const moves = (RegExp.$3) ? (RegExp.$3).split(' ') : [];
         uci_position(position, fen, moves);
     } else if ((/setoption name (\S+) value\s*(.*)/).exec(token)) {
-        report.run_setoption = true;
-        if (RegExp.$1 === "BookFile") {
-            info.bookFile = RegExp.$2;
-        } else if (RegExp.$1 === "UseBook") {
-            info.useBook = (RegExp.$2).includes('true');
-        } else if (RegExp.$1 === "MultiPV") {
-            info.multiPV = parseInt(RegExp.$2);
-        } else if (RegExp.$1 === "UCI_AnalyseMode") {
-            info.analyzingMode = (RegExp.$2).includes('true');
-        } else if (RegExp.$1 === "Ponder") {
-            info.analyzingMode = (RegExp.$2).includes('true');
-        } else if (RegExp.$1 === "UCI_Opponent") {
-            info.opponent = RegExp.$2;
+        if (uci_setoption(info, RegExp.$1, RegExp.$2)) {
+            report.run_setoption = true;
         } else {
-            report.run_setoption = false;
             stdoutFn('Unknown setoption command ' + token);
         }
     } else {

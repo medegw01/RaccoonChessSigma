@@ -245,7 +245,7 @@ describe("Game Tests", () => {
                 "2  - P - = P P P =  2\n" +
                 "1  = N B Q K B N R  1\n\n" +
                 "   A B C D E F G H   \n" +
-                "        INFO         \n" +
+                "INFO:\n" +
                 "turn: b\n" +
                 "enpass: d3\n" +
                 "castling: Kkq\n" +

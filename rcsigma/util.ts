@@ -61,8 +61,8 @@ const castlePermission = new Array<number>(120);
 
 const pieceToAscii = ".PBNRQKpbnrqk";
 const pieceToUnicode = [
-    ' ',
-    '\u265f', '\u265d', '\u265e', '\u265c', '\u265b', '\u265a',
+    '\u2800',
+    '\u2659', '\u2657', '\u2658', '\u2656', '\u2655', '\u2654',
     '\u265f', '\u265d', '\u265e', '\u265c', '\u265b', '\u265a'
 ];
 const castle64Hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
