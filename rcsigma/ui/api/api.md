@@ -12,15 +12,14 @@ To use `rcSigma` as a JavaScript chess library, It MUST be built and configure t
 
 ## Building
 
-`raccoon-api.js`
-TODO
+Please see [Getting Started Guide](../../../docs/getting_started_guide.md)
 
 ## Usage
 
 The code below will randomely plays a complete game of chess.
 
 ```js
-let { Raccoon } = require("./raccoon-api.js");
+let { Raccoon } = require("./raccoon.api.js");
 let raccoon = new Raccoon();
 
 while (!raccoon.gameOver()) {

@@ -33,8 +33,8 @@
     "webpack-cli": "^4.2.0"
   },
   "scripts": {
-    "build:api": "webpack --entry ./rcsigma/ui/api/api.ts --output-path build --output-filename raccoon-api.js",
-    "build:uci": "webpack --entry ./rcsigma/ui/uci/nodeEntrypoint.ts --target node --output-path build --output-filename raccoon-uci.js",
+    "build:api": "webpack --entry ./rcsigma/ui/api/api.ts --output-path build --output-filename raccoon.api.js",
+    "build:uci": "webpack --entry ./rcsigma/ui/uci/entrypoint.ts --target node --output-path build --output-filename raccoon.uci.js",
     "test": "jest",
     "coverage": "jest --coverage",
     "lint-and-fix": "eslint \"*/**/*.{js,ts,tsx}\" --fix",

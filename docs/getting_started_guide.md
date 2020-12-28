@@ -17,7 +17,7 @@ Either [nodejs >= 13.x](https://github.com/nodesource/distributions) or [yarn](h
 | npm  | `npm i -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs @types/node`    |
 | yarn | `yarn add -D typescript ts-loader webpack-cli webpack jest ts-jest @types/jest eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-sonarjs @types/node` |
 
-### Building RaccoonChessSigma
+### Building & Using RaccoonChessSigma
 
 RaccoonChessSigma can be built and used as a [UCI-compliant Chess Engine](./rcsigma/ui/uci/uci.md) or as an extensive [JavaScript Chess Library](./rcsigma/ui/api/api.md).
 If the perquisites have been installed, from the root directory where the repo was cloned, the execute:
@@ -28,11 +28,17 @@ If the perquisites have been installed, from the root directory where the repo w
 | ----- | ------------------- | ---------------- |
 | Build | `npm run build:api` | `yarn build:api` |
 
-The above script will create `raccoon-api.js` in `/build`. [See Usage](./rcsigma/ui/api/api.md) for more info.
+The above script will create `raccoon.api.js` in `/build`. [See Usage](./rcsigma/ui/api/api.md) for more info.
 
-### Deploying RaccoonChessSigma
+#### UCI-compliant Chess Engine
 
-Document how to deploy project if need be
+##### raccoon
+
+| Build               | npm                 | yarn             | output           |
+| ------------------- | ------------------- | ---------------- | ---------------- |
+| NodeJS & Web Worker | `npm run build:uci` | `yarn build:uci` | `raccoon.uci.js` |
+
+The above script will create the output in `/build` folder. [See Usage](./rcsigma/ui/api/api.md) for more info.
 
 ### Testing RaccoonChessSigma
 
