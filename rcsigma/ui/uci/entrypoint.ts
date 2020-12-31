@@ -24,7 +24,6 @@ type entrypointConfig_t = {
     postWorkerThread: (data: searchParam_t | SharedArrayBuffer) => void;
 
     postExternalThread: (msg: string) => void;
-    readExternalThread: () => void;
     bookOpen: (filePath: string) => { success: boolean, error: string };
     exitMain: () => void;
 
@@ -76,6 +75,7 @@ if (config.isMainThread) {
     info.opponent = "Guest";
     info.multiPV = 1;
     info.bookFile = "raccoon.bin";
+    info.searchInitialized = false;
 
     /*
     array[0] -> stop
@@ -86,24 +86,28 @@ if (config.isMainThread) {
     const sharedArray = new Int32Array(sharedBuffer);
 
     const runMainThread = (line: string) => {
-        if (info.uci_quit || line === "exit") {
+        if (info.uciQuit || line === "exit") {
             config.exitMain();
         }
-        info.uci_ponderhit = false;
-        info.uci_quit = false;
-        info.uci_stop = false;
+        info.uciPonderHit = false;
+        info.uciQuit = false;
+        info.uciStop = false;
 
         sharedArray[0] = 0; // set stop to false
         sharedArray[1] = 0; // set ponderhit to false
 
         const report = uci_.uciParser(line, position, info, config.postExternalThread);
 
-        if (info.uci_stop) {
+        if (info.uciStop) {
             sharedArray[0] = 1;
-        } else if (info.uci_ponderhit) {
-            sharedArray[1] = 1;
+        } else if (info.uciPonderHit) {
+            if (!info.ponder) config.postExternalThread("Error: I'm not pondering");
+            else {
+                info.ponder = false;
+                sharedArray[1] = 1;
+            }
         } else {
-            if (report.run_search) {
+            if (report.runSearch) {
                 config.postWorkerThread({
                     position: position,
                     info: info
@@ -151,24 +155,24 @@ if (config.isMainThread) {
 }
 else {
     let sharedArray: Int32Array;
-    let bookIsOpenned = false;
+    let bookIsOpened = false;
 
     const stopSearch = (): boolean => {
         return sharedArray[0] === 1;
     }
-    const isPonderhit = (): boolean => {
+    const isPonderHit = (): boolean => {
         return sharedArray[1] === 1;
     }
 
     const runChildThread = (data: searchParam_t | SharedArrayBuffer) => {
         if (util_.isOfType<searchParam_t>(data, 'position')) {
             data.info.stopSearch = stopSearch;
-            data.info.isPonderhit = isPonderhit;
+            data.info.isPonderHit = isPonderHit;
 
-            if (!bookIsOpenned && data.info.useBook) {
+            if (!bookIsOpened && data.info.useBook) {
                 const bookResult = config.bookOpen(data.info.bookFile);
                 if (bookResult.success) {
-                    bookIsOpenned = true;
+                    bookIsOpened = true;
                 } else {
                     data.info.useBook = false;
                     config.postMainThread(bookResult.error);

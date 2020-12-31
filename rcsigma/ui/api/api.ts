@@ -43,7 +43,7 @@ export class Raccoon {
         catch (err) {
             return { value: false, error: (err as Error).message };
         }
-        this.startFEN = fen; // stores last load for reseting board
+        this.startFEN = fen; // stores last load for resetting board
         this.movesHistory = [];
         return { value: true, error: "No error!" }
     }
@@ -65,14 +65,15 @@ export class Raccoon {
     }
     public boardANSI(show_info = false, color_config = {
         piece: {
-            white: '\u001b[30m',
-            black: '\u001b[30m',
+            white: util_.pieceAnsi.white,
+            black: util_.pieceAnsi.black,
         },
         square: {
-            dark: '\u001b[41m',
-            light: '\u001b[47m',
+            dark: util_.squareAnsi.dark,
+            light: util_.squareAnsi.light,
         }
     }): string {
+
         return board_.boardToANSI(this.board, color_config.piece.white, color_config.piece.black, color_config.square.light, color_config.square.dark, show_info);
     }
     public clearBoard(): void {
@@ -143,7 +144,7 @@ export class Raccoon {
     public moveHistory(option?: { verbose: boolean }): string[] | move_.verboseMove_t[] {
         const verbose = (typeof option !== 'undefined') && ('verbose' in option) && option.verbose;
         const rlt_ver_list = this.movesHistory;
-        return (verbose) ? rlt_ver_list : rlt_ver_list.map((verboMove) => verboMove.san);
+        return (verbose) ? rlt_ver_list : rlt_ver_list.map((verboseMove) => verboseMove.san);
     }
 
 

@@ -7,8 +7,11 @@
 import * as board_ from './game/board'
 import * as hash_ from './game/hash'
 
+const VERSION = "0.1.0";
+const NAME = "RaccoonChessSigma";
+const AUTHOR = "Michael Edegware"
+
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const NAME = "rcSigma";
 const CHECKMATE = 32000;
 const INFINITE = 32001;
 const MAX_MOVES = 2048;
@@ -65,6 +68,14 @@ const pieceToUnicode = [
     '\u2659', '\u2657', '\u2658', '\u2656', '\u2655', '\u2654',
     '\u265f', '\u265d', '\u265e', '\u265c', '\u265b', '\u265a'
 ];
+const pieceAnsi = {
+    white: '\u001b[30m',
+    black: '\u001b[30m',
+};
+const squareAnsi = {
+    dark: '\u001b[41m',
+    light: '\u001b[47m',
+};
 const castle64Hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
 
 const isBigPiece = [false, false, true, true, true, true, true, false, true, true, true, true, true];
@@ -212,6 +223,8 @@ function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
 export {
     START_FEN,
     NAME,
+    VERSION,
+    AUTHOR,
     CHECKMATE,
     INFINITE,
     MAX_DEPTH,
@@ -250,6 +263,8 @@ export {
     flip,
     filesBoard,
     ranksBoard,
+    pieceAnsi,
+    squareAnsi,
 
     COUNT_BITS,
     SET_BIT,

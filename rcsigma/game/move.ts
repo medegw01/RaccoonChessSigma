@@ -684,6 +684,7 @@ function makeMove(move: move_t, board: board_.board_t): boolean {
     undo.move = move;
 
     undo.halfMoves = board.halfMoves;
+    undo.fullMoves = board.fullMoves;
     undo.historyPly = board.historyPly;
     undo.ply = board.ply;
 
@@ -710,6 +711,7 @@ function makeMove(move: move_t, board: board_.board_t): boolean {
     board.moveHistory[board.historyPly] = undo;
     board.historyPly++;
     board.ply++;
+    board.halfMoves++;
     board.fullMoves += (me === board_.Colors.BLACK) ? 1 : 0;
 
     if (util_.isPawn[board.pieces[from]]) {
@@ -755,7 +757,6 @@ function makeMove(move: move_t, board: board_.board_t): boolean {
     }
 
     const captured = CAPTURED(move);
-    board.halfMoves++;
     if (captured !== board_.Pieces.EMPTY) {
         clearPieces(to, board);
         board.halfMoves = 0;
