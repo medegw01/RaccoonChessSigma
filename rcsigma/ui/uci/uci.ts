@@ -78,8 +78,8 @@ function uciPosition(position: board_.board_t, fen: string, moves: string[]): vo
     for (let i = 0; i < moves.length; i++) {
         if (!move_.makeMove(move_.smithToMove(moves[i], position), position)) break;
     }
-
 }
+
 function uciSetOption(info: search_.info_t, name: string, value: string): boolean {
     if (name === "BookFile") info.bookFile = value;
     else if (name === "UseBook") info.useBook = (value).includes('true');
@@ -123,10 +123,7 @@ function uciParser(data: string, position: board_.board_t, info: search_.info_t,
     else if (token === 'ucinewgame') info.searchInitialized = search_.clear();
     else if (token === "uci") uciPrint(info, stdoutFn);
     else if (token === "isready") stdoutFn('readyok');
-    else if ((/^go /).exec(token)) {
-        if (uciGO(token, info, board_.getTurn(position))) report.runSearch = true;
-        else report.runSearch = false
-    }
+    else if ((/^go /).exec(token)) report.runSearch = (uciGO(token, info, board_.getTurn(position)));
     else if ((/^position (?:(startpos)|fen (.*?))\s*(?:moves\s*(.*))?$/).exec(token)) {
         const fen = (RegExp.$1 === 'startpos') ? util_.START_FEN : RegExp.$2;
         const moves = (RegExp.$3) ? (RegExp.$3).split(' ') : [];

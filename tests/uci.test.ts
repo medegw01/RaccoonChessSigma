@@ -27,7 +27,10 @@ describe("UCI Initialization Test", () => {
         console.log = log;
     });
 
-
+    it("unknown command", function () {
+        uciParser("chess960", newBoard(), getInfo(), console.log);
+        expect(console.log).toHaveBeenCalledWith('Unknown command chess960');
+    });
     it("isready", function () {
         uciParser("isready", newBoard(), getInfo(), console.log);
         expect(console.log).toHaveBeenCalledWith('readyok');
