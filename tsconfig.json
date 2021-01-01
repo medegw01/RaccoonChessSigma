@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "commonJS",
-    "lib": ["es2020", "dom"],
+    "lib": ["es2020", "dom", "webworker"],
     "outDir": "./lib",
     "sourceMap": true,
     "strict": true,

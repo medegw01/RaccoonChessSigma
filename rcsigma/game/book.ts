@@ -9,58 +9,55 @@ import * as move_ from '../game/move'
 /*****************************************************************************
   * OPENING BOOK
 ****************************************************************************/
-let book_file: DataView;
-let book_size: number;
+let bookFile: DataView;
+let bookSize: number;
 type entry_t = {
     key: board_.bitboard_t;
     move: number;
     weight: number;
-    n: number;
     learn: number;
 }
 
-export function book_open(arrayBuffer: ArrayBufferLike): boolean {
-    book_file = new DataView(arrayBuffer);
-    book_size = Math.floor(book_file.byteLength / 16);
-    return book_file !== null;
+function bookAdd(arrayBuffer: ArrayBuffer): boolean {
+    bookFile = new DataView(arrayBuffer);
+    bookSize = Math.floor(bookFile.byteLength / 16);
+    return bookFile !== null;
 }
-function find_key(key: board_.bitboard_t) {
-    let left = 0, mid, right = book_size - 1;
+function findKey(key: board_.bitboard_t) {
+    let left = 0, mid, right = bookSize - 1;
     const entry: entry_t = {
         key: 0n,
         move: move_.NO_MOVE,
         weight: 0,
-        n: 0,
         learn: 0
     }
     while (left < right) {
         mid = Math.floor((left + right) / 2);
-        read_entry(entry, mid);
+        readEntry(entry, mid);
         if (key <= entry.key) {
             right = mid;
         } else {
             left = mid + 1;
         }
     }
-    read_entry(entry, left);
-    return (entry.key === key) ? left : book_size;
+    readEntry(entry, left);
+    return (entry.key === key) ? left : bookSize;
 }
-function read_entry(entry: entry_t, index: number) {
+function readEntry(entry: entry_t, index: number) {
     const offset = index * 16;
-    entry.key = book_file.getBigUint64(offset);
-    entry.move = book_file.getUint16(offset + 8);
-    entry.weight = book_file.getUint16(offset + 10);//use later in search
-    entry.n = book_file.getUint32(offset + 12); // use later in search or eval
-    entry.learn = book_file.getUint32(offset + 14); // use later in search or eval
+    entry.key = bookFile.getBigUint64(offset);
+    entry.move = bookFile.getUint16(offset + 8);
+    entry.weight = bookFile.getUint16(offset + 10);//use later in search
+    entry.learn = bookFile.getUint32(offset + 12); // use later in search or eval
 }
 
-function poly_to_smith(poly_move: number) {
+function polyToSmith(polyMove: number) {
     let smith = "";
-    smith += String.fromCharCode('a'.charCodeAt(0) + ((poly_move >> 6) & 7));
-    smith += String.fromCharCode('1'.charCodeAt(0) + ((poly_move >> 9) & 7));
-    smith += String.fromCharCode('a'.charCodeAt(0) + ((poly_move >> 0) & 7));
-    smith += String.fromCharCode('1'.charCodeAt(0) + ((poly_move >> 3) & 7));
-    const promotion = (poly_move >> 12) & 7;
+    smith += String.fromCharCode('a'.charCodeAt(0) + ((polyMove >> 6) & 7));
+    smith += String.fromCharCode('1'.charCodeAt(0) + ((polyMove >> 9) & 7));
+    smith += String.fromCharCode('a'.charCodeAt(0) + ((polyMove >> 0) & 7));
+    smith += String.fromCharCode('1'.charCodeAt(0) + ((polyMove >> 3) & 7));
+    const promotion = (polyMove >> 12) & 7;
     if (promotion !== 0) {
         let pp = 'q';
         switch (promotion) {
@@ -72,35 +69,34 @@ function poly_to_smith(poly_move: number) {
     }
     return smith;
 }
-function my_random(n: number) {
+function myRandom(n: number) {
     return Math.floor(Math.random() * (n));
 }
 
-export function book_move(board: board_.board_t): move_.move_t {
-    if (book_file !== null && book_size !== 0) {
-        let best_move_poly = move_.NO_MOVE;
+function bookMove(board: board_.board_t): move_.move_t {
+    if (bookFile !== null && bookSize !== 0) {
+        let bestMovePoly = move_.NO_MOVE;
         let best_score = 0;
         const entry: entry_t = {
             key: 0n,
-            move: move_.NO_MOVE,
+            move: 0,
             weight: 0,
-            n: 0,
             learn: 0
         }
-        for (let pos = find_key(board.current_polyglot_key); pos < book_size; pos++) {
-            read_entry(entry, pos);
-            if (entry.key !== board.current_polyglot_key) {
+        for (let pos = findKey(board.currentPolyglotKey); pos < bookSize; pos++) {
+            readEntry(entry, pos);
+            if (entry.key !== board.currentPolyglotKey) {
                 break;
             }
             const score = entry.weight;
             best_score += score;
-            if (my_random(best_score) < score) best_move_poly = entry.move;
+            if (myRandom(best_score) < score) bestMovePoly = entry.move;
         }
-        if (best_move_poly !== move_.NO_MOVE) {
-            const smith_move = poly_to_smith(best_move_poly);
-            const best_move = move_.smith_to_move(smith_move, board);
-            if (best_move !== move_.NO_MOVE) {
-                return best_move;
+        if (bestMovePoly !== move_.NO_MOVE) {
+            const smithMove = polyToSmith(bestMovePoly);
+            const bestMove = move_.smithToMove(smithMove, board);
+            if (bestMove !== move_.NO_MOVE) {
+                return bestMove;
             }
         }
     }
@@ -111,15 +107,15 @@ export function book_move(board: board_.board_t): move_.move_t {
   * NOOB PROBE BOOK
 ****************************************************************************/
 // https://www.chessdb.cn/cloudbookc_api_en.html
-export type noobprobe_t = {
+type noobprobe_t = {
     option: string;
     value: string;
 }
-interface noobprobe_callback { (arg: string): void }
+interface noobprobeCallback { (arg: string): void }
 
-export function fetch_noob(action: string, params: noobprobe_t[], board: board_.board_t, callback: noobprobe_callback): void {
+function fetchNoob(action: string, params: noobprobe_t[], board: board_.board_t, callback: noobprobeCallback): void {
     //http://www.chessdb.cn/cdb.php?action=[ACTION]{&[OPTION1]=[VALUE1]...&[OPTIONn]=[VALUEn]}
-    const fen = board_.board_to_fen(board);
+    const fen = board_.boardToFen(board);
     let params_str = "";
     for (const param of params) {
         params_str += `&${param.option}=${param.value}`;
@@ -135,5 +131,11 @@ export function fetch_noob(action: string, params: noobprobe_t[], board: board_.
     }
     Http.open("GET", url, true);
     Http.send(null);
-
 }
+
+export {
+    fetchNoob,
+    noobprobe_t,
+    bookMove,
+    bookAdd
+};

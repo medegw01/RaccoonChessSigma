@@ -7,19 +7,28 @@
 import * as board_ from './game/board'
 import * as hash_ from './game/hash'
 
-export const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-export const NAME = "rcSigma";
-export const CHECKMATE = 32000;
-export const INFINITE = 32001;
-export const MAX_MOVES = 2048;
-export const MAX_MOVES_POSITION = 256;
-export const BOARD_SQUARE_NUM = 120;
-export const MAX_DEPTH = 64;
+const VERSION = "0.1.0";
+const NAME = "RaccoonChessSigma";
+const AUTHOR = "Michael Edegware"
 
-export enum PHASE { MG, EG }
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const CHECKMATE = 32000;
+const INFINITE = 32001;
+const MAX_MOVES = 2048;
+const MAX_MOVES_POSITION = 256;
+const BOARD_SQUARE_NUM = 120;
+const MAX_DEPTH = 64;
 
+enum Phase { MG, EG }
 
-export interface evaluation_fn { (arg: board_.board_t): number }
+interface evaluationFN { (arg: board_.board_t): number }
+
+const isOfType = <T>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+    varToBeChecked: any,
+    propertyToCheckFor: keyof T
+): varToBeChecked is T =>
+    (varToBeChecked as T)[propertyToCheckFor] !== undefined;
 
 export function ASSERT(condition: boolean, msg?: string): asserts condition {
     if (!condition) {
@@ -27,7 +36,7 @@ export function ASSERT(condition: boolean, msg?: string): asserts condition {
     }
 }
 
-export function COUNT_BITS(b: board_.bitboard_t): number {
+function COUNT_BITS(b: board_.bitboard_t): number {
     let num_bits = 0;
     while (b) {
         num_bits++;
@@ -36,86 +45,98 @@ export function COUNT_BITS(b: board_.bitboard_t): number {
     return num_bits;
 }
 
-export function SET_BIT(b: board_.bitboard_t, pos: number): bigint {
+function SET_BIT(b: board_.bitboard_t, pos: number): bigint {
     return (b | 1n << BigInt(pos))
 }
 
-export function CLEAR_BIT(b: board_.bitboard_t, pos: number): bigint {
+function CLEAR_BIT(b: board_.bitboard_t, pos: number): bigint {
     return (b & ~(1n << BigInt(pos)))
 }
 
-export function ISKthBIT_SET(b: board_.bitboard_t, k: number): boolean { return ((b >> BigInt(k)) & 1n) === 1n }
+function ISKthBIT_SET(b: board_.bitboard_t, k: number): boolean { return ((b >> BigInt(k)) & 1n) === 1n }
 
 //===========================================================//
 // Game Globals
 //===========================================================//
-export const square64_to_square120 = new Array<number>(64);
-export const square120_to_square64 = new Array<number>(BOARD_SQUARE_NUM);
-export const castle_permission = new Array<number>(120);
+const square64ToSquare120 = new Array<number>(64);
+const square120ToSquare64 = new Array<number>(BOARD_SQUARE_NUM);
+const castlePermission = new Array<number>(120);
 
-export const piece_to_ascii = ".PBNRQKpbnrqk";
-export const piece_to_unicode = ["░", "♙", "♗", "♘", "♖", "♕", "♔", "♟", "♝", "♞", "♜", "♛", "♚"]
-export const castle64_hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
+const pieceToAscii = ".PBNRQKpbnrqk";
+const pieceToUnicode = [
+    '\u2800',
+    '\u2659', '\u2657', '\u2658', '\u2656', '\u2655', '\u2654',
+    '\u265f', '\u265d', '\u265e', '\u265c', '\u265b', '\u265a'
+];
+const pieceAnsi = {
+    white: '\u001b[30m',
+    black: '\u001b[30m',
+};
+const squareAnsi = {
+    dark: '\u001b[41m',
+    light: '\u001b[47m',
+};
+const castle64Hash = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
 
-export const is_big_piece = [false, false, true, true, true, true, true, false, true, true, true, true, true];
-export const is_major_piece = [false, false, false, false, true, true, true, false, false, false, true, true, true];
-export const is_minor_piece = [false, false, true, true, false, false, false, false, true, true, false, false, false];
-export const is_pawn = [false, true, false, false, false, false, false, true, false, false, false, false, false];
-export const is_knight = [false, false, false, true, false, false, false, false, false, true, false, false, false];
-export const is_bishop = [false, false, true, false, false, false, false, false, true, false, false, false, false];
-export const is_king = [false, false, false, false, false, false, true, false, false, false, false, false, true];
-export const is_queen = [false, false, false, false, false, true, false, false, false, false, false, true, false];
-export const is_rook = [false, false, false, false, true, false, false, false, false, false, true, false, false];
-export const is_rook_or_queen = [false, false, false, false, true, true, false, false, false, false, true, true, false];
-export const is_bishop_or_queen = [false, false, true, false, false, true, false, false, true, false, false, true, false];
-export const is_slide_piece = [false, false, true, false, true, true, false, false, true, false, true, true, false];
-export const is_white_piece = [false, true, true, true, true, true, true, false, false, false, false, false, false];
+const isBigPiece = [false, false, true, true, true, true, true, false, true, true, true, true, true];
+const isMajorPiece = [false, false, false, false, true, true, true, false, false, false, true, true, true];
+const isMinorPiece = [false, false, true, true, false, false, false, false, true, true, false, false, false];
+const isPawn = [false, true, false, false, false, false, false, true, false, false, false, false, false];
+const isKnight = [false, false, false, true, false, false, false, false, false, true, false, false, false];
+const isBishop = [false, false, true, false, false, false, false, false, true, false, false, false, false];
+const isKing = [false, false, false, false, false, false, true, false, false, false, false, false, true];
+const isQueen = [false, false, false, false, false, true, false, false, false, false, false, true, false];
+const is_rook = [false, false, false, false, true, false, false, false, false, false, true, false, false];
+const isRookOrQueen = [false, false, false, false, true, true, false, false, false, false, true, true, false];
+const isBishopOrQueen = [false, false, true, false, false, true, false, false, true, false, false, true, false];
+const isSlidePiece = [false, false, true, false, true, true, false, false, true, false, true, true, false];
+const isWhitePiece = [false, true, true, true, true, true, true, false, false, false, false, false, false];
 
-export const color_pieceflip = [
-    [board_.PIECES.WHITEPAWN, board_.PIECES.WHITEKNIGHT, board_.PIECES.WHITEBISHOP, board_.PIECES.WHITEROOK, board_.PIECES.WHITEQUEEN, board_.PIECES.WHITEKING],
-    [board_.PIECES.BLACKPAWN, board_.PIECES.BLACKKNIGHT, board_.PIECES.BLACKBISHOP, board_.PIECES.BLACKROOK, board_.PIECES.BLACKQUEEN, board_.PIECES.BLACKKING]
+const colorPieceflip = [
+    [board_.Pieces.WHITEPAWN, board_.Pieces.WHITEKNIGHT, board_.Pieces.WHITEBISHOP, board_.Pieces.WHITEROOK, board_.Pieces.WHITEQUEEN, board_.Pieces.WHITEKING],
+    [board_.Pieces.BLACKPAWN, board_.Pieces.BLACKKNIGHT, board_.Pieces.BLACKBISHOP, board_.Pieces.BLACKROOK, board_.Pieces.BLACKQUEEN, board_.Pieces.BLACKKING]
 ];
 
-export const get_color_piece = [
-    board_.COLORS.BOTH, board_.COLORS.WHITE, board_.COLORS.WHITE, board_.COLORS.WHITE, board_.COLORS.WHITE, board_.COLORS.WHITE,
-    board_.COLORS.WHITE, board_.COLORS.BLACK, board_.COLORS.BLACK, board_.COLORS.BLACK, board_.COLORS.BLACK, board_.COLORS.BLACK, board_.COLORS.BLACK, board_.COLORS.BOTH,
+const getColorPiece = [
+    board_.Colors.BOTH, board_.Colors.WHITE, board_.Colors.WHITE, board_.Colors.WHITE, board_.Colors.WHITE, board_.Colors.WHITE,
+    board_.Colors.WHITE, board_.Colors.BLACK, board_.Colors.BLACK, board_.Colors.BLACK, board_.Colors.BLACK, board_.Colors.BLACK, board_.Colors.BLACK, board_.Colors.BOTH,
 ];
 
-export const get_value_piece = [//-- get_value_piece[PHASE][board_.PIECES]
+const getValuePiece = [//-- getValuePiece[Phase][board_.Pieces]
     [0, 128, 825, 781, 1276, 2538, 0, 128, 825, 781, 1276, 2538, 0, 0],
     [0, 213, 915, 854, 1380, 2682, 0, 213, 915, 854, 1380, 2682, 0, 0]
 ];
 
-export const get_poly_piece = [
+const getPolyPiece = [
     -1, 1, 5, 3, 7, 9, 11, 0, 4, 2, 6, 8, 10
 ];
 
-export const is_color_bishop = [
+const isColorBishop = [
     [false, false, true, false, false, false, false, false, false, false, false, false, false],
     [false, false, false, false, false, false, false, false, true, false, false, false, false]
 ];
 
-export const is_color_knight = [
+const isColorKnight = [
     [false, false, false, true, false, false, false, false, false, false, false, false, false],
     [false, false, false, false, false, false, false, false, false, true, false, false, false]
 ];
 
-export const is_color_rook = [
+const isColorRook = [
     [false, false, false, false, true, false, false, false, false, false, false, false, false],
     [false, false, false, false, false, false, false, false, false, false, true, false, false]
 ];
 
-export const is_color_queen = [
+const isColorQueen = [
     [false, false, false, false, false, true, false, false, false, false, false, false, false],
     [false, false, false, false, false, false, false, false, false, false, false, true, false]
 ];
 
-export const is_color_pawn = [
+const isColorPawn = [
     [false, true, false, false, false, false, false, false, false, false, false, false, false],
     [false, false, false, false, false, false, false, true, false, false, false, false, false]
 ];
 
-export const flip = [
+const flip = [
     56, 57, 58, 59, 60, 61, 62, 63,
     48, 49, 50, 51, 52, 53, 54, 55,
     40, 41, 42, 43, 44, 45, 46, 47,
@@ -126,72 +147,136 @@ export const flip = [
     0, 1, 2, 3, 4, 5, 6, 7,
 ];
 
-export const files_board = new Array<number>(BOARD_SQUARE_NUM);
-export const ranks_board = new Array<number>(BOARD_SQUARE_NUM);
+const filesBoard = new Array<number>(BOARD_SQUARE_NUM);
+const ranksBoard = new Array<number>(BOARD_SQUARE_NUM);
 
 // functions
 // Export each of these functions so that you can test each of them individually 
-function initialize_files_rank_array() {
+function initializeFilesRankArray() {
     for (let i = 0; i < BOARD_SQUARE_NUM; i++) {
-        files_board[i] = board_.SQUARES.OFF_BOARD;
-        ranks_board[i] = board_.SQUARES.OFF_BOARD;
+        filesBoard[i] = board_.Squares.OFF_BOARD;
+        ranksBoard[i] = board_.Squares.OFF_BOARD;
     }
-    for (let rank = board_.RANKS.FIRST_RANK; rank <= board_.RANKS.EIGHTH_RANK; ++rank) {
-        for (let file = board_.FILES.A_FILE; file <= board_.FILES.H_FILE; ++file) {
+    for (let rank = board_.Ranks.FIRST_RANK; rank <= board_.Ranks.EIGHTH_RANK; ++rank) {
+        for (let file = board_.Files.A_FILE; file <= board_.Files.H_FILE; ++file) {
             const square_120 = board_.FILE_RANK_TO_SQUARE(file, rank);
-            files_board[square_120] = file;
-            ranks_board[square_120] = rank;
+            filesBoard[square_120] = file;
+            ranksBoard[square_120] = rank;
         }
     }
 }
-function initialize_square120_to_square64() {
+function initializeSquare120ToSquare64() {
     let sq_64 = 0;
     let i, rank, file;
     for (i = 0; i < BOARD_SQUARE_NUM; ++i) {
-        square120_to_square64[i] = 65;
+        square120ToSquare64[i] = 65;
     }
     for (i = 0; i < 64; ++i) {
-        square64_to_square120[i] = 120;
+        square64ToSquare120[i] = 120;
     }
 
-    for (rank = board_.RANKS.FIRST_RANK; rank <= board_.RANKS.EIGHTH_RANK; ++rank) {
-        for (file = board_.FILES.A_FILE; file <= board_.FILES.H_FILE; file++) {
+    for (rank = board_.Ranks.FIRST_RANK; rank <= board_.Ranks.EIGHTH_RANK; ++rank) {
+        for (file = board_.Files.A_FILE; file <= board_.Files.H_FILE; file++) {
             const sq = board_.FILE_RANK_TO_SQUARE(file, rank);
-            square64_to_square120[sq_64] = sq;
-            square120_to_square64[sq] = sq_64;
+            square64ToSquare120[sq_64] = sq;
+            square120ToSquare64[sq] = sq_64;
             sq_64++;
         }
     }
 }
 
-function initialize_hash_key() {
+function initializeHashKey() {
     for (let flag = 0; flag < 16; flag++) {
         for (let i = 0; i < 4; i++) {
-            if ((flag & (1 << i)) !== 0) castle64_hash[flag] ^= hash_.random64_poly[hash_.random_castle + i];
+            if ((flag & (1 << i)) !== 0) castle64Hash[flag] ^= hash_.random64Poly[hash_.randomCastle + i];
         }
     }
 
-    for (let j = 0; j < 120; j++) castle_permission[j] = 0xF;
-    castle_permission[board_.SQUARES.E1] &= ~board_.CASTLING.WHITE_CASTLE_OO;
-    castle_permission[board_.SQUARES.H1] &= ~board_.CASTLING.WHITE_CASTLE_OO;
+    for (let j = 0; j < 120; j++) castlePermission[j] = 0xF;
+    castlePermission[board_.Squares.E1] &= ~board_.Castling.WHITE_CASTLE_OO;
+    castlePermission[board_.Squares.H1] &= ~board_.Castling.WHITE_CASTLE_OO;
 
-    castle_permission[board_.SQUARES.E1] &= ~board_.CASTLING.WHITE_CASTLE_OOO;
-    castle_permission[board_.SQUARES.A1] &= ~board_.CASTLING.WHITE_CASTLE_OOO;
+    castlePermission[board_.Squares.E1] &= ~board_.Castling.WHITE_CASTLE_OOO;
+    castlePermission[board_.Squares.A1] &= ~board_.Castling.WHITE_CASTLE_OOO;
 
-    castle_permission[board_.SQUARES.E8] &= ~board_.CASTLING.BLACK_CASTLE_OO;
-    castle_permission[board_.SQUARES.H8] &= ~board_.CASTLING.BLACK_CASTLE_OO;
+    castlePermission[board_.Squares.E8] &= ~board_.Castling.BLACK_CASTLE_OO;
+    castlePermission[board_.Squares.H8] &= ~board_.Castling.BLACK_CASTLE_OO;
 
-    castle_permission[board_.SQUARES.E8] &= ~board_.CASTLING.BLACK_CASTLE_OOO;
-    castle_permission[board_.SQUARES.A8] &= ~board_.CASTLING.BLACK_CASTLE_OOO;
+    castlePermission[board_.Squares.E8] &= ~board_.Castling.BLACK_CASTLE_OOO;
+    castlePermission[board_.Squares.A8] &= ~board_.Castling.BLACK_CASTLE_OOO;
 }
 
-export function initialize_game(): void {
-    initialize_square120_to_square64();
-    initialize_hash_key();
-    initialize_files_rank_array();
+function initializeGame(): void {
+    initializeSquare120ToSquare64();
+    initializeHashKey();
+    initializeFilesRankArray();
 }
 
-export function get_time_ms(): number {
+function get_time_ms(): number {
     return new Date().getTime();
 }
 
+function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+}
+
+export {
+    START_FEN,
+    NAME,
+    VERSION,
+    AUTHOR,
+    CHECKMATE,
+    INFINITE,
+    MAX_DEPTH,
+    MAX_MOVES,
+    MAX_MOVES_POSITION,
+    BOARD_SQUARE_NUM,
+
+    square64ToSquare120,
+    square120ToSquare64,
+    castlePermission,
+    pieceToAscii,
+    pieceToUnicode,
+    castle64Hash,
+    isBigPiece,
+    isMajorPiece,
+    isMinorPiece,
+    isPawn,
+    isKnight,
+    isBishop,
+    isKing,
+    isQueen,
+    is_rook,
+    isRookOrQueen,
+    isBishopOrQueen,
+    isSlidePiece,
+    isWhitePiece,
+    colorPieceflip,
+    getColorPiece,
+    getValuePiece,
+    getPolyPiece,
+    isColorBishop,
+    isColorKnight,
+    isColorRook,
+    isColorQueen,
+    isColorPawn,
+    flip,
+    filesBoard,
+    ranksBoard,
+    pieceAnsi,
+    squareAnsi,
+
+    COUNT_BITS,
+    SET_BIT,
+    CLEAR_BIT,
+    ISKthBIT_SET,
+
+    evaluationFN,
+    isOfType,
+    Phase,
+
+    bufferToArrayBuffer,
+    get_time_ms,
+    initializeGame,
+
+}

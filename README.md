@@ -5,8 +5,9 @@
   ♔ ♕ ♖ ♗ ♘ ♙<br/>
   TypeScript Chess Library and Engine
 </p>
+
 <p align="center">
-    <a href="https://github.com/medegw01/RaccoonChessSigma/actions" ><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/medegw01/RaccoonChessSigma/CLI%20Build?label=CI%20build&style=flat"></a>
+    <a href="https://github.com/medegw01/RaccoonChessSigma/actions" ><img alt="GitHub Workflow Status (branch)" src="https://img.shields.io/github/workflow/status/medegw01/RaccoonChessSigma/CLI%20Build/main?logo=GitHUB"></a>
     <a href='https://coveralls.io/github/medegw01/RaccoonChessSigma?branch=main'><img src='https://coveralls.io/repos/github/medegw01/RaccoonChessSigma/badge.svg?branch=main' alt='Coverage Status' /></a>
     <a href="https://github.com/medegw01/RaccoonChessSigma/blob/main/LICENSE" ><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
     <a href="https://github.com/medegw01/RaccoonChessSigma/releases/latest" ><img alt="GitHub release (latest by date including pre-releases)" src="https://img.shields.io/github/v/release/medegw01/RaccoonChessSigma?include_prereleases&label=latest&style=flat"></a>
