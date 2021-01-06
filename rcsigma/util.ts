@@ -36,7 +36,7 @@ export function ASSERT(condition: boolean, msg?: string): asserts condition {
     }
 }
 
-function COUNT_BITS(b: board_.bitboard_t): number {
+function POP_COUNT(b: board_.bitboard_t): number {
     let num_bits = 0;
     while (b) {
         num_bits++;
@@ -44,13 +44,12 @@ function COUNT_BITS(b: board_.bitboard_t): number {
     }
     return num_bits;
 }
-
-function SET_BIT(b: board_.bitboard_t, pos: number): bigint {
-    return (b | 1n << BigInt(pos))
+function SEVERAL(bb: board_.bitboard_t): boolean {
+    return (bb & (bb - 1n)) !== 0n;
 }
 
-function CLEAR_BIT(b: board_.bitboard_t, pos: number): bigint {
-    return (b & ~(1n << BigInt(pos)))
+function ONLY_ONE(bb: board_.bitboard_t): boolean {
+    return (bb !== 0n) && !SEVERAL(bb);
 }
 
 function ISKthBIT_SET(b: board_.bitboard_t, k: number): boolean { return ((b >> BigInt(k)) & 1n) === 1n }
@@ -58,6 +57,9 @@ function ISKthBIT_SET(b: board_.bitboard_t, k: number): boolean { return ((b >> 
 //===========================================================//
 // Game Globals
 //===========================================================//
+const lightSquares = BigInt('0x55aa55aa55aa55aa');
+const darkSquares = BigInt('0xaa55aa55aa55aa55');
+
 const square64ToSquare120 = new Array<number>(64);
 const square120ToSquare64 = new Array<number>(BOARD_SQUARE_NUM);
 const castlePermission = new Array<number>(120);
@@ -173,6 +175,7 @@ function initializeSquare120ToSquare64() {
     }
     for (i = 0; i < 64; ++i) {
         square64ToSquare120[i] = 120;
+
     }
 
     for (rank = board_.Ranks.FIRST_RANK; rank <= board_.Ranks.EIGHTH_RANK; ++rank) {
@@ -206,11 +209,13 @@ function initializeHashKey() {
     castlePermission[board_.Squares.A8] &= ~board_.Castling.BLACK_CASTLE_OOO;
 }
 
+
 function initializeGame(): void {
     initializeSquare120ToSquare64();
     initializeHashKey();
     initializeFilesRankArray();
 }
+
 
 function get_time_ms(): number {
     return new Date().getTime();
@@ -219,6 +224,7 @@ function get_time_ms(): number {
 function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
+
 
 export {
     START_FEN,
@@ -232,6 +238,8 @@ export {
     MAX_MOVES_POSITION,
     BOARD_SQUARE_NUM,
 
+    darkSquares,
+    lightSquares,
     square64ToSquare120,
     square120ToSquare64,
     castlePermission,
@@ -266,10 +274,10 @@ export {
     pieceAnsi,
     squareAnsi,
 
-    COUNT_BITS,
-    SET_BIT,
-    CLEAR_BIT,
+    POP_COUNT,
     ISKthBIT_SET,
+    SEVERAL,
+    ONLY_ONE,
 
     evaluationFN,
     isOfType,

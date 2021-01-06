@@ -587,8 +587,8 @@ function clearPieces(sq: board_.Squares, board: board_.board_t): void {
             }
         }
         else {
-            board.pawns[col] = util_.CLEAR_BIT(board.pawns[col], board_.SQ64(sq));
-            board.pawns[board_.Colors.BOTH] = util_.CLEAR_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(sq));
+            board.pawns[col] ^= board_.SQ64BB(board_.SQ64(sq));
+            board.pawns[board_.Colors.BOTH] ^= board_.SQ64BB(board_.SQ64(sq));
         }
 
         for (index = 0; index < board.numberPieces[pce]; ++index) {
@@ -599,6 +599,7 @@ function clearPieces(sq: board_.Squares, board: board_.board_t): void {
         }
 
         board.numberPieces[pce]--;
+        board.piecesBB[pce] ^= board_.SQ64BB(board_.SQ64(sq));
         board.pieceList[board_.PIECE_INDEX(pce, t_pceNum)] = board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce])];
         board.currentPolyglotKey ^= (hash_.random64Poly[hash_.randomPiece + (util_.getPolyPiece[pce]) * 64 + board_.SQ64(sq)]);
 
@@ -621,14 +622,16 @@ function addPiece(sq: board_.Squares, pce: board_.Pieces, board: board_.board_t)
             }
         }
         else {
-            board.pawns[col] = util_.SET_BIT(board.pawns[col], board_.SQ64(sq));
-            board.pawns[board_.Colors.BOTH] = util_.SET_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(sq));
+            board.pawns[col] |= board_.SQ64BB(board_.SQ64(sq));
+            board.pawns[board_.Colors.BOTH] |= board_.SQ64BB(board_.SQ64(sq));
         }
 
         board.materialEg[col] += util_.getValuePiece[util_.Phase.EG][pce];
         board.materialMg[col] += util_.getValuePiece[util_.Phase.MG][pce];
 
         board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce]++)] = sq;
+
+        board.piecesBB[pce] |= board_.SQ64BB(board_.SQ64(sq));
 
         board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomPiece + (polyPiece) * 64 + board_.SQ64(sq)];
 
@@ -645,14 +648,17 @@ function movePiece(from: board_.Squares, to: board_.Squares, board: board_.board
         board.pieces[from] = board_.Pieces.EMPTY;
         board.pieces[to] = pce;
 
+        board.piecesBB[pce] ^= board_.SQ64BB(board_.SQ64(from));
+        board.piecesBB[pce] |= board_.SQ64BB(board_.SQ64(to));
+
 
         if (!util_.isBigPiece[pce]) {
             // -- clear
-            board.pawns[col] = util_.CLEAR_BIT(board.pawns[col], board_.SQ64(from));
-            board.pawns[board_.Colors.BOTH] = util_.CLEAR_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(from));
+            board.pawns[col] ^= board_.SQ64BB(board_.SQ64(from));
+            board.pawns[board_.Colors.BOTH] ^= board_.SQ64BB(board_.SQ64(from));
             //-- set
-            board.pawns[col] = util_.SET_BIT(board.pawns[col], board_.SQ64(to));
-            board.pawns[board_.Colors.BOTH] = util_.SET_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(to));
+            board.pawns[col] |= board_.SQ64BB(board_.SQ64(to));
+            board.pawns[board_.Colors.BOTH] |= board_.SQ64BB(board_.SQ64(to));
         }
 
         for (let index = 0; index < board.numberPieces[pce]; ++index) {
