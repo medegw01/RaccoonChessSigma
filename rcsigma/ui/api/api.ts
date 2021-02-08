@@ -4,6 +4,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import * as util_ from '../../util'
+import * as bitboard_ from '../../game/bitboard'
 import * as board_ from '../../game/board'
 import * as perft_ from '../../game/perft'
 import * as hash_ from '../../game/hash'
@@ -25,7 +26,8 @@ export class Raccoon {
         startFEN?: string;
         book_path?: string | ArrayBufferLike;
     }) {
-        util_.initializeGame();
+        util_.initUtil();
+        bitboard_.initBitBoard();
 
         this.board = board_.newBoard();
         this.movesHistory = [];

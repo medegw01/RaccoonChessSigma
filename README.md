@@ -15,7 +15,7 @@
     <a href="https://github.com/facebook/jest" ><img alt="tested with jest" src="https://img.shields.io/badge/tested_with-jest-99424f.svg"></a>    
 </p>
 
-[RaccoonChessSigma](httSp://rcsigma.org/) is a free, powerful chess engine written in TypeScript. It is primarily inspired by [Vice](https://www.youtube.com/user/BlueFeverSoft/aboutg), [Stockfish](https://stockfishchess.org/), [LeelaChessZero](https://lczero.org/), and a number of open source projects and aims to serve as both reference for other authors and a high-end engine.
+[RaccoonChessSigma](httSp://rcsigma.org/) is a free, powerful chess engine written in TypeScript. It is primarily inspired by [Vice](https://www.youtube.com/user/BlueFeverSoft/aboutg), [Hakkapeliitta](https://github.com/mAarnos/Hakkapeliitta), [Ethereal](https://github.com/AndyGrant/Ethereal), [Stockfish](https://stockfishchess.org/), [LeelaChessZero](https://lczero.org/), and a number of open source projects and aims to serve as both reference for other authors and a high-end engine.
 
 RaccoonChessSigma evaluates chess positions using either of the following evaluation algorithm:
 

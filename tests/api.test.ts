@@ -8,6 +8,7 @@ import { verboseMove_t } from '../rcsigma/game/move';
 import { position_t } from '../rcsigma/game/board';
 import { START_FEN } from '../rcsigma/util';
 
+
 describe("API Tests", () => {
     let game: api.Raccoon;
     beforeEach(() => {
@@ -69,97 +70,129 @@ describe("Game Tests", () => {
         beforeEach(() => {
             game = new api.Raccoon();
         });
-        it("Fen: startFEN; moves: []", function () {
+
+        it("starting position", function () {
             game.loadFEN(startFEN);
             const by_fen = game.getPolyglot();
-            game.loadFEN(startFEN);
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x463b96181691fc9c"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x463b96181691fc9c").toString(16))
+            ).toBe(true);
         });
-        it("Fen: startFEN; moves: ['e2e4']", function () {
+        it("position after e2e4", function () {
             game.loadFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x823c9b50fd114196"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x823c9b50fd114196").toString(16))
+            ).toBe(true);
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5']", function () {
+        it("position after e2e4 d7d5", function () {
             game.loadFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x0756b94461c50fb0"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x0756b94461c50fb0").toString(16))
+            ).toBe(true);
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5']", function () {
+        it("position after e2e4 d7d5 e4e5", function () {
             game.loadFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5', 'e4e5'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5', 'e4e5'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x662fafb965db29d4"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x662fafb965db29d4").toString(16))
+            ).toBe(true);
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5']", function () {
+        it("position after e2e4 d7d5 e4e5 f7f5", function () {
             game.loadFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x22a48b5a8e47ff78"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x22a48b5a8e47ff78").toString(16))
+            ).toBe(true);
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7']", function () {
+        it("position after e2e4 d7d5 e4e5 f7f5 e1e2", function () {
+            game.loadFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR b kq - 0 3");
+            const by_fen = game.getPolyglot();
+
+            game.loadFEN(startFEN);
+            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
+            const byMove = game.getPolyglot(true);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x652a607ca3f242c1").toString(16))
+            ).toBe(true);
+        });
+        it("position after e2e4 d7d5 e4e5 f7f5 e1e2 e8f7", function () {
             game.loadFEN("rnbq1bnr/ppp1pkpp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR w - - 0 4");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x00fdd303c946bdd9"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x00fdd303c946bdd9").toString(16))
+            ).toBe(true);
         });
-        it("Fen: startFEN; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4']", function () {
+        it("position after a2a4 b7b5 h2h4 b5b4 c2c4", function () {
             game.loadFEN("rnbqkbnr/p1pppppp/8/8/PpP4P/8/1P1PPPP1/RNBQKBNR b KQkq c3 0 3");
             const by_fen = game.getPolyglot();
-            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x3c8123ea7b067637"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x3c8123ea7b067637").toString(16))
+            ).toBe(true);
         });
-        it("Fen: startFEN; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3']", function () {
+        it("position after a2a4 b7b5 h2h4 b5b4 c2c4 b4c3 a1a3", function () {
             game.loadFEN("rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4");
             const by_fen = game.getPolyglot();
-            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x5c3f9b829b279560"));
-            expect(byMove).toBe(by_fen);
+
+            expect(
+                (by_fen.toString(16) == byMove.toString(16))
+                && (by_fen.toString(16) == BigInt("0x5c3f9b829b279560").toString(16))
+            ).toBe(true);
+
         });
     });
     describe("Load Fen & Get fen Test", function () {
@@ -790,7 +823,7 @@ describe("Evaluation Tests", () => {
         game.loadFEN(test_fen);
         const eval_score = game.evaluateBoard();
         game.flipBoard();
-        expect(game.evaluateBoard()).toBe(eval_score);
+        expect(game.evaluateBoard()).toBe(-eval_score);
     });
     it("rc0: the same evaluation for white and black", function () {
         game.loadFEN(START_FEN);

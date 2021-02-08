@@ -4,6 +4,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import * as board_ from '../game/board'
+import * as bitboard_ from '../game/bitboard'
 import * as move_ from '../game/move'
 
 /*****************************************************************************
@@ -12,7 +13,7 @@ import * as move_ from '../game/move'
 let bookFile: DataView;
 let bookSize: number;
 type entry_t = {
-    key: board_.bitboard_t;
+    key: bitboard_.bitboard_t;
     move: number;
     weight: number;
     learn: number;
@@ -23,7 +24,7 @@ function bookAdd(arrayBuffer: ArrayBuffer): boolean {
     bookSize = Math.floor(bookFile.byteLength / 16);
     return bookFile !== null;
 }
-function findKey(key: board_.bitboard_t) {
+function findKey(key: bitboard_.bitboard_t) {
     let left = 0, mid, right = bookSize - 1;
     const entry: entry_t = {
         key: 0n,

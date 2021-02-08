@@ -4,6 +4,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import * as util_ from '../../util'
+import * as bitboard_ from '../../game/bitboard'
 import * as board_ from '../../game/board'
 import * as search_ from '../../search/search'
 import * as uci_ from './uci'
@@ -35,7 +36,8 @@ type searchParam_t = {
     info: search_.info_t;
 }
 
-util_.initializeGame();
+util_.initUtil();
+bitboard_.initBitBoard();
 
 const config = {} as entrypointConfig_t;
 (function entrypoint() {

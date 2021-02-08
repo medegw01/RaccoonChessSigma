@@ -1,5 +1,6 @@
-import { initializeGame, NAME, AUTHOR, VERSION, START_FEN } from '../rcsigma/util';
+import { initUtil, NAME, AUTHOR, VERSION, START_FEN } from '../rcsigma/util';
 import { board_t, Colors, newBoard } from '../rcsigma/game/board';
+import { initBitBoard } from '../rcsigma/game/bitboard'
 import { info_t } from '../rcsigma/search/search';
 import { uciParser } from '../rcsigma/ui/uci/uci';
 
@@ -20,7 +21,8 @@ const log = console.log;
 
 describe("UCI Initialization Test", () => {
     beforeEach(() => {
-        initializeGame();
+        initUtil();
+        initBitBoard();
         console.log = jest.fn();
     });
     afterAll(() => {
@@ -80,7 +82,8 @@ describe("UCI Initialization Test", () => {
 describe("UCI setoption name[value] Test", () => {
     let info: info_t;
     beforeEach(() => {
-        initializeGame();
+        initUtil();
+        initBitBoard();
         console.log = jest.fn();
         info = getInfo();
     });
@@ -119,7 +122,8 @@ describe("position [fen  | startpos ]  moves  .... Test", () => {
     let position: board_t;
 
     beforeEach(() => {
-        initializeGame();
+        initUtil();
+        initBitBoard();
         position = newBoard();
         console.log = jest.fn();
     });
@@ -163,7 +167,8 @@ describe("go Test", () => {
     let info: info_t;
 
     beforeEach(() => {
-        initializeGame();
+        initUtil();
+        initBitBoard();
         info = getInfo();
         info.searchInitialized = true;
     });

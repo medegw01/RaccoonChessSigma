@@ -5,6 +5,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import * as board_ from './game/board'
+import * as bitboard_ from './game/bitboard'
 import * as hash_ from './game/hash'
 
 const VERSION = "0.1.0";
@@ -36,30 +37,10 @@ export function ASSERT(condition: boolean, msg?: string): asserts condition {
     }
 }
 
-function POP_COUNT(b: board_.bitboard_t): number {
-    let num_bits = 0;
-    while (b) {
-        num_bits++;
-        b &= b - 1n;
-    }
-    return num_bits;
-}
-function SEVERAL(bb: board_.bitboard_t): boolean {
-    return (bb & (bb - 1n)) !== 0n;
-}
-
-function ONLY_ONE(bb: board_.bitboard_t): boolean {
-    return (bb !== 0n) && !SEVERAL(bb);
-}
-
-function ISKthBIT_SET(b: board_.bitboard_t, k: number): boolean { return ((b >> BigInt(k)) & 1n) === 1n }
 
 //===========================================================//
 // Game Globals
 //===========================================================//
-const lightSquares = BigInt('0x55aa55aa55aa55aa');
-const darkSquares = BigInt('0xaa55aa55aa55aa55');
-
 const square64ToSquare120 = new Array<number>(64);
 const square120ToSquare64 = new Array<number>(BOARD_SQUARE_NUM);
 const castlePermission = new Array<number>(120);
@@ -149,6 +130,38 @@ const flip = [
     0, 1, 2, 3, 4, 5, 6, 7,
 ];
 
+
+/**
+ * Return relative rank based on color pov
+ * @param color 
+ * @param rank 
+ */
+const relativeRank = (color: board_.Colors, rank: number): number => {
+    return rank ^ (color * 7);
+}
+
+const relativeSquare = (color: board_.Colors, sq: number): number => {
+    return sq ^ (color * 56);
+}
+
+const pawnPush = (color: board_.Colors): bitboard_.Direction => {
+    return (color == board_.Colors.WHITE) ? bitboard_.Direction.NORTH : bitboard_.Direction.SOUTH;
+}
+
+const distance = (sq: number, sqq: number): number => {
+    return Math.max(
+        Math.abs(ranksBoard[board_.SQ120(sq)] - ranksBoard[board_.SQ120(sqq)]),
+        Math.abs(filesBoard[board_.SQ120(sq)] - filesBoard[board_.SQ120(sqq)]),
+    );
+}
+const rankOf = (sq64: number): number => {
+    return sq64 >> 3;
+}
+const fileOf = (sq64: number): number => {
+    return sq64 & 7;
+
+}
+
 const filesBoard = new Array<number>(BOARD_SQUARE_NUM);
 const ranksBoard = new Array<number>(BOARD_SQUARE_NUM);
 
@@ -210,7 +223,7 @@ function initializeHashKey() {
 }
 
 
-function initializeGame(): void {
+function initUtil(): void {
     initializeSquare120ToSquare64();
     initializeHashKey();
     initializeFilesRankArray();
@@ -238,8 +251,6 @@ export {
     MAX_MOVES_POSITION,
     BOARD_SQUARE_NUM,
 
-    darkSquares,
-    lightSquares,
     square64ToSquare120,
     square120ToSquare64,
     castlePermission,
@@ -274,17 +285,17 @@ export {
     pieceAnsi,
     squareAnsi,
 
-    POP_COUNT,
-    ISKthBIT_SET,
-    SEVERAL,
-    ONLY_ONE,
-
     evaluationFN,
     isOfType,
     Phase,
 
     bufferToArrayBuffer,
     get_time_ms,
-    initializeGame,
-
+    initUtil,
+    relativeRank,
+    relativeSquare,
+    pawnPush,
+    distance,
+    rankOf,
+    fileOf
 }
