@@ -299,7 +299,7 @@ function pT2P(color: board_.Colors, pce: number) {
     return pce + 6 * color
 }
 function p2Pt(pce: board_.Pieces) {
-    return pce % 7
+    return (pce < 7) ? pce : (pce % 7) + 1
 }
 
 function initEvaluation() {
@@ -808,6 +808,7 @@ function kingEval(board: board_.board_t, US: board_.Colors) {// stockfish
     // Penalty if king flank is under attack, potentially moving toward the king
     boardStaticEval.kingSafety[util_.Phase.EG] -= flankAttacks[util_.Phase.EG] * kingFlankAttack * pov;
     boardStaticEval.kingSafety[util_.Phase.MG] -= flankAttacks[util_.Phase.MG] * kingFlankAttack * pov;
+
 }
 
 
@@ -883,11 +884,10 @@ function spaceEval(board: board_.board_t, US: board_.Colors) {
 // Evaluation::threats() assigns bonuses according to the types of the
 // attacking and the attacked pieces.
 function threatsEval(board: board_.board_t, US: board_.Colors) {
-    const k = boardStaticEval.threat[0];
     const THEM = US ^ 1;
     const Up = util_.pawnPush(US);
     const pov = (1 - US * 2);
-    const thirdRankBB = US == board_.Colors.WHITE ? bitboard_.ranks[2] : bitboard_.ranks[5];
+    const thirdRankBB = (US == board_.Colors.WHITE) ? bitboard_.ranks[2] : bitboard_.ranks[5];
 
     let b: bitboard_.bitboardObj_t, cnt: number;
 
@@ -912,20 +912,16 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
             v: (defended | weak) & (attackedBy[pT2P(US, PieceType.KNIGHT)] | attackedBy[pT2P(US, PieceType.BISHOP)])
         };
         while (b.v) {
-            const sq = bitboard_.poplsb(b);
-            const pce = board.pieces[board_.SQ120(sq)];
-            console.log(`sq: ${sq} pce: ${pce}`);
-            boardStaticEval.threat[util_.Phase.MG] += threatByMinor[p2Pt(pce)][util_.Phase.MG] * pov;
-            boardStaticEval.threat[util_.Phase.EG] += threatByMinor[p2Pt(pce)][util_.Phase.EG] * pov;
+            const pce = p2Pt(board.pieces[board_.SQ120(bitboard_.poplsb(b))]);
+            boardStaticEval.threat[util_.Phase.MG] += threatByMinor[pce][util_.Phase.MG] * pov;
+            boardStaticEval.threat[util_.Phase.EG] += threatByMinor[pce][util_.Phase.EG] * pov;
         }
 
         b = { v: weak & attackedBy[pT2P(US, PieceType.ROOK)] };
         while (b.v) {
-            const sq = bitboard_.poplsb(b);
-            const pce = board.pieces[board_.SQ120(sq)];
-            console.log(`sq: ${sq} pce: ${pce}`);
-            boardStaticEval.threat[util_.Phase.MG] += threatByRook[p2Pt(pce)][util_.Phase.MG] * pov;
-            boardStaticEval.threat[util_.Phase.EG] += threatByRook[p2Pt(pce)][util_.Phase.EG] * pov;
+            const pce = p2Pt(board.pieces[board_.SQ120(bitboard_.poplsb(b))]);
+            boardStaticEval.threat[util_.Phase.MG] += threatByRook[pce][util_.Phase.MG] * pov;
+            boardStaticEval.threat[util_.Phase.EG] += threatByRook[pce][util_.Phase.EG] * pov;
         }
 
         if (weak & attackedBy[pT2P(US, PieceType.KING)]) {
@@ -985,9 +981,8 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
     boardStaticEval.threat[util_.Phase.EG] += threatByPawnPush[util_.Phase.EG] * cnt * pov;
 
     // Bonus for threats on the next moves against enemy queen
-    if (bitboard_.popcount({ v: board.piecesBB[pT2P(THEM, PieceType.QUEEN)] }) == 1) {
-        const queenImbalance = +(bitboard_.popcount({ v: board.piecesBB[pT2P(US, PieceType.QUEEN)] }) == 0);
-
+    if (board.numberPieces[pT2P(THEM, PieceType.QUEEN)] == 1) {
+        const queenImbalance = +((board.numberPieces[pT2P(THEM, PieceType.QUEEN)] + board.numberPieces[pT2P(US, PieceType.QUEEN)]) == 1);
         const sq = bitboard_.poplsb({ v: board.piecesBB[pT2P(THEM, PieceType.QUEEN)] });
         const mobArea = mobilityArea(
             board,
@@ -1015,7 +1010,6 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
         boardStaticEval.threat[util_.Phase.EG] += sliderOnQueen[util_.Phase.EG] * cnt * (1 + queenImbalance) * pov;
     }
 
-    console.log(Math.abs(k - boardStaticEval.threat[0]));
 }
 
 /**
@@ -1174,7 +1168,9 @@ bitboard_.initBitBoard();
 
 const fen = "3qkb2/pppp1ppp/n1b1p2r/4P3/2B2N2/2N5/PPPP1PPP/R3KB1R w KQkq - 2 2";
 const pos = board_.newBoard();
-board_.fenToBoard(fen, pos);
-//boardS_.mirrorBoard(pos)
 
+board_.fenToBoard(fen, pos);
+console.log(raccoonEvaluate(pos))
+
+board_.mirrorBoard(pos)
 console.log(raccoonEvaluate(pos))
