@@ -7,6 +7,7 @@ import * as bitboard_ from './bitboard'
 import * as util_ from '../util'
 import * as hash_ from './hash'
 import * as move_ from './move'
+import * as eval_ from '../evaluate/rc/eval'
 
 enum Pieces {
     EMPTY,
@@ -97,6 +98,7 @@ type board_t = {
 
     pieceList: Squares[];
     moveHistory: undo_t[];
+    pawnEvalHash: Map<bitboard_.bitboard_t, pawnEntry_t>;
 }
 type piece_t = { type: string, color: string };
 type position_t = {
@@ -105,6 +107,27 @@ type position_t = {
     enpassant: string  // enpassant
     turn: string // side to move
     moveCount: [number, number] // move counts: [half move, full, move]
+}
+
+type pawnEntry_t = {
+    /*pawnSpan: bitboard_.bitboard_t; //bitboard_.bitboard_t[];
+    attacked: bitboard_.bitboard_t;//bitboard_.bitboard_t[];
+    attacked2: bitboard_.bitboard_t;//bitboard_.bitboard_t[];
+    attackedBy: bitboard_.bitboard_t;//bitboard_.bitboard_t[];
+    kingAttackCount: number//number[];
+    kingAttackersCount: number//number[];
+    kingAttackWeight: number//number[];*/
+
+
+    pawnSpan: bitboard_.bitboard_t[];
+    attacked: bitboard_.bitboard_t[];
+    attacked2: bitboard_.bitboard_t[];
+    attackedBy: bitboard_.bitboard_t[];
+    kingAttackCount: number[];
+    kingAttackersCount: number[];
+    kingAttackWeight: number[];
+    boardStaticEval: eval_.staticEval_c;
+
 }
 
 
@@ -195,6 +218,7 @@ function checkBoard(position: board_t): void {
 function getTurn(board: board_t): string {
     return "wb-"[board.turn];
 }
+
 function newBoard(): board_t {
     return {
         pieces: new Array<Pieces>(util_.BOARD_SQUARE_NUM),
@@ -223,6 +247,8 @@ function newBoard(): board_t {
 
         pieceList: new Array<Squares>(13 * 10),
         moveHistory: new Array<undo_t>(util_.MAX_MOVES),
+
+        pawnEvalHash: new Map<bitboard_.bitboard_t, pawnEntry_t>(),
     };
 }
 
@@ -640,6 +666,7 @@ export {
     board_t,
     piece_t,
     position_t,
+    pawnEntry_t,
 
     FILE_RANK_TO_SQUARE,
     SQ120,

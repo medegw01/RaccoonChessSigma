@@ -1,11 +1,12 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
 import * as util_ from '../../util'
 import * as board_ from '../../game/board'
 import * as bitboard_ from '../../game/bitboard'
+import * as pawn_ from './pawns'
 
 class staticEval_c {
     psqt: [number, number]; imbalance: [number, number]; pawns: [number, number];
@@ -23,7 +24,7 @@ class staticEval_c {
         this.passed = [0, 0];
         this.space = [0, 0];
         this.kingSafety = [0, 0];
-    };
+    }
 }
 enum Scale {
     DRAW = 0,
@@ -295,10 +296,12 @@ let kingAttackWeight: number[];
 let boardStaticEval: staticEval_c;
 
 //pbnrq
-function pT2P(color: board_.Colors, pce: number) {
+function ptToP(color: board_.Colors, pce: number): board_.Pieces {
+    util_.ASSERT(pce <= PieceType.KING && pce >= PieceType.NO_PIECE_TYPE)
     return pce + 6 * color
 }
-function p2Pt(pce: board_.Pieces) {
+function pToPt(pce: board_.Pieces): PieceType {
+    util_.ASSERT(pce <= board_.Pieces.BLACKKING && pce >= board_.Pieces.EMPTY)
     return (pce < 7) ? pce : (pce % 7) + 1
 }
 
@@ -335,41 +338,21 @@ const mobilityArea = (board: board_.board_t, color: board_.Colors, pawn_attacks:
     return BigInt.asUintN(64, ~((p & shifted) | k | pawn_attacks));
 }
 
-
-function pawnEval(board: board_.board_t, US: board_.Colors) {
-    let sq: number, moves: bitboard_.bitboard_t;
-    const pov = (1 - US * 2);
-
-    const THEM = US ^ 1;
-    const isWhite = (US === board_.Colors.WHITE);
-    const pce = (isWhite) ? board_.Pieces.WHITEPAWN : board_.Pieces.BLACKPAWN;
-
-    const myPawn = (isWhite) ? board_.Pieces.WHITEPAWN : board_.Pieces.BLACKPAWN;
-    const enemyPawn = (isWhite) ? board_.Pieces.BLACKPAWN : board_.Pieces.WHITEPAWN;
-
-    const kingRing = bitboard_.kingSafetyZone(THEM, board_.SQ64(board.kingSquare[THEM]))
-        & BigInt.asUintN(64, ~bitboard_.pawnDoubleAttacksBB(THEM, board.piecesBB[enemyPawn]));
-    const pceBB = { v: board.piecesBB[pce] };
-    while (pceBB.v) {
-        sq = bitboard_.poplsb(pceBB);
-
-        moves = bitboard_.pawnAttacks(US, sq);
-        attacked2[US] |= moves & attacked[US];
-        attacked[US] |= moves;
-        attackedBy[pce] |= moves;
-
-        pawnSpan[US] |= bitboard_.pawnAttackSpan(US, sq);
-
-        //-- psqt
-        boardStaticEval.psqt[util_.Phase.EG] += pawnPSQT[util_.Phase.EG][util_.relativeSquare(US, sq)] * pov;
-        boardStaticEval.psqt[util_.Phase.MG] += pawnPSQT[util_.Phase.MG][util_.relativeSquare(US, sq)] * pov;
-
-        // King Safety calculations
-        if (kingRing & moves) {
-            kingAttackCount[THEM] += bitboard_.popcount({ v: kingRing & moves });
-            kingAttackersCount[THEM]++;
-            kingAttackWeight[THEM] += KingAttackWeights[PieceType.PAWN];
-        }
+function pawnEval(board: board_.board_t) {
+    const pawnEntry = pawn_.probePawn(board);
+    // Update Evaluation with pawn entry 
+    for (let c = board_.Colors.WHITE; c < board_.Colors.BOTH; c++) {
+        attacked[c] |= pawnEntry.attacked[c];
+        attacked2[c] |= pawnEntry.attacked2[c];
+        attackedBy[ptToP(c, PieceType.PAWN)] |= pawnEntry.attackedBy[ptToP(c, PieceType.PAWN)];
+        pawnSpan[c] |= pawnEntry.pawnSpan[c]
+        kingAttackCount[c] += pawnEntry.kingAttackCount[c];
+        kingAttackersCount[c] += pawnEntry.kingAttackersCount[c];
+        kingAttackWeight[c] += pawnEntry.kingAttackWeight[c];
+    }
+    for (let p = util_.Phase.MG; p <= util_.Phase.EG; p++) {
+        boardStaticEval.psqt[p] += pawnEntry.boardStaticEval.psqt[p];
+        boardStaticEval.pawns[p] += pawnEntry.boardStaticEval.pawns[p];
     }
 }
 
@@ -710,11 +693,11 @@ function kingEval(board: board_.board_t, US: board_.Colors) {// stockfish
     const moves = bitboard_.kingAttacks(sq);
     attacked2[US] |= moves & attacked[US];
     attacked[US] |= moves;
-    attackedBy[pT2P(US, PieceType.KING)] |= moves;
+    attackedBy[ptToP(US, PieceType.KING)] |= moves;
 
 
     const myKingRing = bitboard_.kingSafetyZone(US, board_.SQ64(board.kingSquare[US]))
-        & BigInt.asUintN(64, ~bitboard_.pawnDoubleAttacksBB(US, board.piecesBB[pT2P(US, PieceType.PAWN)]));
+        & BigInt.asUintN(64, ~bitboard_.pawnDoubleAttacksBB(US, board.piecesBB[ptToP(US, PieceType.PAWN)]));
 
     //-- psqt
     boardStaticEval.psqt[util_.Phase.EG] += kingPSQT[util_.Phase.EG][util_.relativeSquare(US, sq)] * pov;
@@ -732,7 +715,7 @@ function kingEval(board: board_.board_t, US: board_.Colors) {// stockfish
     // than once and only defended by our Queens or our King
     const weak = attacked[THEM]
         & ~attacked2[US]
-        & (~attacked[US] | attackedBy[pT2P(US, PieceType.QUEEN)] | attackedBy[pT2P(US, PieceType.KING)]);
+        & (~attacked[US] | attackedBy[ptToP(US, PieceType.QUEEN)] | attackedBy[ptToP(US, PieceType.KING)]);
 
     // Safe target squares are defended or are weak and attacked by two.
     // We exclude squares containing pieces which we cannot capture.
@@ -741,32 +724,32 @@ function kingEval(board: board_.board_t, US: board_.Colors) {// stockfish
 
     // Find square and piece combinations which would check our King
     const occ = (bitboard_.getPieces(THEM, board) | bitboard_.getPieces(US, board))
-        ^ board.piecesBB[pT2P(US, PieceType.QUEEN)];
+        ^ board.piecesBB[ptToP(US, PieceType.QUEEN)];
 
     b1 = bitboard_.rookAttacks(sq, occ);
     b2 = bitboard_.bishopAttacks(sq, occ);
     b3 = 0n;
 
     // Enemy rooks checks
-    const rookChecks = b1 & safe & attackedBy[pT2P(THEM, PieceType.ROOK)];
+    const rookChecks = b1 & safe & attackedBy[ptToP(THEM, PieceType.ROOK)];
     if (rookChecks) kingDanger += SafeCheck[PieceType.ROOK][+bitboard_.several(rookChecks)]
-    else unsafeChecks |= b1 & attackedBy[pT2P(THEM, PieceType.ROOK)];
+    else unsafeChecks |= b1 & attackedBy[ptToP(THEM, PieceType.ROOK)];
 
     // Enemy queen safe checks: count them only if the checks are from squares from
     // which opponent cannot give a rook check, because rook checks are more valuable.
-    const queenChecks = (b1 | b2) & safe & attackedBy[pT2P(THEM, PieceType.QUEEN)]
-        & ~(attackedBy[pT2P(US, PieceType.QUEEN)] | rookChecks);
+    const queenChecks = (b1 | b2) & safe & attackedBy[ptToP(THEM, PieceType.QUEEN)]
+        & ~(attackedBy[ptToP(US, PieceType.QUEEN)] | rookChecks);
     if (queenChecks) kingDanger += SafeCheck[PieceType.QUEEN][+bitboard_.several(queenChecks)]
 
 
     // Enemy bishops checks: count them only if they are from squares from which
     // opponent cannot give a queen check, because queen checks are more valuable.
-    const bishopChecks = b2 & safe & attackedBy[pT2P(THEM, PieceType.BISHOP)] & ~queenChecks;
+    const bishopChecks = b2 & safe & attackedBy[ptToP(THEM, PieceType.BISHOP)] & ~queenChecks;
     if (bishopChecks) kingDanger += SafeCheck[PieceType.BISHOP][+bitboard_.several(bishopChecks)]
-    else unsafeChecks |= b2 & attackedBy[pT2P(THEM, PieceType.BISHOP)];
+    else unsafeChecks |= b2 & attackedBy[ptToP(THEM, PieceType.BISHOP)];
 
     // Enemy knights checks
-    const knightChecks = bitboard_.kingAttacks(sq) & attackedBy[pT2P(THEM, PieceType.KNIGHT)];
+    const knightChecks = bitboard_.kingAttacks(sq) & attackedBy[ptToP(THEM, PieceType.KNIGHT)];
     if (knightChecks & safe) kingDanger += SafeCheck[PieceType.BISHOP][+bitboard_.several(bishopChecks & safe)];
     else unsafeChecks |= knightChecks;
 
@@ -788,8 +771,8 @@ function kingEval(board: board_.board_t, US: board_.Colors) {// stockfish
         + 69 * kingAttackCount[THEM]
         + ((US == board_.Colors.WHITE) ? boardStaticEval.mobility[util_.Phase.MG] : -boardStaticEval.mobility[util_.Phase.MG])
         + 3 * kingFlankAttack * kingFlankAttack / 8
-        - 873 * ((board.piecesBB[pT2P(THEM, PieceType.QUEEN)]) ? 0 : 1)
-        - 100 * ((attackedBy[pT2P(US, PieceType.KNIGHT)] & attackedBy[pT2P(US, PieceType.KING)]) ? 1 : 0)
+        - 873 * ((board.piecesBB[ptToP(THEM, PieceType.QUEEN)]) ? 0 : 1)
+        - 100 * ((attackedBy[ptToP(US, PieceType.KNIGHT)] & attackedBy[ptToP(US, PieceType.KING)]) ? 1 : 0)
         - 4 * kingFlankDefense
         + 37;
 
@@ -800,7 +783,7 @@ function kingEval(board: board_.board_t, US: board_.Colors) {// stockfish
     }
 
     // Penalty when our king is on a pawnless flank
-    if (!((board.piecesBB[pT2P(US, PieceType.PAWN)] | board.piecesBB[pT2P(THEM, PieceType.PAWN)]) & bitboard_.kingFlank[util_.fileOf(sq)])) {
+    if (!((board.piecesBB[ptToP(US, PieceType.PAWN)] | board.piecesBB[ptToP(THEM, PieceType.PAWN)]) & bitboard_.kingFlank[util_.fileOf(sq)])) {
         boardStaticEval.kingSafety[util_.Phase.MG] -= pawnlessFlank[util_.Phase.MG] * pov;
         boardStaticEval.kingSafety[util_.Phase.EG] -= pawnlessFlank[util_.Phase.EG] * pov;
     }
@@ -857,11 +840,11 @@ function spaceEval(board: board_.board_t, US: board_.Colors) {
 
         // Find the available squares for our pieces inside the area defined by SpaceMask
         const safe = spaceMask
-            & BigInt.asUintN(64, ~board.piecesBB[pT2P(US, PieceType.PAWN)])
-            & BigInt.asUintN(64, ~attackedBy[pT2P(THEM, PieceType.PAWN)])
+            & BigInt.asUintN(64, ~board.piecesBB[ptToP(US, PieceType.PAWN)])
+            & BigInt.asUintN(64, ~attackedBy[ptToP(THEM, PieceType.PAWN)])
 
         // Find all squares which are at most three squares behind some friendly pawn
-        let behind = board.piecesBB[pT2P(US, PieceType.PAWN)];
+        let behind = board.piecesBB[ptToP(US, PieceType.PAWN)];
         behind |= bitboard_.shift(Down, behind);
         behind |= bitboard_.shift(Down + Down, behind);
 
@@ -870,9 +853,9 @@ function spaceEval(board: board_.board_t, US: board_.Colors) {
         const bonus = bitboard_.popcount({ v: safe })
             + bitboard_.popcount({ v: behind & safe & BigInt.asUintN(64, ~attacked[THEM]) });
 
-        const doubleAttackThem = bitboard_.pawnDoubleAttacksBB(THEM, board.piecesBB[pT2P(THEM, PieceType.PAWN)]);
-        const blockedByOppPawns = bitboard_.shift(Up, board.piecesBB[pT2P(US, PieceType.PAWN)])
-            & (board.piecesBB[pT2P(THEM, PieceType.PAWN)] | doubleAttackThem)
+        const doubleAttackThem = bitboard_.pawnDoubleAttacksBB(THEM, board.piecesBB[ptToP(THEM, PieceType.PAWN)]);
+        const blockedByOppPawns = bitboard_.shift(Up, board.piecesBB[ptToP(US, PieceType.PAWN)])
+            & (board.piecesBB[ptToP(THEM, PieceType.PAWN)] | doubleAttackThem)
 
         const number_blocked = bitboard_.popcount({ v: blockedByOppPawns });
         const weight = bitboard_.popcount({ v: bitboard_.getPieces(US, board) }) - 3 + Math.min(number_blocked, 9);
@@ -893,11 +876,11 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
 
     // Non-pawn enemies
     const nonPawnEnemies = bitboard_.getPieces(THEM, board)
-        & BigInt.asUintN(64, ~(board.piecesBB[pT2P(THEM, PieceType.PAWN)] | board.piecesBB[pT2P(US, PieceType.PAWN)]));
+        & BigInt.asUintN(64, ~(board.piecesBB[ptToP(THEM, PieceType.PAWN)] | board.piecesBB[ptToP(US, PieceType.PAWN)]));
 
     // Squares strongly protected by the enemy, either because they defend the
     // square with a pawn, or because they defend the square twice and we don't.
-    const stronglyProtected = attackedBy[pT2P(THEM, PieceType.PAWN)]
+    const stronglyProtected = attackedBy[ptToP(THEM, PieceType.PAWN)]
         | (attacked2[THEM] & BigInt.asUintN(64, ~attacked2[US]));
 
     // Non-pawn enemies, strongly protected
@@ -909,22 +892,22 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
     // Bonus according to the kind of attacking pieces
     if (defended | weak) {
         b = {
-            v: (defended | weak) & (attackedBy[pT2P(US, PieceType.KNIGHT)] | attackedBy[pT2P(US, PieceType.BISHOP)])
+            v: (defended | weak) & (attackedBy[ptToP(US, PieceType.KNIGHT)] | attackedBy[ptToP(US, PieceType.BISHOP)])
         };
         while (b.v) {
-            const pce = p2Pt(board.pieces[board_.SQ120(bitboard_.poplsb(b))]);
+            const pce = pToPt(board.pieces[board_.SQ120(bitboard_.poplsb(b))]);
             boardStaticEval.threat[util_.Phase.MG] += threatByMinor[pce][util_.Phase.MG] * pov;
             boardStaticEval.threat[util_.Phase.EG] += threatByMinor[pce][util_.Phase.EG] * pov;
         }
 
-        b = { v: weak & attackedBy[pT2P(US, PieceType.ROOK)] };
+        b = { v: weak & attackedBy[ptToP(US, PieceType.ROOK)] };
         while (b.v) {
-            const pce = p2Pt(board.pieces[board_.SQ120(bitboard_.poplsb(b))]);
+            const pce = pToPt(board.pieces[board_.SQ120(bitboard_.poplsb(b))]);
             boardStaticEval.threat[util_.Phase.MG] += threatByRook[pce][util_.Phase.MG] * pov;
             boardStaticEval.threat[util_.Phase.EG] += threatByRook[pce][util_.Phase.EG] * pov;
         }
 
-        if (weak & attackedBy[pT2P(US, PieceType.KING)]) {
+        if (weak & attackedBy[ptToP(US, PieceType.KING)]) {
             boardStaticEval.threat[util_.Phase.MG] += threatByKing[util_.Phase.MG] * pov;
             boardStaticEval.threat[util_.Phase.EG] += threatByKing[util_.Phase.EG] * pov;
         }
@@ -938,7 +921,7 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
         boardStaticEval.threat[util_.Phase.EG] += hanging[util_.Phase.EG] * cnt * pov;
 
         // Additional bonus if weak piece is only protected by a queen
-        cnt = bitboard_.popcount({ v: weak & attackedBy[pT2P(THEM, PieceType.QUEEN)] });
+        cnt = bitboard_.popcount({ v: weak & attackedBy[ptToP(THEM, PieceType.QUEEN)] });
         boardStaticEval.threat[util_.Phase.MG] += weakQueenProtection[util_.Phase.MG] * cnt * pov;
         boardStaticEval.threat[util_.Phase.EG] += weakQueenProtection[util_.Phase.EG] * cnt * pov;
     }
@@ -958,7 +941,7 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
 
     // Bonus for attacking enemy pieces with our relatively safe pawns
     b = {
-        v: bitboard_.pawnAttacksBB(US, board.piecesBB[pT2P(US, PieceType.PAWN)] & safe) & nonPawnEnemies
+        v: bitboard_.pawnAttacksBB(US, board.piecesBB[ptToP(US, PieceType.PAWN)] & safe) & nonPawnEnemies
     }
     cnt = bitboard_.popcount(b);
     boardStaticEval.threat[util_.Phase.MG] += threatBySafePawn[util_.Phase.MG] * cnt * pov;
@@ -967,12 +950,12 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
     // Find squares where our pawns can push on the next move
     const allSquares = bitboard_.getPieces(US, board) | bitboard_.getPieces(THEM, board);
     b = {
-        v: bitboard_.shift(Up, board.piecesBB[pT2P(US, PieceType.PAWN)]) & BigInt.asUintN(64, ~allSquares)
+        v: bitboard_.shift(Up, board.piecesBB[ptToP(US, PieceType.PAWN)]) & BigInt.asUintN(64, ~allSquares)
     }
     b.v |= bitboard_.shift(Up, b.v & thirdRankBB) & BigInt.asUintN(64, ~allSquares);
 
     // Keep only the squares which are relatively safe
-    b.v &= BigInt.asUintN(64, ~attackedBy[pT2P(THEM, PieceType.PAWN)]) & safe;
+    b.v &= BigInt.asUintN(64, ~attackedBy[ptToP(THEM, PieceType.PAWN)]) & safe;
 
     // Bonus for safe pawn threats on the next move
     b.v = bitboard_.pawnAttacksBB(US, b.v) & nonPawnEnemies;
@@ -981,29 +964,29 @@ function threatsEval(board: board_.board_t, US: board_.Colors) {
     boardStaticEval.threat[util_.Phase.EG] += threatByPawnPush[util_.Phase.EG] * cnt * pov;
 
     // Bonus for threats on the next moves against enemy queen
-    if (board.numberPieces[pT2P(THEM, PieceType.QUEEN)] == 1) {
-        const queenImbalance = +((board.numberPieces[pT2P(THEM, PieceType.QUEEN)] + board.numberPieces[pT2P(US, PieceType.QUEEN)]) == 1);
-        const sq = bitboard_.poplsb({ v: board.piecesBB[pT2P(THEM, PieceType.QUEEN)] });
+    if (board.numberPieces[ptToP(THEM, PieceType.QUEEN)] == 1) {
+        const queenImbalance = +((board.numberPieces[ptToP(THEM, PieceType.QUEEN)] + board.numberPieces[ptToP(US, PieceType.QUEEN)]) == 1);
+        const sq = bitboard_.poplsb({ v: board.piecesBB[ptToP(THEM, PieceType.QUEEN)] });
         const mobArea = mobilityArea(
             board,
             US,
             attackedBy[(US == board_.Colors.WHITE) ? board_.Pieces.BLACKPAWN : board_.Pieces.WHITEPAWN]
         );
         safe = mobArea
-            & BigInt.asUintN(64, ~board.piecesBB[pT2P(US, PieceType.PAWN)])
+            & BigInt.asUintN(64, ~board.piecesBB[ptToP(US, PieceType.PAWN)])
             & BigInt.asUintN(64, ~stronglyProtected);
 
 
         b = {
-            v: attackedBy[pT2P(US, PieceType.KNIGHT)] & bitboard_.knightAttacks(sq)
+            v: attackedBy[ptToP(US, PieceType.KNIGHT)] & bitboard_.knightAttacks(sq)
         }
         cnt = bitboard_.popcount({ v: b.v & safe });
         boardStaticEval.threat[util_.Phase.MG] += knightOnQueen[util_.Phase.MG] * cnt * (1 + queenImbalance) * pov;
         boardStaticEval.threat[util_.Phase.EG] += knightOnQueen[util_.Phase.EG] * cnt * (1 + queenImbalance) * pov;
 
         b = {
-            v: (attackedBy[pT2P(US, PieceType.BISHOP)] & bitboard_.bishopAttacks(sq, allSquares))
-                | (attackedBy[pT2P(US, PieceType.ROOK)] & bitboard_.rookAttacks(sq, allSquares))
+            v: (attackedBy[ptToP(US, PieceType.BISHOP)] & bitboard_.bishopAttacks(sq, allSquares))
+                | (attackedBy[ptToP(US, PieceType.ROOK)] & bitboard_.rookAttacks(sq, allSquares))
         }
         cnt = bitboard_.popcount({ v: b.v & safe & attacked2[US] });
         boardStaticEval.threat[util_.Phase.MG] += sliderOnQueen[util_.Phase.MG] * cnt * (1 + queenImbalance) * pov;
@@ -1035,7 +1018,7 @@ function gameEvaluation(board: board_.board_t): [number, number] {
     boardStaticEval.pieceValue[util_.Phase.MG] = (board.materialMg[board_.Colors.WHITE] - board.materialMg[board_.Colors.BLACK]);
     boardStaticEval.pieceValue[util_.Phase.EG] = (board.materialEg[board_.Colors.WHITE] - board.materialEg[board_.Colors.BLACK]);
     //-- Pawns
-    colorLoop(pawnEval);
+    pawnStructure(board);
 
     //-- pieces
     colorLoop(knightEval);
@@ -1054,6 +1037,10 @@ function gameEvaluation(board: board_.board_t): [number, number] {
 
     //-- threat
     colorLoop(threatsEval);
+
+    //-- 
+
+    //-- known endgame TODO
 
     return [sumScore(util_.Phase.MG), sumScore(util_.Phase.EG)];
 }
@@ -1158,6 +1145,10 @@ function raccoonEvaluate(position: board_.board_t): number {
 }
 
 export {
+    PieceType,
+    staticEval_c,
+    pToPt,
+    ptToP,
     raccoonEvaluate
 }
 
