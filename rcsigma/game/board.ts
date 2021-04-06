@@ -7,7 +7,6 @@ import * as bitboard_ from './bitboard'
 import * as util_ from '../util'
 import * as hash_ from './hash'
 import * as move_ from './move'
-import * as eval_ from '../evaluate/rc/eval'
 
 enum Pieces {
     EMPTY,
@@ -126,7 +125,7 @@ type pawnEntry_t = {
     kingAttackCount: number[];
     kingAttackersCount: number[];
     kingAttackWeight: number[];
-    boardStaticEval: eval_.staticEval_c;
+    boardStaticEval: util_.staticEval_c;
 
 }
 

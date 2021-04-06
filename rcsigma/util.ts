@@ -130,6 +130,39 @@ const flip = [
     0, 1, 2, 3, 4, 5, 6, 7,
 ];
 
+class staticEval_c {
+    psqt: [number, number]; imbalance: [number, number]; pawns: [number, number];
+    pieces: [number, number]; pieceValue: [number, number]; mobility: [number, number];
+    threat: [number, number]; passed: [number, number]; space: [number, number]; kingSafety: [number, number];
+
+    constructor() {
+        this.psqt = [0, 0];
+        this.imbalance = [0, 0];
+        this.pawns = [0, 0];
+        this.pieces = [0, 0];
+        this.pieceValue = [0, 0];
+        this.mobility = [0, 0];
+        this.threat = [0, 0];
+        this.passed = [0, 0];
+        this.space = [0, 0];
+        this.kingSafety = [0, 0];
+    }
+}
+
+
+enum PieceType {
+    NO_PIECE_TYPE, PAWN, BISHOP, KNIGHT, ROOK, QUEEN, KING,
+}
+
+//pbnrq
+function ptToP(color: board_.Colors, pce: number): board_.Pieces {
+    ASSERT(pce <= PieceType.KING && pce >= PieceType.NO_PIECE_TYPE)
+    return pce + 6 * color
+}
+function pToPt(pce: board_.Pieces): PieceType {
+    ASSERT(pce <= board_.Pieces.BLACKKING && pce >= board_.Pieces.EMPTY)
+    return (pce < 7) ? pce : (pce % 7) + 1
+}
 
 /**
  * Return relative rank based on color pov
@@ -285,9 +318,10 @@ export {
     pieceAnsi,
     squareAnsi,
 
+    staticEval_c,
     evaluationFN,
-    isOfType,
     Phase,
+    PieceType,
 
     bufferToArrayBuffer,
     get_time_ms,
@@ -297,5 +331,8 @@ export {
     pawnPush,
     distance,
     rankOf,
-    fileOf
+    fileOf,
+    isOfType,
+    pToPt,
+    ptToP,
 }

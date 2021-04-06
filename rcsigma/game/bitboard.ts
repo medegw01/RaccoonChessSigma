@@ -25,11 +25,12 @@ enum Direction {
     SOUTH = -NORTH,
     WEST = -EAST,
 
-    NORTH_EAST = NORTH + EAST,
-    SOUTH_EAST = SOUTH + EAST,
-    SOUTH_WEST = SOUTH + WEST,
-    NORTH_WEST = NORTH + WEST
-};
+    NORTH_EAST = Number(NORTH) + Number(EAST),
+    SOUTH_EAST = Number(SOUTH) + Number(EAST),
+    SOUTH_WEST = Number(SOUTH) + Number(WEST),
+    NORTH_WEST = Number(NORTH) + Number(WEST)
+}
+
 
 /**
  * bitboard containing all light squares set

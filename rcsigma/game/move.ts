@@ -596,7 +596,7 @@ function clearPieces(sq: board_.Squares, board: board_.board_t): void {
         }
 
         board.numberPieces[pce]--;
-        board.piecesBB[pce] ^= bitboard_.bits[board_.SQ64(sq)];
+        board.piecesBB[pce] ^= bitboard_.bit(board_.SQ64(sq));
         board.pieceList[board_.PIECE_INDEX(pce, t_pceNum)] = board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce])];
 
         board.currentPolyglotKey ^= (hash_.random64Poly[hash_.randomPiece + (util_.getPolyPiece[pce]) * 64 + board_.SQ64(sq)]);
@@ -625,7 +625,7 @@ function addPiece(sq: board_.Squares, pce: board_.Pieces, board: board_.board_t)
 
         board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce]++)] = sq;
 
-        board.piecesBB[pce] |= bitboard_.bits[board_.SQ64(sq)];
+        board.piecesBB[pce] |= bitboard_.bit(board_.SQ64(sq));
 
         board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomPiece + (polyPiece) * 64 + board_.SQ64(sq)];
 
@@ -641,8 +641,8 @@ function movePiece(from: board_.Squares, to: board_.Squares, board: board_.board
         board.pieces[from] = board_.Pieces.EMPTY;
         board.pieces[to] = pce;
 
-        board.piecesBB[pce] ^= bitboard_.bits[board_.SQ64(from)];
-        board.piecesBB[pce] |= bitboard_.bits[board_.SQ64(to)];
+        board.piecesBB[pce] ^= bitboard_.bit(board_.SQ64(from));
+        board.piecesBB[pce] |= bitboard_.bit(board_.SQ64(to));
 
         for (let index = 0; index < board.numberPieces[pce]; ++index) {
             if (board.pieceList[board_.PIECE_INDEX(pce, index)] === from) {
