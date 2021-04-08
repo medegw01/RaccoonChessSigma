@@ -105,7 +105,7 @@ export class Raccoon {
         } else {
             let tmp = move.from + move.to;
             if ('promotion' in move) {
-                tmp += move.promotion;
+                tmp += move.promotion!;
             }
             mv = move_.smithToMove(tmp, this.board);
         }

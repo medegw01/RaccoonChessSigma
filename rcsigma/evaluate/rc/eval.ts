@@ -233,6 +233,12 @@ const threatByRook = [
     [0, 0], [37, 68], [3, 44], [42, 60], [0, 39], [58, 43]
 ];
 
+// passedRank[Rank] contains a bonus according to the rank of a passed pawn
+const passedRank = [
+    [0, 0], [7, 27], [16, 32], [17, 40], [64, 71], [170, 174], [278, 262]
+];
+
+const passedFile = [11, 8];
 const hanging = [69, 36];
 const restrictedPiece = [7, 7];
 const weakQueenProtection = [14, 0];
@@ -243,6 +249,7 @@ const knightOnQueen = [16, 11];
 const sliderOnQueen = [60, 18];
 
 //-- helpers for evaluation
+let passedPawn: bitboard_.bitboard_t[];
 let pawnSpan: bitboard_.bitboard_t[];
 let attacked: bitboard_.bitboard_t[];
 let attacked2: bitboard_.bitboard_t[];
@@ -261,6 +268,7 @@ function initEvaluation() {
     kingAttackersCount = (new Array<number>(2)).fill(0);
     kingAttackWeight = (new Array<number>(2)).fill(0);
     pawnSpan = (new Array<bitboard_.bitboard_t>(2)).fill(0n);
+    passedPawn = (new Array<bitboard_.bitboard_t>(2)).fill(0n);
     boardStaticEval = new util_.staticEval_c();
 }
 
@@ -293,10 +301,12 @@ function pawnEval(board: board_.board_t) {
         attacked[c] |= pawnEntry.attacked[c];
         attacked2[c] |= pawnEntry.attacked2[c];
         attackedBy[util_.ptToP(c, util_.PieceType.PAWN)] |= pawnEntry.attackedBy[util_.ptToP(c, util_.PieceType.PAWN)];
-        pawnSpan[c] |= pawnEntry.pawnSpan[c]
+        pawnSpan[c] |= pawnEntry.pawnSpan[c];
+        passedPawn[c] |= pawnEntry.passedPawn[c];
         kingAttackCount[c] += pawnEntry.kingAttackCount[c];
         kingAttackersCount[c] += pawnEntry.kingAttackersCount[c];
         kingAttackWeight[c] += pawnEntry.kingAttackWeight[c];
+
     }
     for (let p = util_.Phase.MG; p <= util_.Phase.EG; p++) {
         boardStaticEval.psqt[p] += pawnEntry.boardStaticEval.psqt[p];
@@ -742,6 +752,101 @@ function kingEval(board: board_.board_t, US: board_.Colors) {// stockfish
 
 }
 
+function passedEval(board: board_.board_t, US: board_.Colors) {
+    const pov = (1 - US * 2);
+    const THEM = US ^ 1;
+    const isWhite = (US === board_.Colors.WHITE);
+    const Up = Number(util_.pawnPush(US));
+    const Down = -Up;
+
+    const myPawn = (isWhite) ? board_.Pieces.WHITEPAWN : board_.Pieces.BLACKPAWN;
+    const enemyPawn = (isWhite) ? board_.Pieces.BLACKPAWN : board_.Pieces.WHITEPAWN;
+
+
+    const kingProximity = (c: board_.Colors, sq: number): number => {
+        return Math.min(util_.distance(board_.SQ64(board.kingSquare[c]), sq), 5)
+    };
+
+    let b: bitboard_.bitboard_t, bb: bitboard_.bitboard_t, sq2Queen: bitboard_.bitboard_t
+    let unsafeSq: bitboard_.bitboard_t, helpers: bitboard_.bitboard_t
+
+
+    let eg = 0; let mg = 0;
+    b = passedPawn[US];
+
+    const blockedPassers = b & bitboard_.shift(Down, board.piecesBB[enemyPawn])
+    if (blockedPassers) {
+        helpers = bitboard_.shift(Up, board.piecesBB[myPawn])
+            & BigInt.asUintN(64, ~bitboard_.getPieces(THEM, board))
+            & (BigInt.asUintN(64, ~attacked2[THEM]) | attacked[US])
+
+        // Remove blocked candidate passers that don't have help to pass
+        b &= ~blockedPassers
+            | bitboard_.shift(bitboard_.Direction.WEST, helpers)
+            | bitboard_.shift(bitboard_.Direction.EAST, helpers)
+    }
+
+    const vB: bitboard_.bitboardObj_t = { v: b };
+    while (vB.v) {
+        const sq = bitboard_.poplsb(vB)
+        util_.ASSERT(!(board.piecesBB[enemyPawn] & bitboard_.forwardFiles(US, sq + Up)))
+        const r = util_.relativeRank(US, sq)
+        const bonus = passedRank[r];
+
+        if (r > board_.Ranks.THIRD_RANK) {
+            const w = 5 * r - 13;
+            const blockSq = sq + Up;
+
+            // Adjust bonus based on the king's proximity
+            bonus[util_.Phase.EG] += (kingProximity(THEM, blockSq) * 19 / 4
+                - kingProximity(US, blockSq) * 2) * w;
+
+            // If blockSq is not the queening square then consider also a second push
+            if (r != board_.Ranks.SEVENTH_RANK)
+                bonus[util_.Phase.EG] -= kingProximity(US, blockSq + Up) * w;
+
+            // If the pawn is free to advance, then increase the bonus
+            if (board.pieces[board_.SQ120(blockSq)] == board_.Pieces.EMPTY) {
+                sq2Queen = bitboard_.forwardFiles(US, sq);
+                unsafeSq = bitboard_.passedPawn(US, sq);
+
+                bb = bitboard_.forwardFiles(THEM, sq)
+                    & ((board.piecesBB[board_.Pieces.WHITEQUEEN] | board.piecesBB[board_.Pieces.BLACKQUEEN])
+                        | (board.piecesBB[board_.Pieces.WHITEROOK] | board.piecesBB[board_.Pieces.BLACKROOK])
+                    )
+
+
+                if (!(bitboard_.getPieces(THEM, board) & bb))
+                    unsafeSq &= attacked[THEM] | bitboard_.getPieces(THEM, board);
+
+                // If there are no enemy pieces or attacks on passed pawn span, assign a big bonus.
+                // Or if there is some, but they are all attacked by our pawns, assign a bit smaller bonus.
+                // Otherwise assign a smaller bonus if the path to queen is not attacked
+                // and even smaller bonus if it is attacked but block square is not.
+                let k = !unsafeSq ? 36 :
+                    !(unsafeSq & (BigInt.asUintN(64, ~attackedBy[myPawn]))) ? 30 :
+                        !(unsafeSq & sq2Queen) ? 17 :
+                            !(unsafeSq & bitboard_.bit(blockSq)) ? 7 :
+                                0;
+
+                // Assign a larger bonus if the block square is defended
+                if ((bitboard_.getPieces(US, board) & bb) || (attacked[US] & bitboard_.bit(blockSq)))
+                    k += 5;
+
+                bonus[util_.Phase.EG] += k * w
+                bonus[util_.Phase.MG] += k * w
+            }
+        } // r > RANK_3
+
+        const d = Math.min(util_.fileOf(sq), board_.Files.H_FILE - util_.fileOf(sq))
+        eg += bonus[util_.Phase.EG] - passedFile[util_.Phase.EG] * d
+        mg += bonus[util_.Phase.MG] - passedFile[util_.Phase.MG] * d
+
+    }
+
+    boardStaticEval.passed[util_.Phase.MG] += mg * pov
+    boardStaticEval.passed[util_.Phase.EG] += eg * pov
+}
 
 /**
  * Second-degree polynomial material imbalance by Tord Romstad
@@ -977,6 +1082,10 @@ function gameEvaluation(board: board_.board_t): [number, number] {
     //-- king
     colorLoop(kingEval);
 
+    //-- passed
+    colorLoop(passedEval)
+
+
     //-- imbalance
     colorLoop(imbalanceEval);
 
@@ -1126,9 +1235,7 @@ for (const move of positions.moves) {
     console.log(raccoonEvaluate(pos));
     makeMove(sanToMove(move, pos), pos)
 }
-enum L {
-    a = 3
-}
-console.log(L.a === 3)
+console.log(raccoonEvaluate(pos));
+
 /*board_.mirrorBoard(pos)
 console.log(raccoonEvaluate(pos))*/

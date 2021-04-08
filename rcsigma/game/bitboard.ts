@@ -371,7 +371,7 @@ function initBitBoard(): void {
  */
 function shift(D: Direction, b: bitboard_t): bitboard_t {
     return D == Direction.NORTH ? b << 8n : D == Direction.SOUTH ? b >> 8n
-        : D == Direction.NORTH + Direction.NORTH ? b << 16n : D == Direction.SOUTH + Direction.SOUTH ? b >> 16n
+        : D == Number(Direction.NORTH) + Number(Direction.NORTH) ? b << 16n : D == Number(Direction.SOUTH) + Number(Direction.SOUTH) ? b >> 16n
             : D == Direction.EAST ? (b & ~files[7]) << 1n : D == Direction.WEST ? (b & ~files[0]) >> 1n
                 : D == Direction.NORTH_EAST ? (b & ~files[7]) << 9n : D == Direction.NORTH_WEST ? (b & ~files[0]) << 7n
                     : D == Direction.SOUTH_EAST ? (b & ~files[7]) >> 7n : D == Direction.SOUTH_WEST ? (b & ~files[0]) >> 9n
@@ -673,7 +673,7 @@ function isolatedPawn(sq: number): bitboard_t {
 /**
  * Get the zone used for king safety calculations for a given color and square.
  * @param c The color.
- *  @param sq The square.
+ * @param sq The square.
  * @return A bitboard which has the square of the king, all king attacks from that square and three (or two) squares in front of those marked.
  */
 function kingSafetyZone(c: number, sq: number): bitboard_t {
@@ -827,6 +827,16 @@ function popmsb(bb: bitboardObj_t): number {
     return s;
 }
 
+/**
+  * Returns the most advanced square for the given color
+  * @param c  The color.
+  * @param bb  A a non-zero bitboard.
+ */
+function fmSQ(c: board_.Colors, bb: bitboard_t): number {
+    util_.ASSERT(bb != 0n)
+    return c == board_.Colors.WHITE ? msb(bb) : lsb(bb);
+}
+
 
 export {
     bitboard_t,
@@ -882,6 +892,7 @@ export {
     poplsb,
     msb,
     popmsb,
+    fmSQ,
 
     pretty,
     initBitBoard,

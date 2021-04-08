@@ -119,6 +119,7 @@ type pawnEntry_t = {
 
 
     pawnSpan: bitboard_.bitboard_t[];
+    passedPawn: bitboard_.bitboard_t[];
     attacked: bitboard_.bitboard_t[];
     attacked2: bitboard_.bitboard_t[];
     attackedBy: bitboard_.bitboard_t[];
