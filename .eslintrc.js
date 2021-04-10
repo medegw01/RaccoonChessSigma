@@ -39,6 +39,7 @@ module.exports = {
     "@typescript-eslint/explicit-module-boundary-types": ["error"],
     "@typescript-eslint/no-non-null-assertion": ["error"],
     "@typescript-eslint/no-explicit-any": ["error"],
+    "@typescript-eslint/no-unused-vars": ["error"],
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/restrict-plus-operands": ["error", { "checkCompoundAssignments": true }],
     "sonarjs/no-duplicate-string": "off",

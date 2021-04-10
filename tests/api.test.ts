@@ -818,8 +818,15 @@ describe("Evaluation Tests", () => {
         game = new api.Raccoon();
     });
 
-    it("rc: the same evaluation for white and black", function () {
-        const test_fen = '8/7K/8/8/1R6/k7/1R1p4/8 b - - 0 1';
+    it("rc: the same evaluation for white and black(basic)", function () {
+        const test_fen = '8/5B1K/3p4/3P4/1R1B4/k7/1R1p4/8 b - - 0 1';
+        game.loadFEN(test_fen);
+        const eval_score = game.evaluateBoard();
+        game.flipBoard();
+        expect(game.evaluateBoard()).toBe(-eval_score);
+    });
+    it("rc: the same evaluation for white and black(complex)", function () {
+        const test_fen = '4k1r1/1bB2nPp/p2p1RP1/P1pNp3/1pN1P3/1P4q1/2P2QP1/R3K2R w - - 4 3'
         game.loadFEN(test_fen);
         const eval_score = game.evaluateBoard();
         game.flipBoard();

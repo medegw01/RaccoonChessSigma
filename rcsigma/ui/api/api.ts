@@ -238,7 +238,6 @@ export class Raccoon {
     }
 
     // Search and Evaluation
-    // evaluateBoard()
     // searchBoard(option)
     // noob_book(noob_cmd)
     // set_book(arrayBuffer)

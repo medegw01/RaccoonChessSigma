@@ -531,40 +531,6 @@ function squaresBetween(from: number, to: number): bitboard_t {
 }
 
 /**
- * Gets a bitboard with all squares in the line formed by the two given squares marked.
- * @param from The from-square.
- * @param to The to-square.
- * @return The bitboard. If the given squares are not in a line the bitboard will be empty.
- */
-function lineFormedBySquares(from: number, to: number): bitboard_t {
-    return lines[from][to];
-}
-
-
-/**
- * Gets a bitboard with all squares in the DIRECTION through squares marked.
- *   
- * Directions
- * 
- *     0 -> South West 
- *     1 -> South
- *     2 -> South East
- *     3 -> West
- *     4 -> East
- *     5 -> North West
- *     6 -> North
- *     7 -> North East
- * 
- * @param direction The direction of the ray(0->SW, 1->).
- * @param sq The square.
- * @return The bitboard.
- */
-function ray(direction: number, sq: number): bitboard_t {
-    return xrays[direction][sq];
-}
-
-
-/**
  * Get a bitboard for detecting if square is doubly attacked by pawn
  * @param c The color
  * @param bb The bitboard
@@ -652,25 +618,6 @@ function outpost(c: number, sq: number): bitboard_t {
 }
 
 /**
- * Gets a bitboard for detecting if a pawn of a given color on a given square is backward.
- * @param c The color.
- * @param sq The square.
- * @return A bitboard which has the adjacent files marked as long as these files are <= the rank of the pawn (taking into account the color).
- */
-function backwardPawn(c: number, sq: number): bitboard_t {
-    return backward[c][sq];
-}
-
-/**
- * Gets a bitboard for detecting if a pawn on a given square is isolated.
- * @param sq The square.
- * @return A bitboard which has the adjacent files marked. If the marked squares contain no friendly pawns the given pawn is isolated.
- */
-function isolatedPawn(sq: number): bitboard_t {
-    return isolated[sq]; //adjacentFiles(sq)
-}
-
-/**
  * Get the zone used for king safety calculations for a given color and square.
  * @param c The color.
  * @param sq The square.
@@ -738,23 +685,6 @@ function isSet(bb: bitboard_t, k: number): boolean {
 }
 
 /**
- * Sets the specified bit of a bitboard to 1
- * @param bb  The bitboard.
- * @param k The bit to set.
- */
-function setBit(bb: bitboardObj_t, k: number): bitboard_t {
-    return bb.v |= mbits[k];
-}
-
-/**
- * Sets the specified bit of the given bitboard to 0. We assume that the bit is already 1, otherwise this doesn't work
- * @param bb  The bitboard.
- * @param k The bit to clear.
- */
-function clearBit(bb: bitboardObj_t, k: number): bitboard_t { return bb.v ^= mbits[k]; }
-
-
-/**
  * Returns the number of leading zero
  * @param bb  The bitboard.
  */
@@ -798,13 +728,11 @@ function lsb(bb: bitboard_t): number {
     return ctz(bb);
 }
 
-
 /**
  * Returns the most significant bit, little endian order.
  * @param bb  The bitboard.
  */
 function msb(bb: bitboard_t): number { return 63 ^ clz(bb) }
-
 
 /**
  * Resets and returns the least significant set bit in a given bitboard
@@ -813,17 +741,6 @@ function msb(bb: bitboard_t): number { return 63 ^ clz(bb) }
 function poplsb(bb: bitboardObj_t): number {
     const s = lsb(bb.v);
     bb.v &= (bb.v - 1n);
-    return s;
-}
-
-
-/**
- * Resets and returns the most significant set bit in a given bitboard
- * @param bb  The bitboard.
- */
-function popmsb(bb: bitboardObj_t): number {
-    const s = msb(bb.v);
-    bb.v ^= (1n << BigInt(s));
     return s;
 }
 
@@ -869,29 +786,22 @@ export {
     getPieces,
     sliderBlockers,
     adjacentFiles,
-    isolatedPawn,
-    backwardPawn,
     pawnDoubleAttacksBB,
     pawnAttacksBB,
     outpost,
     kingSafetyZone,
-    lineFormedBySquares,
     squaresBetween,
     bit,
-    ray,
 
     several,
     isSet,
     onlyOne,
-    setBit,
-    clearBit,
     popcount,
     ctz,
     clz,
     lsb,
     poplsb,
     msb,
-    popmsb,
     fmSQ,
 
     pretty,

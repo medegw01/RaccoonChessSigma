@@ -7,8 +7,6 @@ import * as util_ from '../../util'
 import * as pawn_ from './pawns'
 import * as board_ from '../../game/board'
 import * as bitboard_ from '../../game/bitboard'
-import { makeMove, sanToMove } from '../../game/move';
-
 
 enum Scale {
     DRAW = 0,
@@ -209,18 +207,6 @@ const SafeCheck = [
 ];
 const pawnlessFlank = [17, 95];
 const flankAttacks = [8, 0];
-/* Threat Evaluation Terms */
-
-/*const int ThreatWeakPawn = S(-11, -38);
-const int ThreatMinorAttackedByPawn = S(-55, -83);
-const int ThreatMinorAttackedByMinor = S(-25, -45);
-const int ThreatMinorAttackedByMajor = S(-30, -55);
-const int ThreatRookAttackedByLesser = S(-48, -28);
-const int ThreatMinorAttackedByKing = S(-43, -21);
-const int ThreatRookAttackedByKing = S(-33, -18);
-const int ThreatQueenAttackedByOne = S(-50, -7);
-const int ThreatOverloadedPieces = S(-7, -16);
-const int ThreatByPawnPush = S(15, 32);*/
 
 // ThreatByMinor/ByRook[attacked util_.PieceType] contains bonuses according to
 // which piece type attacks which one. Attacks on lesser pieces which are
@@ -414,6 +400,7 @@ function bishopEval(board: board_.board_t, US: board_.Colors,) {
 
     // bishop pairs
     if ((pceBB.v & bitboard_.lightSquares) && (pceBB.v & bitboard_.darkSquares)) {
+        console.log("pair")
         boardStaticEval.pieces[util_.Phase.EG] += bishopPair[util_.Phase.EG] * pov;
         boardStaticEval.pieces[util_.Phase.MG] += bishopPair[util_.Phase.MG] * pov;
     }
@@ -774,6 +761,7 @@ function passedEval(board: board_.board_t, US: board_.Colors) {
     let eg = 0; let mg = 0;
     b = passedPawn[US];
 
+
     const blockedPassers = b & bitboard_.shift(Down, board.piecesBB[enemyPawn])
     if (blockedPassers) {
         helpers = bitboard_.shift(Up, board.piecesBB[myPawn])
@@ -786,12 +774,13 @@ function passedEval(board: board_.board_t, US: board_.Colors) {
             | bitboard_.shift(bitboard_.Direction.EAST, helpers)
     }
 
+
     const vB: bitboard_.bitboardObj_t = { v: b };
     while (vB.v) {
         const sq = bitboard_.poplsb(vB)
         util_.ASSERT(!(board.piecesBB[enemyPawn] & bitboard_.forwardFiles(US, sq + Up)))
-        const r = util_.relativeRank(US, sq)
-        const bonus = passedRank[r];
+        const r = util_.relativeRank(US, util_.rankOf(sq))
+        const bonus = [...passedRank[r]]; //clone Arrays
 
         if (r > board_.Ranks.THIRD_RANK) {
             const w = 5 * r - 13;
@@ -828,7 +817,6 @@ function passedEval(board: board_.board_t, US: board_.Colors) {
                         !(unsafeSq & sq2Queen) ? 17 :
                             !(unsafeSq & bitboard_.bit(blockSq)) ? 7 :
                                 0;
-
                 // Assign a larger bonus if the block square is defended
                 if ((bitboard_.getPieces(US, board) & bb) || (attacked[US] & bitboard_.bit(blockSq)))
                     k += 5;
@@ -1095,10 +1083,6 @@ function gameEvaluation(board: board_.board_t): [number, number] {
     //-- threat
     colorLoop(threatsEval);
 
-    //-- 
-
-    //-- known endgame TODO
-
     return [sumScore(util_.Phase.MG), sumScore(util_.Phase.EG)];
 }
 
@@ -1194,8 +1178,6 @@ function scaleFactor(board: board_.board_t, eg: number): number {
  */
 function raccoonEvaluate(position: board_.board_t): number {
     const [mg, eg] = gameEvaluation(position);
-    /* TODO: remove after debugging*/
-    console.log([mg, eg])
     const p = phase(position), tempo = TEMPO * ((position.turn === board_.Colors.WHITE) ? 1 : -1);
     let score = (((mg * p + ((eg * (256 - p) * (scaleFactor(position, eg) / Scale.NORMAL)) << 0)) / 256) << 0);
     score += tempo;
@@ -1205,37 +1187,3 @@ function raccoonEvaluate(position: board_.board_t): number {
 export {
     raccoonEvaluate
 }
-
-
-/// Playground
-util_.initUtil();
-bitboard_.initBitBoard();
-
-//const fen = "3qkb2/pppp1ppp/n1b1p2r/4P3/2B2N2/2N5/PPPP1PPP/R3KB1R w KQkq - 2 2";
-const pos = board_.newBoard();
-
-//board_.fenToBoard(fen, pos);@
-//console.log(raccoonEvaluate(pos));
-
-
-const positions = {
-    fen: '8/pp3p1k/2p2q1p/3r1P2/5R2/7P/P1P1QP2/7K b - - 2 30',
-    moves: ['Qe5', 'Qh5', 'Qf6', 'Qe2', 'Re5', 'Qd3', 'Rd5', 'Qe2']
-}
-
-board_.fenToBoard(positions.fen, pos);
-/*const config = {
-    pieces: ["P", "B", "N", "R", "Q", "K", "p", "b", "n", "r", "q", "k"],
-    light_square: "-",
-    dark_square: "="
-}
-console.log(board_.boardToASCII(pos, config.pieces, config.light_square, config.dark_square, false))*/
-
-for (const move of positions.moves) {
-    console.log(raccoonEvaluate(pos));
-    makeMove(sanToMove(move, pos), pos)
-}
-console.log(raccoonEvaluate(pos));
-
-/*board_.mirrorBoard(pos)
-console.log(raccoonEvaluate(pos))*/

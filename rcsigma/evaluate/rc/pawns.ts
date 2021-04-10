@@ -5,7 +5,6 @@
 import * as util_ from '../../util'
 import * as board_ from '../../game/board'
 import * as bitboard_ from '../../game/bitboard'
-import { Console } from 'console';
 
 const pawnPSQT = [
     [
@@ -111,7 +110,7 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
 
     const pov = (1 - US * 2);
     const THEM = US ^ 1;
-    const isWhite = (US === board_.Colors.WHITE);
+    const isWhite = (US == board_.Colors.WHITE);
     const Up = Number(util_.pawnPush(US));
     const Down = -Up;
 
@@ -124,7 +123,7 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
     const pceBB = { v: board.piecesBB[myPawn] };
     while (pceBB.v) {
         sq = bitboard_.poplsb(pceBB);
-        r = util_.relativeRank(US, util_.ranksBoard[board_.SQ120(sq)]);
+        r = util_.relativeRank(US, util_.rankOf(sq));
 
         moves = bitboard_.pawnAttacks(US, sq);
         newEntry.attacked2[US] |= moves & newEntry.attacked[US];
@@ -187,7 +186,7 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
             || (!(stoppers ^ leverPush)
                 && (bitboard_.popcount({ v: phalanx }) >= bitboard_.popcount({ v: leverPush }))
             )
-            || (stoppers == blocked && r >= 5
+            || (stoppers == blocked && r >= board_.Ranks.FIFTH_RANK
                 && (!!(bitboard_.shift(Up, (support)) & ~(board.piecesBB[enemyPawn] | doubleAttackThem)))
             );
 
@@ -233,9 +232,9 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
                 + WeakLever[util_.Phase.EG] * (+bitboard_.several(lever))) * pov
 
         }
-        if (blocked && r >= 5) {
-            newEntry.boardStaticEval.pawns[util_.Phase.EG] += BlockedPawn[r - 5][util_.Phase.EG] * pov
-            newEntry.boardStaticEval.pawns[util_.Phase.MG] += BlockedPawn[r - 5][util_.Phase.MG] * pov
+        if (blocked && r >= board_.Ranks.FIFTH_RANK) {
+            newEntry.boardStaticEval.pawns[util_.Phase.EG] += BlockedPawn[r - board_.Ranks.FIFTH_RANK][util_.Phase.EG] * pov
+            newEntry.boardStaticEval.pawns[util_.Phase.MG] += BlockedPawn[r - board_.Ranks.FIFTH_RANK][util_.Phase.MG] * pov
 
         }
     }
@@ -248,8 +247,6 @@ function pawnShelter(board: board_.board_t, US: board_.Colors, newEntry: board_.
     const pov = (1 - US * 2);
     const THEM = US ^ 1;
     const kingSQ = board_.SQ64(board.kingSquare[US]);
-
-    console.log(board_.squareToAlgebraic(board.kingSquare[US]))
 
     let b = (board.piecesBB[myPawn] | board.piecesBB[enemyPawn]) & BigInt.asUintN(64, ~bitboard_.forwardRanks(THEM, kingSQ));
     const myPawnBB = b & bitboard_.getPieces(US, board) & BigInt.asUintN(64, ~newEntry.attackedBy[enemyPawn]);
