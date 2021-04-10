@@ -543,8 +543,8 @@ function rookEval(board: board_.board_t, US: board_.Colors) {
                 boardStaticEval.pieces[util_.Phase.MG] -= rookOnCloseFile[util_.Phase.MG] * pov;
             }
             if (mob <= 3) { // Penalty when trapped by the king, even more if the king cannot castle
-                const kF = bitboard_.files[util_.filesBoard[board.kingSquare[US]]];
-                if ((kF < board_.Files.E_FILE) == (rF < kF)) {
+                const kF = util_.fileOf(board_.SQ64(board.kingSquare[US]));
+                if ((kF < board_.Files.E_FILE) == (util_.fileOf(sq) < kF)) {
                     boardStaticEval.pieces[util_.Phase.EG] -= rookTrapped[util_.Phase.EG] * (1 + (+!board.castlingRight)) * pov;
                     boardStaticEval.pieces[util_.Phase.MG] -= rookTrapped[util_.Phase.MG] * (1 + (+!board.castlingRight)) * pov;
                 }

@@ -806,14 +806,14 @@ describe("Evaluation Tests", () => {
     });
 
     it("rc: the same evaluation for white and black(basic)", function () {
-        const test_fen = '8/5B1K/3p4/3P4/1R1B4/k7/1R1p4/8 b - - 0 1';
+        const test_fen = 'kqrR4/rp1R1B1K/p1Np4/3P4/3B4/8/3p4/8 b - - 0 1';
         game.loadFEN(test_fen);
         const eval_score = game.evaluateBoard();
         game.flipBoard();
         expect(game.evaluateBoard()).toBe(-eval_score);
     });
     it("rc: the same evaluation for white and black(complex)", function () {
-        const test_fen = '4k1r1/1bB2nPp/p2p1RP1/P1pNp3/1pN1P3/1P4q1/2P2QP1/R3K2R w - - 4 3'
+        const test_fen = '4k2r/1bB2n2/p2p1R2/P1pNp1P1/1pNpP1P1/1Pp3q1/2P2QP1/R3K2R w - - 1 4'
         game.loadFEN(test_fen);
         const eval_score = game.evaluateBoard();
         game.flipBoard();

@@ -187,7 +187,8 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
                 && (bitboard_.popcount({ v: phalanx }) >= bitboard_.popcount({ v: leverPush }))
             )
             || (stoppers == blocked && r >= board_.Ranks.FIFTH_RANK
-                && (!!(bitboard_.shift(Up, (support)) & ~(board.piecesBB[enemyPawn] | doubleAttackThem)))
+                && (!!(bitboard_.shift(Up, (support))
+                    & BigInt.asUintN(64, ~(board.piecesBB[enemyPawn] | doubleAttackThem))))
             );
 
         passed &&= !(bitboard_.forwardFiles(US, sq) & board.piecesBB[myPawn]);
