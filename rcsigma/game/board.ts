@@ -219,67 +219,41 @@ function getTurn(board: board_t): string {
     return "wb-"[board.turn];
 }
 
-function newBoard(): board_t {
-    return {
-        pieces: new Array<Pieces>(util_.BOARD_SQUARE_NUM),
-        kingSquare: new Array<Squares>(2),
-
-        enpassant: Squares.OFF_SQUARE,
-        turn: Colors.BOTH,
-        halfMoves: 0,
-        fullMoves: 0,
-        castlingRight: 0,
-
-        ply: 0,
-        historyPly: 0,
-
-        currentPolyglotKey: 0n,
-
-        materialEg: new Array<number>(2),
-        materialMg: new Array<number>(2),
-
-        piecesBB: new Array<bitboard_.bitboard_t>(13),
-
-        numberPieces: new Array<number>(13),
-        numberBigPieces: new Array<number>(2),
-        numberMajorPieces: new Array<number>(2),
-        numberMinorPieces: new Array<number>(2),
-
-        pieceList: new Array<Squares>(13 * 10),
-        moveHistory: new Array<undo_t>(util_.MAX_MOVES),
-
-        pawnEvalHash: new Map<bitboard_.bitboard_t, pawnEntry_t>(),
-    };
-}
-
-function clearBoard(board: board_t): void {
-    for (let i = 0; i < util_.BOARD_SQUARE_NUM; i++) {
-        board.pieces[i] = Pieces.OFF_BOARD_PIECE;
-    }
+function clearBoard(board: board_t = {} as board_t): board_t {
+    board.pieces = new Array<Pieces>(util_.BOARD_SQUARE_NUM).fill(Pieces.OFF_BOARD_PIECE);
     for (let i = 0; i < 64; i++) {
         board.pieces[SQ120(i)] = Pieces.EMPTY;
     }
-    for (let i = 0; i < 2; i++) {
-        board.numberBigPieces[i] = 0;
-        board.numberMajorPieces[i] = 0;
-        board.numberMinorPieces[i] = 0;
-        board.materialMg[i] = 0;
-        board.materialEg[i] = 0;
-    }
 
-    for (let i = 0; i < 13; i++) {
-        board.numberPieces[i] = 0;
-        board.piecesBB[i] = 0n;
-    }
-    board.kingSquare[Colors.BLACK] = board.kingSquare[Colors.WHITE] = Squares.OFF_SQUARE;
-    board.turn = Colors.WHITE; // Generally cleard board sets turn to white
+    board.kingSquare = new Array<Squares>(2).fill(Squares.OFF_SQUARE);
+
     board.enpassant = Squares.OFF_SQUARE;
+    board.turn = Colors.WHITE; // Generally cleared board sets turn to white
     board.halfMoves = 0;
-    board.ply = 0;
     board.fullMoves = 1;
-    board.historyPly = 0;
     board.castlingRight = 0;
+
+    board.ply = 0;
+    board.historyPly = 0;
+
     board.currentPolyglotKey = 0n;
+
+    board.materialEg = new Array<number>(2).fill(0);
+    board.materialMg = new Array<number>(2).fill(0);
+
+    board.piecesBB = new Array<bitboard_.bitboard_t>(13).fill(0n);
+
+    board.numberPieces = new Array<number>(13).fill(0);
+    board.numberBigPieces = new Array<number>(2).fill(0);
+    board.numberMajorPieces = new Array<number>(2).fill(0);
+    board.numberMinorPieces = new Array<number>(2).fill(0);
+
+    board.pieceList = new Array<Squares>(13 * 10).fill(0);
+    board.moveHistory = new Array<undo_t>(util_.MAX_MOVES);
+
+    board.pawnEvalHash = new Map<bitboard_.bitboard_t, pawnEntry_t>();
+
+    return board;
 }
 
 function updateMaterialList(board: board_t) {
@@ -678,8 +652,6 @@ export {
     PIECE_INDEX,
     PIECE_COLOR,
 
-
-    newBoard,
     getTurn,
     mirrorBoard,
     clearBoard,

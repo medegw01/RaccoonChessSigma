@@ -67,7 +67,7 @@ const config = {} as entrypointConfig_t;
 
 if (config.isMainThread) {
     // eslint-disable-next-line prefer-const
-    let position = board_.newBoard();
+    let position = board_.clearBoard();
     board_.fenToBoard(util_.START_FEN, position);
     // eslint-disable-next-line prefer-const
     let info = {} as search_.info_t;

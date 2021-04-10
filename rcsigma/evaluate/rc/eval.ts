@@ -400,7 +400,6 @@ function bishopEval(board: board_.board_t, US: board_.Colors,) {
 
     // bishop pairs
     if ((pceBB.v & bitboard_.lightSquares) && (pceBB.v & bitboard_.darkSquares)) {
-        console.log("pair")
         boardStaticEval.pieces[util_.Phase.EG] += bishopPair[util_.Phase.EG] * pov;
         boardStaticEval.pieces[util_.Phase.MG] += bishopPair[util_.Phase.MG] * pov;
     }

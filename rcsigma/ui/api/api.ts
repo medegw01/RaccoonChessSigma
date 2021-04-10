@@ -29,7 +29,7 @@ export class Raccoon {
         util_.initUtil();
         bitboard_.initBitBoard();
 
-        this.board = board_.newBoard();
+        this.board = board_.clearBoard();
         this.movesHistory = [];
         //this.evalFN = ((typeof config !== 'undefined') && ('evaluateFN' in config)) ? config.evaluateFN! : rc_eval_.raccoonEvaluate;
         this.startFEN = ((typeof config !== 'undefined') && ('startFEN' in config)) ? config.startFEN! : util_.START_FEN;

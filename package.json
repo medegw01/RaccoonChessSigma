@@ -35,9 +35,9 @@
   "scripts": {
     "build:api": "webpack --entry ./rcsigma/ui/api/api.ts --output-path build --output-filename raccoon.api.js",
     "build:uci": "webpack --entry ./rcsigma/ui/uci/entrypoint.ts --target node --output-path build --output-filename raccoon.uci.js",
-    "test-api": "jest --watchAll -- ./tests/api.test.ts",
-    "test-uci": "jest --watch -- ./tests/uci.test.ts",
-    "test-general": "jest --watch -- ./tests/general.test.ts",
+    "test-api": "jest -- ./tests/api.test.ts",
+    "test-uci": "jest -- ./tests/uci.test.ts",
+    "test-general": "jest -- ./tests/general.test.ts",
     "coverage": "jest --coverage",
     "lint-and-fix": "eslint \"*/**/*.{js,ts,tsx}\" --fix",
     "lint": "eslint \"*/**/*.{js,ts,tsx}\""
