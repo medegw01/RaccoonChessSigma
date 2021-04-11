@@ -19,7 +19,7 @@ Either [nodejs >= 13.x](https://github.com/nodesource/distributions) or [yarn](h
 
 ### Building & Using RaccoonChessSigma
 
-RaccoonChessSigma can be built and used as a [UCI-compliant Chess Engine](./rcsigma/ui/uci/uci.md) or as an extensive [JavaScript Chess Library](./rcsigma/ui/api/api.md).
+RaccoonChessSigma can be built and used as a [UCI-compliant Chess Engine](../rcsigma/ui/uci/uci.md) or as an extensive [JavaScript Chess Library](../rcsigma/ui/api/api.md).
 If the perquisites have been installed, from the root directory where the repo was cloned, the execute:
 
 #### JavaScript Chess Library
@@ -28,7 +28,7 @@ If the perquisites have been installed, from the root directory where the repo w
 | ----- | ------------------- | ---------------- |
 | Build | `npm run build:api` | `yarn build:api` |
 
-The above script will create `raccoon.api.js` in `/build`. [See Usage](./rcsigma/ui/api/api.md) for more info.
+The above script will create `raccoon.api.js` in `/build`. [See Usage](../rcsigma/ui/api/api.md) for more info.
 
 #### UCI-compliant Chess Engine
 
@@ -38,7 +38,7 @@ The above script will create `raccoon.api.js` in `/build`. [See Usage](./rcsigma
 | ------------------- | ------------------- | ---------------- | ---------------- |
 | NodeJS & Web Worker | `npm run build:uci` | `yarn build:uci` | `raccoon.uci.js` |
 
-The above script will create the output in `/build` folder. [See Usage](./rcsigma/ui/api/api.md) for more info.
+The above script will create the output in `/build` folder. [See Usage](../rcsigma/ui/api/uci.md) for more info.
 
 ### Testing RaccoonChessSigma
 

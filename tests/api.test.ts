@@ -3,169 +3,185 @@
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
-import * as api from '../rcsigma/ui/api/api'
-import { verboseMove_t } from '../rcsigma/game/move';
-import { position_t } from '../rcsigma/game/board';
-import { START_FEN } from '../rcsigma/util';
+import * as api_ from '../rcsigma/ui/api/api';
+import * as move_ from '../rcsigma/game/move';
+import * as board_ from '../rcsigma/game/board';
+import * as util_ from '../rcsigma/util';
 
 describe("API Tests", () => {
-    let game: api.Raccoon;
+    const game = new api_.Raccoon();
     beforeEach(() => {
-        game = new api.Raccoon();
+        game.clearBoard()
     });
 
     it("Success: Constructor loads fen", function () {
         const test_fen = '8/7K/8/8/1R6/k7/1R1p4/8 b - - 0 1';
-        const game2 = new api.Raccoon({ startFEN: test_fen });
+        const game2 = new api_.Raccoon({ startFEN: test_fen });
         game.loadFEN(test_fen);
         expect(game.getFEN()).toBe(game2.getFEN());
     });
 });
 
+describe("Perft Test", () => {
+    const startFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const game = new api_.Raccoon();
+    let nodes: bigint
+    beforeEach(() => {
+        game.clearBoard();
+        nodes = 0n;
+    });
+
+    // see below link for perft table:
+    //   https://www.chessprogramming.org/Perft_Results
+    //
+
+    it('Initiail Position', function () {
+        game.loadFEN(startFEN);
+        nodes = game.perft(4);
+        expect(nodes).toBe(197281n);
+    });
+
+    it('Position 2', function () {
+        game.loadFEN('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1');
+        nodes = game.perft(4);
+        expect(nodes).toBe(4085603n);
+    });
+    it('Position 3', function () {
+        game.loadFEN('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1');
+        nodes = game.perft(4);
+        expect(nodes).toBe(43238n);
+    });
+    it('Position 4 ', function () {
+        game.loadFEN('r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 ');
+        nodes = game.perft(3);
+        expect(nodes).toBe(9467n);
+    });
+
+    it('Position 5', function () {
+        game.loadFEN('rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ');
+        nodes = game.perft(3);
+        expect(nodes).toBe(62379n);
+    });
+});
+
 describe("Game Tests", () => {
     const startFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    describe("Perft Test", () => {
-        let game: api.Raccoon;
-        let nodes: bigint
-        beforeEach(() => {
-            game = new api.Raccoon();
-            nodes = 0n;
-        });
-        /*
-        see below link for perft table:
-          https://www.chessprogramming.org/Perft_Results
-        */
-
-        it('Initiail Position', function () {
-            game.loadFEN(startFEN);
-            nodes = game.perft(4);
-            expect(nodes).toBe(197281n);
-        });
-
-        it('Position 2', function () {
-            game.loadFEN('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1');
-            nodes = game.perft(4);
-            expect(nodes).toBe(4085603n);
-        });
-        it('Position 3', function () {
-            game.loadFEN('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1');
-            nodes = game.perft(4);
-            expect(nodes).toBe(43238n);
-        });
-        it('Position 4 ', function () {
-            game.loadFEN('r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 ');
-            nodes = game.perft(3);
-            expect(nodes).toBe(9467n);
-        });
-
-        it('Position 5', function () {
-            game.loadFEN('rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ');
-            nodes = game.perft(3);
-            expect(nodes).toBe(62379n);
-        });
-    });
     describe("Poly Keys Test", function () {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
-        it("Fen: startFEN; moves: []", function () {
+
+        it("starting position", function () {
             game.loadFEN(startFEN);
             const by_fen = game.getPolyglot();
-            game.loadFEN(startFEN);
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x463b96181691fc9c"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x463b96181691fc9c").toString(16));
+
         });
-        it("Fen: startFEN; moves: ['e2e4']", function () {
+        it("position after e2e4", function () {
             game.loadFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x823c9b50fd114196"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x823c9b50fd114196").toString(16));
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5']", function () {
+        it("position after e2e4 d7d5", function () {
             game.loadFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x0756b94461c50fb0"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x0756b94461c50fb0").toString(16));
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5']", function () {
+        it("position after e2e4 d7d5 e4e5", function () {
             game.loadFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5', 'e4e5'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5', 'e4e5'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x662fafb965db29d4"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x662fafb965db29d4").toString(16));
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5']", function () {
+        it("position after e2e4 d7d5 e4e5 f7f5", function () {
             game.loadFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x22a48b5a8e47ff78"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x22a48b5a8e47ff78").toString(16));
         });
-        it("Fen: startFEN; moves: ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7']", function () {
+        it("position after e2e4 d7d5 e4e5 f7f5 e1e2", function () {
+            game.loadFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR b kq - 0 3");
+            const by_fen = game.getPolyglot();
+
+            game.loadFEN(startFEN);
+            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
+            const byMove = game.getPolyglot(true);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x652a607ca3f242c1").toString(16));
+        });
+        it("position after e2e4 d7d5 e4e5 f7f5 e1e2 e8f7", function () {
             game.loadFEN("rnbq1bnr/ppp1pkpp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR w - - 0 4");
             const by_fen = game.getPolyglot();
-            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x00fdd303c946bdd9"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x00fdd303c946bdd9").toString(16));
         });
-        it("Fen: startFEN; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4']", function () {
+        it("position after a2a4 b7b5 h2h4 b5b4 c2c4", function () {
             game.loadFEN("rnbqkbnr/p1pppppp/8/8/PpP4P/8/1P1PPPP1/RNBQKBNR b KQkq c3 0 3");
             const by_fen = game.getPolyglot();
-            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x3c8123ea7b067637"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x3c8123ea7b067637").toString(16));
         });
-        it("Fen: startFEN; moves: ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3']", function () {
+        it("position after a2a4 b7b5 h2h4 b5b4 c2c4 b4c3 a1a3", function () {
             game.loadFEN("rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4");
             const by_fen = game.getPolyglot();
-            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3'];
+
             game.loadFEN(startFEN);
-            for (const mv of moves) {
-                game.makeMove(mv);
-            }
+            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3'];
+            moves.forEach((mv: string) => { game.makeMove(mv) });
             const byMove = game.getPolyglot(true);
-            expect(by_fen).toBe(BigInt("0x5c3f9b829b279560"));
-            expect(byMove).toBe(by_fen);
+
+            expect(by_fen.toString(16)).toBe(byMove.toString(16));
+            expect(by_fen.toString(16)).toBe(BigInt("0x5c3f9b829b279560").toString(16));
         });
     });
     describe("Load Fen & Get fen Test", function () {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it("Success: No Enpass; fen: startFEN", function () {
@@ -211,10 +227,10 @@ describe("Game Tests", () => {
         });
     });
     describe("Print Board Test", () => {
-        let game: api.Raccoon;
         const fen_print = 'rnbqkbnr/p1pppppp/8/8/P1pP3P/R7/1P2PPP1/1NBQKBNR b Kkq d3 0 5';
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it("Fen: startFEN; Default, i.e ASCII", function () {
@@ -273,6 +289,7 @@ describe("Game Tests", () => {
             expect(game.boardASCII(false, config)).toBe(expected);
         });
         it("Fen: startFEN; ANSI", function () {
+            game.loadFEN(startFEN);
             const t = game.boardANSI();
 
             const output = `    a  b  c  d  e  f  g  h
@@ -285,15 +302,13 @@ describe("Game Tests", () => {
  2 [47m[30m ♙ [0m[41m[30m ♙ [0m[47m[30m ♙ [0m[41m[30m ♙ [0m[47m[30m ♙ [0m[41m[30m ♙ [0m[47m[30m ♙ [0m[41m[30m ♙ [0m 2
  1 [41m[30m ♖ [0m[47m[30m ♘ [0m[41m[30m ♗ [0m[47m[30m ♕ [0m[41m[30m ♔ [0m[47m[30m ♗ [0m[41m[30m ♘ [0m[47m[30m ♖ [0m 1
     a  b  c  d  e  f  g  h\n\n`;
-            game.loadFEN(fen_print);
             expect(t).toBe(output);
         });
     });
 
     describe("Make Move & Undo Move Test", () => {
-        let game: api.Raccoon;
         const test_fen = "2n1b3/1P1kr3/3p4/3N4/4N3/2R1K3/2P5/8 w - - 0 1";
-        const expectedMove: verboseMove_t = {
+        const expectedMove: move_.verboseMove_t = {
             from: "b7",
             to: "c8",
             color: "w",
@@ -305,9 +320,11 @@ describe("Game Tests", () => {
             captured: "n"
         }
 
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
+
         it("Success: Legal smith move: b7c8q", function () {
             game.loadFEN(test_fen);
             expect(game.makeMove("b7c8q")).toStrictEqual(expectedMove);
@@ -345,10 +362,9 @@ describe("Game Tests", () => {
         });
     });
     describe("Get Moves Test", () => {
-        let game: api.Raccoon;
         const test_fen = "Bn1K4/NP1P1k2/1N1n4/pP1P4/P1r5/8/8/8 w - - 0 1";
         const expected_str: string[] = ['Nc6', 'Nac8', 'Nbc8', 'Nxc4'].sort()
-        const expectedMove: verboseMove_t[] = [
+        const expectedMove: move_.verboseMove_t[] = [
             {
                 from: "a7",
                 to: "c6",
@@ -388,15 +404,16 @@ describe("Game Tests", () => {
             }
         ].sort((a, b) => (a.san > b.san) ? 1 : -1);
 
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it("Pass: get all moves on board", function () {
             game.loadFEN(test_fen);
             expect(game.getMoves().sort()).toStrictEqual(expected_str); // Default in san format
             const verbo = game.getMoves({ verbose: true });
-            const verbo_sorted = (verbo as verboseMove_t[]).sort((a, b) => (a.san > b.san) ? 1 : -1);
+            const verbo_sorted = (verbo as move_.verboseMove_t[]).sort((a, b) => (a.san > b.san) ? 1 : -1);
             expect(verbo_sorted).toStrictEqual(expectedMove);// verbose
         });
         it("Pass: get all from a7", function () {
@@ -420,9 +437,9 @@ describe("Game Tests", () => {
 
 
     describe("Checkmate/Check Test", () => {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it("Success: Q-R mate", function () {
@@ -466,9 +483,9 @@ describe("Game Tests", () => {
     });
 
     describe("Stalemate/Not Check/Draw Test", () => {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it("Success: caged", function () {
@@ -500,9 +517,9 @@ describe("Game Tests", () => {
     });
 
     describe("Insufficient Material/Draw Test", () => {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it("Success: 8/8/8/8/8/8/8/k6K w - - 0 1", function () {
@@ -555,7 +572,6 @@ describe("Game Tests", () => {
     });
 
     describe("Threefold Repetition/Draw Test", () => {
-        let game: api.Raccoon;
         const positions = [
             {
                 fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -568,8 +584,9 @@ describe("Game Tests", () => {
                 moves: ['Qe5', 'Qh5', 'Qf6', 'Qe2', 'Re5', 'Qd3', 'Rd5', 'Qe2']
             },
         ];
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it(`Success: ${positions[0].fen} `, function () {
@@ -591,9 +608,10 @@ describe("Game Tests", () => {
     });
 
     describe("Get, Set, and Pop Piece Test", () => {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
+            game.loadFEN(util_.START_FEN)
         });
 
         it(`Success: SET, GET, POP`, function () {
@@ -626,10 +644,12 @@ describe("Game Tests", () => {
         });
     });
 
+
     describe("MICS Test", () => {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
+            game.loadFEN(util_.START_FEN)
         });
 
         it('Get Turn', function () {
@@ -654,9 +674,9 @@ describe("Game Tests", () => {
     });
 
     describe("Reset and Clear board, and Move History Test", () => {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it('Clear Board & Move History', function () {
@@ -668,7 +688,7 @@ describe("Game Tests", () => {
         it('Reset Board & Move History', function () {
             const intial_fen = "8/pp3p1k/2p2q1p/3r1P2/5R2/7P/P1P1QP2/7K b - - 2 30";
             const moves_str = ['Qe5', 'Qh5', 'Qf6', 'Qe2', 'Re5'];
-            const moves_verbo: verboseMove_t[] = [
+            const moves_verbo: move_.verboseMove_t[] = [
                 {
                     color: "b",
                     flag: "n",
@@ -728,13 +748,13 @@ describe("Game Tests", () => {
         });
     });
     describe("Get Board Test", () => {
-        let game: api.Raccoon;
+        const game = new api_.Raccoon();
         beforeEach(() => {
-            game = new api.Raccoon();
+            game.clearBoard()
         });
 
         it('Get Empty Board', function () {
-            const position: position_t = {
+            const position: board_.position_t = {
                 board: [
                     [null, null, null, null, null, null, null, null],
                     [null, null, null, null, null, null, null, null],
@@ -755,7 +775,7 @@ describe("Game Tests", () => {
         });
         it('Get Board from startFEN', function () {
             const P = (p: string, b: string): { type: string, color: string } => { return { type: p, color: b } };
-            const position: position_t = {
+            const position: board_.position_t = {
                 board: [
                     [null, null, null, null, null, null, null, null],
                     [P('p', 'b'), P('p', 'b'), null, null, null, P('p', 'b'), null, P('k', 'b')],
@@ -780,20 +800,27 @@ describe("Game Tests", () => {
 
 
 describe("Evaluation Tests", () => {
-    let game: api.Raccoon;
+    const game = new api_.Raccoon();
     beforeEach(() => {
-        game = new api.Raccoon();
+        game.clearBoard()
     });
 
-    it("rc: the same evaluation for white and black", function () {
-        const test_fen = '8/7K/8/8/1R6/k7/1R1p4/8 b - - 0 1';
+    it("rc: the same evaluation for white and black(basic)", function () {
+        const test_fen = 'kqrR4/rp1R1B1K/p1Np4/3P4/3B4/8/3p4/8 b - - 0 1';
         game.loadFEN(test_fen);
         const eval_score = game.evaluateBoard();
         game.flipBoard();
-        expect(game.evaluateBoard()).toBe(eval_score);
+        expect(game.evaluateBoard()).toBe(-eval_score);
+    });
+    it("rc: the same evaluation for white and black(complex)", function () {
+        const test_fen = '4k2r/1bB2n2/p2p1R2/P1pNp1P1/1pNpP1P1/1Pp3q1/2P2QP1/R3K2R w - - 1 4'
+        game.loadFEN(test_fen);
+        const eval_score = game.evaluateBoard();
+        game.flipBoard();
+        expect(game.evaluateBoard()).toBe(-eval_score);
     });
     it("rc0: the same evaluation for white and black", function () {
-        game.loadFEN(START_FEN);
+        game.loadFEN(util_.START_FEN);
         const eval_score = game.evaluateBoard({ use_nnue: true });
         game.flipBoard();
         expect(game.evaluateBoard({ use_nnue: true })).toBe(eval_score);

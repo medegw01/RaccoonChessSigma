@@ -4,6 +4,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import * as util_ from '../../util'
+import * as bitboard_ from '../../game/bitboard'
 import * as board_ from '../../game/board'
 import * as perft_ from '../../game/perft'
 import * as hash_ from '../../game/hash'
@@ -25,9 +26,10 @@ export class Raccoon {
         startFEN?: string;
         book_path?: string | ArrayBufferLike;
     }) {
-        util_.initializeGame();
+        util_.initUtil();
+        bitboard_.initBitBoard();
 
-        this.board = board_.newBoard();
+        this.board = board_.clearBoard();
         this.movesHistory = [];
         //this.evalFN = ((typeof config !== 'undefined') && ('evaluateFN' in config)) ? config.evaluateFN! : rc_eval_.raccoonEvaluate;
         this.startFEN = ((typeof config !== 'undefined') && ('startFEN' in config)) ? config.startFEN! : util_.START_FEN;
@@ -103,7 +105,7 @@ export class Raccoon {
         } else {
             let tmp = move.from + move.to;
             if ('promotion' in move) {
-                tmp += move.promotion;
+                tmp += move.promotion!;
             }
             mv = move_.smithToMove(tmp, this.board);
         }
@@ -236,7 +238,6 @@ export class Raccoon {
     }
 
     // Search and Evaluation
-    // evaluateBoard()
     // searchBoard(option)
     // noob_book(noob_cmd)
     // set_book(arrayBuffer)

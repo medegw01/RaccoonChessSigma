@@ -5,6 +5,7 @@
 // -------------------------------------------------------------------------------------------------
 
 import * as board_ from './game/board'
+import * as bitboard_ from './game/bitboard'
 import * as hash_ from './game/hash'
 
 const VERSION = "0.1.0";
@@ -36,24 +37,6 @@ export function ASSERT(condition: boolean, msg?: string): asserts condition {
     }
 }
 
-function COUNT_BITS(b: board_.bitboard_t): number {
-    let num_bits = 0;
-    while (b) {
-        num_bits++;
-        b &= b - 1n;
-    }
-    return num_bits;
-}
-
-function SET_BIT(b: board_.bitboard_t, pos: number): bigint {
-    return (b | 1n << BigInt(pos))
-}
-
-function CLEAR_BIT(b: board_.bitboard_t, pos: number): bigint {
-    return (b & ~(1n << BigInt(pos)))
-}
-
-function ISKthBIT_SET(b: board_.bitboard_t, k: number): boolean { return ((b >> BigInt(k)) & 1n) === 1n }
 
 //===========================================================//
 // Game Globals
@@ -147,6 +130,71 @@ const flip = [
     0, 1, 2, 3, 4, 5, 6, 7,
 ];
 
+class staticEval_c {
+    psqt: [number, number]; imbalance: [number, number]; pawns: [number, number];
+    pieces: [number, number]; pieceValue: [number, number]; mobility: [number, number];
+    threat: [number, number]; passed: [number, number]; space: [number, number]; kingSafety: [number, number];
+
+    constructor() {
+        this.psqt = [0, 0];
+        this.imbalance = [0, 0];
+        this.pawns = [0, 0];
+        this.pieces = [0, 0];
+        this.pieceValue = [0, 0];
+        this.mobility = [0, 0];
+        this.threat = [0, 0];
+        this.passed = [0, 0];
+        this.space = [0, 0];
+        this.kingSafety = [0, 0];
+    }
+}
+
+
+enum PieceType {
+    NO_PIECE_TYPE, PAWN, BISHOP, KNIGHT, ROOK, QUEEN, KING,
+}
+
+//pbnrq
+function ptToP(color: board_.Colors, pce: number): board_.Pieces {
+    ASSERT(pce <= PieceType.KING && pce >= PieceType.NO_PIECE_TYPE)
+    return pce + 6 * color
+}
+function pToPt(pce: board_.Pieces): PieceType {
+    ASSERT(pce <= board_.Pieces.BLACKKING && pce >= board_.Pieces.EMPTY)
+    return (pce < 7) ? pce : (pce % 7) + 1
+}
+
+/**
+ * Return relative rank based on color pov
+ * @param color 
+ * @param rank 
+ */
+const relativeRank = (color: board_.Colors, rank: number): number => {
+    return rank ^ (color * 7);
+}
+
+const relativeSquare = (color: board_.Colors, sq: number): number => {
+    return sq ^ (color * 56);
+}
+
+const pawnPush = (color: board_.Colors): bitboard_.Direction => {
+    return (color == board_.Colors.WHITE) ? bitboard_.Direction.NORTH : bitboard_.Direction.SOUTH;
+}
+
+const distance = (sq: number, sqq: number): number => {
+    return Math.max(
+        Math.abs(ranksBoard[board_.SQ120(sq)] - ranksBoard[board_.SQ120(sqq)]),
+        Math.abs(filesBoard[board_.SQ120(sq)] - filesBoard[board_.SQ120(sqq)]),
+    );
+}
+const rankOf = (sq64: number): number => {
+    return sq64 >> 3;
+}
+const fileOf = (sq64: number): number => {
+    return sq64 & 7;
+
+}
+
 const filesBoard = new Array<number>(BOARD_SQUARE_NUM);
 const ranksBoard = new Array<number>(BOARD_SQUARE_NUM);
 
@@ -173,6 +221,7 @@ function initializeSquare120ToSquare64() {
     }
     for (i = 0; i < 64; ++i) {
         square64ToSquare120[i] = 120;
+
     }
 
     for (rank = board_.Ranks.FIRST_RANK; rank <= board_.Ranks.EIGHTH_RANK; ++rank) {
@@ -206,11 +255,13 @@ function initializeHashKey() {
     castlePermission[board_.Squares.A8] &= ~board_.Castling.BLACK_CASTLE_OOO;
 }
 
-function initializeGame(): void {
+
+function initUtil(): void {
     initializeSquare120ToSquare64();
     initializeHashKey();
     initializeFilesRankArray();
 }
+
 
 function get_time_ms(): number {
     return new Date().getTime();
@@ -219,6 +270,7 @@ function get_time_ms(): number {
 function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
+
 
 export {
     START_FEN,
@@ -266,17 +318,21 @@ export {
     pieceAnsi,
     squareAnsi,
 
-    COUNT_BITS,
-    SET_BIT,
-    CLEAR_BIT,
-    ISKthBIT_SET,
-
+    staticEval_c,
     evaluationFN,
-    isOfType,
     Phase,
+    PieceType,
 
     bufferToArrayBuffer,
     get_time_ms,
-    initializeGame,
-
+    initUtil,
+    relativeRank,
+    relativeSquare,
+    pawnPush,
+    distance,
+    rankOf,
+    fileOf,
+    isOfType,
+    pToPt,
+    ptToP,
 }

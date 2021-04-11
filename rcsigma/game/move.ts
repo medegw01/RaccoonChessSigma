@@ -5,6 +5,7 @@
 
 import * as util_ from '../util'
 import * as board_ from './board'
+import * as bitboard_ from './bitboard'
 import * as state_ from './state'
 import * as hash_ from './hash'
 import * as attack_ from './attack'
@@ -586,10 +587,6 @@ function clearPieces(sq: board_.Squares, board: board_.board_t): void {
                 board.numberMinorPieces[col]--;
             }
         }
-        else {
-            board.pawns[col] = util_.CLEAR_BIT(board.pawns[col], board_.SQ64(sq));
-            board.pawns[board_.Colors.BOTH] = util_.CLEAR_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(sq));
-        }
 
         for (index = 0; index < board.numberPieces[pce]; ++index) {
             if (board.pieceList[board_.PIECE_INDEX(pce, index)] === sq) {
@@ -599,7 +596,9 @@ function clearPieces(sq: board_.Squares, board: board_.board_t): void {
         }
 
         board.numberPieces[pce]--;
+        board.piecesBB[pce] ^= bitboard_.bit(board_.SQ64(sq));
         board.pieceList[board_.PIECE_INDEX(pce, t_pceNum)] = board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce])];
+
         board.currentPolyglotKey ^= (hash_.random64Poly[hash_.randomPiece + (util_.getPolyPiece[pce]) * 64 + board_.SQ64(sq)]);
 
     }
@@ -620,15 +619,13 @@ function addPiece(sq: board_.Squares, pce: board_.Pieces, board: board_.board_t)
                 board.numberMinorPieces[col]++;
             }
         }
-        else {
-            board.pawns[col] = util_.SET_BIT(board.pawns[col], board_.SQ64(sq));
-            board.pawns[board_.Colors.BOTH] = util_.SET_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(sq));
-        }
 
         board.materialEg[col] += util_.getValuePiece[util_.Phase.EG][pce];
         board.materialMg[col] += util_.getValuePiece[util_.Phase.MG][pce];
 
         board.pieceList[board_.PIECE_INDEX(pce, board.numberPieces[pce]++)] = sq;
+
+        board.piecesBB[pce] |= bitboard_.bit(board_.SQ64(sq));
 
         board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomPiece + (polyPiece) * 64 + board_.SQ64(sq)];
 
@@ -640,20 +637,12 @@ function movePiece(from: board_.Squares, to: board_.Squares, board: board_.board
     if (board_.SQUARE_ON_BOARD(from) && board_.SQUARE_ON_BOARD(to)) {
         //console.log(`board entering movePiece: ${board_.boardToascii(board)}`)
         const pce = board.pieces[from];
-        const col = util_.getColorPiece[pce];
 
         board.pieces[from] = board_.Pieces.EMPTY;
         board.pieces[to] = pce;
 
-
-        if (!util_.isBigPiece[pce]) {
-            // -- clear
-            board.pawns[col] = util_.CLEAR_BIT(board.pawns[col], board_.SQ64(from));
-            board.pawns[board_.Colors.BOTH] = util_.CLEAR_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(from));
-            //-- set
-            board.pawns[col] = util_.SET_BIT(board.pawns[col], board_.SQ64(to));
-            board.pawns[board_.Colors.BOTH] = util_.SET_BIT(board.pawns[board_.Colors.BOTH], board_.SQ64(to));
-        }
+        board.piecesBB[pce] ^= bitboard_.bit(board_.SQ64(from));
+        board.piecesBB[pce] |= bitboard_.bit(board_.SQ64(to));
 
         for (let index = 0; index < board.numberPieces[pce]; ++index) {
             if (board.pieceList[board_.PIECE_INDEX(pce, index)] === from) {
@@ -680,7 +669,7 @@ function makeMove(move: move_t, board: board_.board_t): boolean {
     const undo = {} as board_.undo_t;
     undo.currentPolyglotKey = board.currentPolyglotKey;
 
-    undo.turn = board.turn;
+    undo.turn = me;
     undo.move = move;
 
     undo.halfMoves = board.halfMoves;
@@ -703,7 +692,7 @@ function makeMove(move: move_t, board: board_.board_t): boolean {
     board.castlingRight = new_right;
     board.currentPolyglotKey ^= util_.castle64Hash[old_right ^ new_right]; //hack
 
-    if (board.enpassant !== board_.Squares.OFF_SQUARE) {
+    if (board.enpassant != board_.Squares.OFF_SQUARE) {
         board.currentPolyglotKey ^= hash_.random64Poly[hash_.randomEnpass + util_.filesBoard[board.enpassant]];
         board.enpassant = board_.Squares.OFF_SQUARE;
     }
@@ -780,6 +769,7 @@ function makeMove(move: move_t, board: board_.board_t): boolean {
         takeMove(board);
         return false;
     }
+
     return true;
 }
 

@@ -3,6 +3,7 @@
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
+import * as bitboard_ from './bitboard'
 import * as board_ from './board'
 import * as util_ from '../util'
 
@@ -211,7 +212,7 @@ const random64Poly: bigint[] = [ //-- http://hgm.nubati.net/book_format.html
 ];
 
 
-function pawnCP(board: board_.board_t) {
+function pawnCP(board: board_.board_t): boolean {
     let sqWithPawn = 0;
     const targetPce = (board.turn === board_.Colors.WHITE) ? board_.Pieces.WHITEPAWN : board_.Pieces.BLACKPAWN;
     if (board.enpassant !== board_.Squares.OFF_SQUARE) {
@@ -228,7 +229,7 @@ function pawnCP(board: board_.board_t) {
     return false;
 }
 
-function polyglotKey(board: board_.board_t): board_.bitboard_t {
+function polyglotKey(board: board_.board_t): bitboard_.bitboard_t {
     let sq, rank = 0, file = 0;
     let finalKey = 0n, piece = board_.Pieces.EMPTY, polyPiece = 0;
 

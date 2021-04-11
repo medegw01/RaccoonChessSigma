@@ -3,6 +3,7 @@
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
+import * as bitboard_ from './bitboard'
 import * as util_ from '../util'
 import * as hash_ from './hash'
 import * as move_ from './move'
@@ -53,8 +54,6 @@ enum Castling {
     BLACK_CASTLE_OOO = 1 << 3
 }
 
-
-type bitboard_t = bigint
 type undo_t = {
     move: move_.move_t;
 
@@ -66,14 +65,13 @@ type undo_t = {
     ply: number;
     fullMoves: number;
     historyPly: number;
-    currentPolyglotKey: bitboard_t;
+    currentPolyglotKey: bitboard_.bitboard_t;
 
     materialEg: number[];
     materialMg: number[];
 }
 type board_t = {
     pieces: Pieces[];
-    pawns: bitboard_t[];
     kingSquare: Squares[];
 
     enpassant: Squares;
@@ -85,10 +83,12 @@ type board_t = {
     ply: number;
     historyPly: number;
 
-    currentPolyglotKey: bitboard_t;
+    currentPolyglotKey: bitboard_.bitboard_t;
 
     materialEg: number[];
     materialMg: number[];
+
+    piecesBB: bitboard_.bitboard_t[];
 
     numberPieces: number[];
     numberBigPieces: number[];
@@ -97,6 +97,7 @@ type board_t = {
 
     pieceList: Squares[];
     moveHistory: undo_t[];
+    pawnEvalHash: Map<bitboard_.bitboard_t, pawnEntry_t>;
 }
 type piece_t = { type: string, color: string };
 type position_t = {
@@ -105,6 +106,28 @@ type position_t = {
     enpassant: string  // enpassant
     turn: string // side to move
     moveCount: [number, number] // move counts: [half move, full, move]
+}
+
+type pawnEntry_t = {
+    /*pawnSpan: bitboard_.bitboard_t; //bitboard_.bitboard_t[];
+    attacked: bitboard_.bitboard_t;//bitboard_.bitboard_t[];
+    attacked2: bitboard_.bitboard_t;//bitboard_.bitboard_t[];
+    attackedBy: bitboard_.bitboard_t;//bitboard_.bitboard_t[];
+    kingAttackCount: number//number[];
+    kingAttackersCount: number//number[];
+    kingAttackWeight: number//number[];*/
+
+
+    pawnSpan: bitboard_.bitboard_t[];
+    passedPawn: bitboard_.bitboard_t[];
+    attacked: bitboard_.bitboard_t[];
+    attacked2: bitboard_.bitboard_t[];
+    attackedBy: bitboard_.bitboard_t[];
+    kingAttackCount: number[];
+    kingAttackersCount: number[];
+    kingAttackWeight: number[];
+    boardStaticEval: util_.staticEval_c;
+
 }
 
 
@@ -123,24 +146,23 @@ function IS_VALID_PIECE(pce: Pieces): boolean { return ((pce) >= Pieces.WHITEPAW
 
 function SQUARE_COLOR(sq: Squares): Colors { return (util_.ranksBoard[(sq)] + util_.filesBoard[(sq)]) % 2 === 0 ? Colors.BLACK : Colors.WHITE; }
 function PIECE_INDEX(piece: number, piece_num: number): number { return (piece * 10 + piece_num) }
-
+function PIECE_COLOR(piece: number): Colors {
+    return (piece < Pieces.WHITEPAWN) ? Colors.BOTH
+        : (piece < Pieces.BLACKPAWN) ? Colors.WHITE
+            : Colors.BLACK
+}
 
 /*****************************************************************************
 * BOARD POSITION
 ****************************************************************************/
-function checkBoard(position: board_t) {
+function checkBoard(position: board_t): void {
     const tmpNumberPiece = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    const tmpPieceBB = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
     const tmpNumberbigPiece = [0, 0];
     const tmpNumbermajorPiece = [0, 0];
     const tmpNumberminorPiece = [0, 0];
     const tmpMaterialEg = [0, 0];
     const tmpMaterialMg = [0, 0];
-
-    const tmp_pawns = [0n, 0n, 0n];
-    tmp_pawns[Colors.WHITE] = position.pawns[Colors.WHITE];
-    tmp_pawns[Colors.BLACK] = position.pawns[Colors.BLACK];
-    tmp_pawns[Colors.BOTH] = position.pawns[Colors.BOTH];
-
 
     // check piece lists
     for (let p = Pieces.WHITEPAWN; p <= Pieces.BLACKKING; ++p) {
@@ -155,6 +177,7 @@ function checkBoard(position: board_t) {
         const sq120 = SQ120(square64);
         const p = position.pieces[sq120];
         tmpNumberPiece[p]++;
+        tmpPieceBB[p] |= bitboard_.bit(square64);
         const color = util_.getColorPiece[p];
         if (util_.isBigPiece[p]) tmpNumberbigPiece[color]++;
         if (util_.isMinorPiece[p]) tmpNumberminorPiece[color]++;
@@ -166,34 +189,8 @@ function checkBoard(position: board_t) {
 
     for (let p = Pieces.WHITEPAWN; p <= Pieces.BLACKKING; ++p) {
         util_.ASSERT(tmpNumberPiece[p] == position.numberPieces[p], `BoardErr: no. of Pieces Mismatch\n Got: ${position.numberPieces[p]} Expect: ${tmpNumberPiece[p]}`);
-    }
-
-    // check bitboards count
-    let pcount = util_.COUNT_BITS(tmp_pawns[Colors.WHITE]);
-    util_.ASSERT(pcount == position.numberPieces[Pieces.WHITEPAWN], `BoardErr: no. White Pawns Mismatch\n Got: ${position.numberPieces[Pieces.WHITEPAWN]} Expect: ${pcount}`);
-    pcount = util_.COUNT_BITS(tmp_pawns[Colors.BLACK]);
-    util_.ASSERT(pcount == position.numberPieces[Pieces.BLACKPAWN], `BoardErr: no. Black Pawns Mismatch\n Got: ${position.numberPieces[Pieces.BLACKPAWN]} Expect: ${pcount}`);
-    pcount = util_.COUNT_BITS(tmp_pawns[Colors.BOTH]);
-    const both_pawns = position.numberPieces[Pieces.BLACKPAWN] + position.numberPieces[Pieces.WHITEPAWN];
-    util_.ASSERT(pcount == both_pawns, `BoardErr: no. Both Pawns Mismatch\n Got: ${both_pawns} Expect: ${pcount}`);
-
-
-    // check bitboards squares
-
-    for (let square64 = 0; square64 <= 64; ++square64) {
-        if (util_.ISKthBIT_SET(tmp_pawns[Colors.WHITE], square64)) {
-            util_.ASSERT(position.pieces[SQ120(square64)] == Pieces.WHITEPAWN, `BoardErr: no. White Pawn BitBoard  Mismatch at ${SQ120(square64)}`);
-        }
-    }
-    for (let square64 = 0; square64 <= 64; ++square64) {
-        if (util_.ISKthBIT_SET(tmp_pawns[Colors.BLACK], square64)) {
-            util_.ASSERT(position.pieces[SQ120(square64)] == Pieces.BLACKPAWN, `BoardErr: no. White Pawn BitBoard  Mismatch at  ${SQ120(square64)}`);
-        }
-    }
-    for (let square64 = 0; square64 <= 64; ++square64) {
-        if (util_.ISKthBIT_SET(tmp_pawns[Colors.BOTH], square64)) {
-            util_.ASSERT(position.pieces[SQ120(square64)] == Pieces.BLACKPAWN || position.pieces[SQ120(square64)] == Pieces.WHITEPAWN, `BoardErr: no. Both Pawns BitBoard Mismatch at ${SQ120(square64)}`);
-        }
+        util_.ASSERT(tmpPieceBB[p] == position.piecesBB[p], `BoardErr: no. of ${util_.pieceToAscii[p]} Pieces BB Mismatch\n Got: ${position.piecesBB[p]} Expect: ${tmpPieceBB[p]}`);
+        util_.ASSERT(position.numberPieces[p] == bitboard_.popcount({ v: position.piecesBB[p] }), `BoardErr: no. of ${util_.pieceToAscii[p]} Pieces BB Mismatch no ${util_.pieceToAscii[p]} Pieces\n Got: ${bitboard_.popcount({ v: position.piecesBB[p] })} Expect: ${position.numberPieces[p]}`);
     }
 
     util_.ASSERT(tmpMaterialEg[Colors.WHITE] == position.materialEg[Colors.WHITE], `BoardErr: White eg Material imbalance. Got: ${position.materialEg[Colors.WHITE]} Expect: ${tmpMaterialEg[Colors.WHITE]}`);
@@ -221,66 +218,42 @@ function checkBoard(position: board_t) {
 function getTurn(board: board_t): string {
     return "wb-"[board.turn];
 }
-function newBoard(): board_t {
-    return {
-        pieces: new Array<Pieces>(util_.BOARD_SQUARE_NUM),
-        kingSquare: new Array<Squares>(2),
-        pawns: new Array<bitboard_t>(3),
 
-        enpassant: Squares.OFF_SQUARE,
-        turn: Colors.BOTH,
-        halfMoves: 0,
-        fullMoves: 0,
-        castlingRight: 0,
-
-        ply: 0,
-        historyPly: 0,
-
-        currentPolyglotKey: 0n,
-
-        materialEg: new Array<number>(2),
-        materialMg: new Array<number>(2),
-
-        numberPieces: new Array<number>(13),
-        numberBigPieces: new Array<number>(2),
-        numberMajorPieces: new Array<number>(2),
-        numberMinorPieces: new Array<number>(2),
-
-        pieceList: new Array<Squares>(13 * 10),
-        moveHistory: new Array<undo_t>(util_.MAX_MOVES),
-    };
-}
-
-function clearBoard(board: board_t): void {
-    for (let i = 0; i < util_.BOARD_SQUARE_NUM; i++) {
-        board.pieces[i] = Pieces.OFF_BOARD_PIECE;
-    }
+function clearBoard(board: board_t = {} as board_t): board_t {
+    board.pieces = new Array<Pieces>(util_.BOARD_SQUARE_NUM).fill(Pieces.OFF_BOARD_PIECE);
     for (let i = 0; i < 64; i++) {
         board.pieces[SQ120(i)] = Pieces.EMPTY;
     }
-    for (let i = 0; i < 2; i++) {
-        board.numberBigPieces[i] = 0;
-        board.numberMajorPieces[i] = 0;
-        board.numberMinorPieces[i] = 0;
-        board.materialMg[i] = 0;
-        board.materialEg[i] = 0;
-    }
-    for (let i = 0; i < 3; i++) {
-        board.pawns[i] = 0n;
-    }
 
-    for (let i = 0; i < 13; i++) {
-        board.numberPieces[i] = 0;
-    }
-    board.kingSquare[Colors.BLACK] = board.kingSquare[Colors.WHITE] = Squares.OFF_SQUARE;
-    board.turn = Colors.WHITE; // Generally cleard board sets turn to white
+    board.kingSquare = new Array<Squares>(2).fill(Squares.OFF_SQUARE);
+
     board.enpassant = Squares.OFF_SQUARE;
+    board.turn = Colors.WHITE; // Generally cleared board sets turn to white
     board.halfMoves = 0;
-    board.ply = 0;
     board.fullMoves = 1;
-    board.historyPly = 0;
     board.castlingRight = 0;
+
+    board.ply = 0;
+    board.historyPly = 0;
+
     board.currentPolyglotKey = 0n;
+
+    board.materialEg = new Array<number>(2).fill(0);
+    board.materialMg = new Array<number>(2).fill(0);
+
+    board.piecesBB = new Array<bitboard_.bitboard_t>(13).fill(0n);
+
+    board.numberPieces = new Array<number>(13).fill(0);
+    board.numberBigPieces = new Array<number>(2).fill(0);
+    board.numberMajorPieces = new Array<number>(2).fill(0);
+    board.numberMinorPieces = new Array<number>(2).fill(0);
+
+    board.pieceList = new Array<Squares>(13 * 10).fill(0);
+    board.moveHistory = new Array<undo_t>(util_.MAX_MOVES);
+
+    board.pawnEvalHash = new Map<bitboard_.bitboard_t, pawnEntry_t>();
+
+    return board;
 }
 
 function updateMaterialList(board: board_t) {
@@ -298,18 +271,10 @@ function updateMaterialList(board: board_t) {
             board.pieceList[(PIECE_INDEX(piece, board.numberPieces[piece]))] = square;
             board.numberPieces[piece]++;
 
+            board.piecesBB[piece] |= bitboard_.bit(SQ64(square));
+
             if (piece === Pieces.WHITEKING) board.kingSquare[Colors.WHITE] = square;
             if (piece === Pieces.BLACKKING) board.kingSquare[Colors.BLACK] = square;
-
-            //-- set pawns
-            if (piece === Pieces.WHITEPAWN) {
-                board.pawns[Colors.WHITE] = util_.SET_BIT(board.pawns[Colors.WHITE], SQ64(square));
-                board.pawns[Colors.BOTH] = util_.SET_BIT(board.pawns[Colors.BOTH], SQ64(square));
-            }
-            else if (piece === Pieces.BLACKPAWN) {
-                board.pawns[Colors.BLACK] = util_.SET_BIT(board.pawns[Colors.BLACK], SQ64(square));
-                board.pawns[Colors.BOTH] = util_.SET_BIT(board.pawns[Colors.BOTH], SQ64(square));
-            }
         }
     }
 }
@@ -605,7 +570,7 @@ function fenToBoard(fen: string, board: board_t): void {
         checkBoard(board)
     }
     catch (err) {
-        util_.ASSERT(false, `FenErr: Cannot not parse fen due to ${(err as Error).message}`);
+        util_.ASSERT(false, `FenErr: Cannot not parse fen due to ${(err as Error).message} \n${(err as Error).stack!}`);
     }
 
 }
@@ -671,11 +636,11 @@ export {
     Squares,
     Castling,
 
-    bitboard_t,
     undo_t,
     board_t,
     piece_t,
     position_t,
+    pawnEntry_t,
 
     FILE_RANK_TO_SQUARE,
     SQ120,
@@ -685,11 +650,12 @@ export {
     IS_VALID_PIECE,
     SQUARE_COLOR,
     PIECE_INDEX,
+    PIECE_COLOR,
 
-    newBoard,
     getTurn,
     mirrorBoard,
     clearBoard,
+    checkBoard,
 
     boardToPosition_t,
     boardToASCII,

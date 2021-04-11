@@ -6,5 +6,8 @@
 import * as board_ from '../../../game/board'
 
 export function raccoonZeroEvaluate(board: board_.board_t): number {
-    return board.materialEg[board.turn] + board.materialMg[board.turn];
+    return (
+        (board.materialEg[board_.Colors.WHITE] + board.materialMg[board_.Colors.WHITE])
+        - (board.materialEg[board_.Colors.BLACK] + board.materialMg[board_.Colors.BLACK])
+    );
 }

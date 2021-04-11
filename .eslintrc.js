@@ -20,7 +20,7 @@ module.exports = {
   ],
   rules: {
     // security
-    "sonarjs/cognitive-complexity": ["error", 50],
+    "sonarjs/cognitive-complexity": ["error", 60],
     "sonarjs/no-unused-collection": "off",
 
     // ESlint Default
@@ -39,7 +39,9 @@ module.exports = {
     "@typescript-eslint/explicit-module-boundary-types": ["error"],
     "@typescript-eslint/no-non-null-assertion": ["error"],
     "@typescript-eslint/no-explicit-any": ["error"],
+    "@typescript-eslint/no-unused-vars": ["error"],
     "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/restrict-plus-operands": ["error", { "checkCompoundAssignments": true }],
     "sonarjs/no-duplicate-string": "off",
   },
 };
