@@ -38,7 +38,7 @@ Although it is optional, **RaccoonChessSigma** can be configured with the follow
 
 ```js
 config = {
-  evaluateFN: "raccoonEvaluate" /* Default */,
+  evaluateFN: "evaluate" /* Default */,
   startFEN:
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" /* Default */,
   bookFile: "pathTochess_book/<book_name>.bin",
@@ -46,10 +46,10 @@ config = {
 };
 ```
 
-- `evaluateFN`: is the evaluation function that will be used while searching for best move. The other choice is `"raccoonZeroEvaluate"`. If this is specified, you MUST also provide `nnue_file`. See [README](../../../README.md) for more information
+- `evaluateFN`: is the evaluation function that will be used while searching for best move. The other choice is `"evaluate"`. If this is specified, you MUST also provide `nnue_file`. See [README](../../../README.md) for more information
 - `startFEN`: is the the board configuration in [Forsyth-Edwards Notation](http://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
 - `book_path`: is the path to a chess book. If not provided, engine calculates opening moves instead of playing book moves.
-- `nnue_file`: is the path to the the NNUE evaluation parameters(for instance, `nn-c157e0a5755b.nnue`). ONLY provided when `evaluateFN` is `"raccoonZeroEvaluate"`
+- `nnue_file`: is the path to the the NNUE evaluation parameters(for instance, `nn-c157e0a5755b.nnue`). ONLY provided when `evaluateFN` is `"evaluate"`
 
 ### Constructor: Raccoon(config?)
 
@@ -60,7 +60,7 @@ The Raccoon() constructor takes an optional parameter which specifies the config
 let raccoon = new Raccoon();
 
 let raccoon = new Raccoon({
-  evaluateFN: "raccoonZeroEvaluate",
+  evaluateFN: "evaluate",
   startFEN:
     "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
   nnue_file: "lol.nnue",

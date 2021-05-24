@@ -6,13 +6,14 @@
 import * as util_ from '../../util'
 import * as bitboard_ from '../../game/bitboard'
 import * as board_ from '../../game/board'
-import * as perft_ from '../../game/perft'
 import * as hash_ from '../../game/hash'
 import * as move_ from '../../game/move'
 import * as state_ from '../../game/state'
+import * as thread_ from '../../search/thread'
+import * as tb_ from '../../search/tbase'
+import * as search_ from '../../search/search'
 import * as rc0_eval_ from '../../evaluate/rc0/backend/nn'
 import * as rc_eval_ from '../../evaluate/rc/eval'
-
 
 export class Raccoon {
     private board: board_.board_t;
@@ -21,17 +22,23 @@ export class Raccoon {
     //private book_path: string
     private movesHistory: move_.verboseMove_t[]
 
+    private thread: thread_.thread_t
+
     public constructor(config?: {
         evaluateFN?: string;
         startFEN?: string;
         book_path?: string | ArrayBufferLike;
     }) {
-        util_.initUtil();
-        bitboard_.initBitBoard();
+        util_.init();
+        bitboard_.init();
+        tb_.resize(32);
+        search_.init();
 
         this.board = board_.clearBoard();
+        this.thread = thread_.create(1)[0];
+
         this.movesHistory = [];
-        //this.evalFN = ((typeof config !== 'undefined') && ('evaluateFN' in config)) ? config.evaluateFN! : rc_eval_.raccoonEvaluate;
+        //this.evalFN = ((typeof config !== 'undefined') && ('evaluateFN' in config)) ? config.evaluateFN! : rc_eval_.evaluate;
         this.startFEN = ((typeof config !== 'undefined') && ('startFEN' in config)) ? config.startFEN! : util_.START_FEN;
         //this.book_path = ((typeof config !== 'undefined') && ('book_path' in config)) ? config.book_path! : "No book path provided";
         board_.fenToBoard(this.startFEN, this.board)
@@ -40,6 +47,7 @@ export class Raccoon {
     // Game Board
     public loadFEN(fen: string): { value: boolean, error: string } {
         try {
+            this.board = board_.clearBoard();
             board_.fenToBoard(fen, this.board);
         }
         catch (err) {
@@ -79,7 +87,7 @@ export class Raccoon {
         return board_.boardToANSI(this.board, color_config.piece.white, color_config.piece.black, color_config.square.light, color_config.square.dark, show_info);
     }
     public clearBoard(): void {
-        board_.clearBoard(this.board);
+        this.board = board_.clearBoard();
         this.movesHistory = [];
     }
     public getBoard(): board_.position_t {
@@ -111,35 +119,44 @@ export class Raccoon {
         }
 
         const move_veb = move_.moveToVerboseMove(mv, this.board);
-        if (move_.makeMove(mv, this.board)) {
+        if (move_.makeMove(mv, this.board, this.thread)) {
             this.movesHistory.push(move_veb);
             return move_veb;
         }
         return null;
     }
     public undoMove(): move_.verboseMove_t | null {
-        if (move_.takeMove(this.board)) {
+        if (move_.takeMove(this.board, this.thread)) {
             return this.movesHistory.pop()!;
         } else {
             return null;
         }
     }
     public getMoves(option?: { square?: string, verbose?: boolean, capture_only?: boolean }): string[] | move_.verboseMove_t[] {
-        const square = ((typeof option !== 'undefined') && ('square' in option)) ? board_.algebraicToSquare(option.square!) : board_.Squares.ALL;
+        const square = ((typeof option !== 'undefined') && ('square' in option)) ? new RegExp(option.square!) : /.*/;
         const verbose = (typeof option !== 'undefined') && ('verbose' in option) && option.verbose;
         const capture_only = (typeof option !== 'undefined') && ('capture_only' in option) && option.capture_only;
 
-        const moves_score = move_.generateLegalMoves(this.board, capture_only, square);
         const rlt_str_list: string[] = [];
         const rlt_ver_list: move_.verboseMove_t[] = [];
-        for (const mv of moves_score) {
-            const verb_mv = move_.moveToVerboseMove(mv.move, this.board);
-            if (verbose) {
-                rlt_ver_list.push(verb_mv);
-            } else {
-                rlt_str_list.push(verb_mv.san);
-            }
+
+        const canADD = (san: string, from: string): boolean => {
+            return (square.exec(from) != null) && ((capture_only && san.includes("x")) || !capture_only)
         }
+        const moves = move_.generateLegalMoves(this.board);
+
+        for (const move of moves) {
+            const verb_mv = move_.moveToVerboseMove(move, this.board);
+            if (canADD(verb_mv.san, verb_mv.from)) {
+                if (verbose) {
+                    rlt_ver_list.push(verb_mv);
+                } else {
+                    rlt_str_list.push(verb_mv.san);
+                }
+            }
+
+        }
+
         return (verbose) ? rlt_ver_list : rlt_str_list;
     }
 
@@ -161,16 +178,16 @@ export class Raccoon {
         return state_.inStalemate(this.board);
     }
     public inThreefoldRepetition(): boolean {
-        return state_.inThreefoldRepetition(this.board);
+        return state_.inThreefoldRepetition(this.board, this.thread);
     }
     public insufficientMaterial(): boolean {
         return state_.insufficientMaterial(this.board);
     }
     public inDraw(): boolean {
-        return state_.inDraw(this.board);
+        return state_.inDraw(this.board, this.thread);
     }
     public gameOver(): boolean {
-        return state_.gameOver(this.board);
+        return state_.gameOver(this.board, this.thread);
     }
 
 
@@ -178,10 +195,10 @@ export class Raccoon {
     private peekPiece(square: string, remove = false): null | board_.piece_t {
         const sq = board_.algebraicToSquare(square);
         let rlt: { type: string, color: string };
-        if (board_.SQUARE_ON_BOARD(sq) && this.board.pieces[sq] !== board_.Pieces.EMPTY) {
+        if (util_.SQUARE_ON_BOARD(sq) && this.board.pieces[sq] !== util_.Pieces.EMPTY) {
             rlt = {
                 type: util_.pieceToAscii[this.board.pieces[sq]].toLowerCase(),
-                color: (util_.getColorPiece[this.board.pieces[sq]] === board_.Colors.WHITE) ? 'w' : 'b'
+                color: (util_.getColorPiece[this.board.pieces[sq]] === util_.Colors.WHITE) ? 'w' : 'b'
             };
             if (remove) move_.clearPieces(sq, this.board);
             return rlt;
@@ -198,19 +215,19 @@ export class Raccoon {
     public setPiece(piece: board_.piece_t, square: string): boolean {
         const sq = board_.algebraicToSquare(square);
 
-        if (sq === board_.Squares.OFF_BOARD) return false;
+        if (sq === util_.Squares.OFF_BOARD) return false;
         if (!"wb".includes(piece.color)) return false;
 
         const look = (piece.color === 'w') ? (piece.type).toUpperCase() : (piece.type).toLowerCase();
-        let pce = board_.Pieces.OFF_BOARD_PIECE;
-        for (let i = board_.Pieces.EMPTY; i < board_.Pieces.OFF_BOARD_PIECE; i++) {
+        let pce = util_.Pieces.OFF_BOARD_PIECE;
+        for (let i = util_.Pieces.EMPTY; i < util_.Pieces.OFF_BOARD_PIECE; i++) {
             if (look === util_.pieceToAscii[i]) {
                 pce = i;
                 break;
             }
         }
-        if (pce !== board_.Pieces.OFF_BOARD_PIECE) {
-            if ((pce === board_.Pieces.WHITEKING || pce === board_.Pieces.BLACKKING)
+        if (pce !== util_.Pieces.OFF_BOARD_PIECE) {
+            if ((pce === util_.Pieces.WHITEKING || pce === util_.Pieces.BLACKKING)
                 && (this.board.numberPieces[pce] > 0)
                 && (this.board.kingSquare[util_.getColorPiece[pce]] !== sq)
             ) {
@@ -229,7 +246,7 @@ export class Raccoon {
     }
     public squareColor(square: string): null | string {
         const sq = board_.algebraicToSquare(square);
-        if (board_.SQUARE_ON_BOARD(sq)) {
+        if (util_.SQUARE_ON_BOARD(sq)) {
             return ((util_.ranksBoard[sq] + util_.filesBoard[sq]) % 2 === 0) ? "dark" : "light";
         } else {
             return null
@@ -243,14 +260,9 @@ export class Raccoon {
     // set_book(arrayBuffer)
     public evaluateBoard(config?: { use_nnue: boolean }): number {
         if (config && config.use_nnue) {
-            return rc0_eval_.raccoonZeroEvaluate(this.board)
+            return rc0_eval_.evaluate(this.board)
         } else {
-            return rc_eval_.raccoonEvaluate(this.board);
+            return rc_eval_.evaluate(this.board);
         }
-    }
-
-    // Game debugging
-    public perft(depth: number): bigint {
-        return perft_.perft(depth, this.board);
     }
 }

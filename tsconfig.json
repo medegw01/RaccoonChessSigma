@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "commonJS",
-    "lib": ["es2020", "dom", "webworker"],
+    "lib": [
+      "es2020",
+      "dom",
+      "webworker"
+    ],
     "outDir": "./lib",
     "sourceMap": true,
     "strict": true,
@@ -13,13 +17,11 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
-
     /* Additional Checks */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-
+    "noFallthroughCasesInSwitch": false,
     /* Module Resolution Options */
     "moduleResolution": "node",
     "esModuleInterop": true,
@@ -27,6 +29,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["rcsigma/**/*.ts", "tests"],
-  "exclude": ["node_modules", "lib", "docs", "website"]
+  "include": [
+    "rcsigma/**/*.ts",
+    "tests"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib",
+    "docs",
+    "website"
+  ]
 }

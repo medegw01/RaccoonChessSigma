@@ -8,8 +8,6 @@ module.exports = {
   coverageReporters: ["json-summary", "lcov", "text"],
   collectCoverageFrom: [
        "rcsigma/**/*.ts", 
-       "!rcsigma/**/book.ts", // ignore coverage for now
-       "!rcsigma/**/search.ts", // ignore coverage for now
        "!rcsigma/**/entrypoint.ts" // entrypoint components have been thoroughly tested already.
     ],
 };

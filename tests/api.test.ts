@@ -8,6 +8,7 @@ import * as move_ from '../rcsigma/game/move';
 import * as board_ from '../rcsigma/game/board';
 import * as util_ from '../rcsigma/util';
 
+
 describe("API Tests", () => {
     const game = new api_.Raccoon();
     beforeEach(() => {
@@ -22,162 +23,7 @@ describe("API Tests", () => {
     });
 });
 
-describe("Perft Test", () => {
-    const startFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    const game = new api_.Raccoon();
-    let nodes: bigint
-    beforeEach(() => {
-        game.clearBoard();
-        nodes = 0n;
-    });
-
-    // see below link for perft table:
-    //   https://www.chessprogramming.org/Perft_Results
-    //
-
-    it('Initiail Position', function () {
-        game.loadFEN(startFEN);
-        nodes = game.perft(4);
-        expect(nodes).toBe(197281n);
-    });
-
-    it('Position 2', function () {
-        game.loadFEN('r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1');
-        nodes = game.perft(4);
-        expect(nodes).toBe(4085603n);
-    });
-    it('Position 3', function () {
-        game.loadFEN('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1');
-        nodes = game.perft(4);
-        expect(nodes).toBe(43238n);
-    });
-    it('Position 4 ', function () {
-        game.loadFEN('r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 ');
-        nodes = game.perft(3);
-        expect(nodes).toBe(9467n);
-    });
-
-    it('Position 5', function () {
-        game.loadFEN('rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8 ');
-        nodes = game.perft(3);
-        expect(nodes).toBe(62379n);
-    });
-});
-
 describe("Game Tests", () => {
-    const startFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    describe("Poly Keys Test", function () {
-        const game = new api_.Raccoon();
-        beforeEach(() => {
-            game.clearBoard()
-        });
-
-        it("starting position", function () {
-            game.loadFEN(startFEN);
-            const by_fen = game.getPolyglot();
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x463b96181691fc9c").toString(16));
-
-        });
-        it("position after e2e4", function () {
-            game.loadFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['e2e4'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x823c9b50fd114196").toString(16));
-        });
-        it("position after e2e4 d7d5", function () {
-            game.loadFEN("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['e2e4', 'd7d5'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x0756b94461c50fb0").toString(16));
-        });
-        it("position after e2e4 d7d5 e4e5", function () {
-            game.loadFEN("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['e2e4', 'd7d5', 'e4e5'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x662fafb965db29d4").toString(16));
-        });
-        it("position after e2e4 d7d5 e4e5 f7f5", function () {
-            game.loadFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x22a48b5a8e47ff78").toString(16));
-        });
-        it("position after e2e4 d7d5 e4e5 f7f5 e1e2", function () {
-            game.loadFEN("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR b kq - 0 3");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x652a607ca3f242c1").toString(16));
-        });
-        it("position after e2e4 d7d5 e4e5 f7f5 e1e2 e8f7", function () {
-            game.loadFEN("rnbq1bnr/ppp1pkpp/8/3pPp2/8/8/PPPPKPPP/RNBQ1BNR w - - 0 4");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['e2e4', 'd7d5', 'e4e5', 'f7f5', 'e1e2', 'e8f7'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x00fdd303c946bdd9").toString(16));
-        });
-        it("position after a2a4 b7b5 h2h4 b5b4 c2c4", function () {
-            game.loadFEN("rnbqkbnr/p1pppppp/8/8/PpP4P/8/1P1PPPP1/RNBQKBNR b KQkq c3 0 3");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x3c8123ea7b067637").toString(16));
-        });
-        it("position after a2a4 b7b5 h2h4 b5b4 c2c4 b4c3 a1a3", function () {
-            game.loadFEN("rnbqkbnr/p1pppppp/8/8/P6P/R1p5/1P1PPPP1/1NBQKBNR b Kkq - 0 4");
-            const by_fen = game.getPolyglot();
-
-            game.loadFEN(startFEN);
-            const moves = ['a2a4', 'b7b5', 'h2h4', 'b5b4', 'c2c4', 'b4c3', 'a1a3'];
-            moves.forEach((mv: string) => { game.makeMove(mv) });
-            const byMove = game.getPolyglot(true);
-
-            expect(by_fen.toString(16)).toBe(byMove.toString(16));
-            expect(by_fen.toString(16)).toBe(BigInt("0x5c3f9b829b279560").toString(16));
-        });
-    });
     describe("Load Fen & Get fen Test", function () {
         const game = new api_.Raccoon();
         beforeEach(() => {
@@ -185,9 +31,9 @@ describe("Game Tests", () => {
         });
 
         it("Success: No Enpass; fen: startFEN", function () {
-            const result = game.loadFEN(startFEN);
+            const result = game.loadFEN(util_.START_FEN);
             expect(result.value).toBe(true)
-            expect(game.getFEN()).toBe(startFEN);
+            expect(game.getFEN()).toBe(util_.START_FEN);
         });
         it("Success: No Castling; fen: 1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2", function () {
             const result = game.loadFEN('1nbqkbn1/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/1NBQKBN1 b - - 1 2');
@@ -245,7 +91,7 @@ describe("Game Tests", () => {
                 "2  P P P P P P P P  2\n" +
                 "1  R N B Q K B N R  1\n\n" +
                 "   A B C D E F G H   \n");
-            game.loadFEN(startFEN)
+            game.loadFEN(util_.START_FEN)
             expect(game.boardASCII()).toBe(expected);
         });
         it("Fen: startFEN; ASCII and info", function () {
@@ -289,7 +135,7 @@ describe("Game Tests", () => {
             expect(game.boardASCII(false, config)).toBe(expected);
         });
         it("Fen: startFEN; ANSI", function () {
-            game.loadFEN(startFEN);
+            game.loadFEN(util_.START_FEN);
             const t = game.boardANSI();
 
             const output = `    a  b  c  d  e  f  g  h
@@ -804,6 +650,16 @@ describe("Evaluation Tests", () => {
     beforeEach(() => {
         game.clearBoard()
     });
+    it("rc: the same evaluation for specific position(idempotent)", function () {
+        const test_fen = 'kqrR4/rp1R1B1K/p1Np4/3P4/3B4/8/3p4/8 b - - 0 1';
+        game.loadFEN(test_fen);
+        const eval_score1 = game.evaluateBoard();
+
+        game.loadFEN(test_fen);
+        const eval_score2 = game.evaluateBoard();
+
+        expect(eval_score1).toBe(eval_score2);
+    });
 
     it("rc: the same evaluation for white and black(basic)", function () {
         const test_fen = 'kqrR4/rp1R1B1K/p1Np4/3P4/3B4/8/3p4/8 b - - 0 1';
@@ -818,6 +674,29 @@ describe("Evaluation Tests", () => {
         const eval_score = game.evaluateBoard();
         game.flipBoard();
         expect(game.evaluateBoard()).toBe(-eval_score);
+    });
+    it("rc: cached pawn evaluation", function () {
+        const a: number[] = [];
+        const b: number[] = [];
+
+        const average = (arr: number[]) => arr.reduce((acc, v) => acc + v) / arr.length;
+        const performance = (rep: number) => {
+            for (let i = 0; i < rep; i++) {
+                const test_fen = '6k1/5pp1/1p1pp2p/pP6/2P1P3/P6P/5PP1/6K1 b - - 0 1' // only pawns fen
+                game.loadFEN(test_fen);
+
+                let now = util_.getTimeMs()
+                game.evaluateBoard();
+                a.push(util_.getTimeMs() - now)
+
+                now = util_.getTimeMs()
+                game.evaluateBoard(); // should be faster, chashed
+                b.push(util_.getTimeMs() - now)
+            }
+        }
+
+        performance(10000);
+        expect(average(a)).toBeGreaterThan(average(b))
     });
     it("rc0: the same evaluation for white and black", function () {
         game.loadFEN(util_.START_FEN);

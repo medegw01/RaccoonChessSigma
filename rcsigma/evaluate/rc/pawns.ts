@@ -74,8 +74,8 @@ const KingOnFile = [[[-21, 10], [-7, 1]],
 
 function probePawn(board: board_.board_t): board_.pawnEntry_t {
     let newEntry: board_.pawnEntry_t;
-    const key = board.piecesBB[util_.ptToP(board_.Colors.WHITE, util_.PieceType.PAWN)]
-        | board.piecesBB[util_.ptToP(board_.Colors.BLACK, util_.PieceType.PAWN)]
+    const key = board.piecesBB[util_.ptToP(util_.Colors.WHITE, util_.PieceType.PAWN)]
+        | board.piecesBB[util_.ptToP(util_.Colors.BLACK, util_.PieceType.PAWN)]
     if (board.pawnEvalHash.has(key)) {
         newEntry = board.pawnEvalHash.get(key)!;
     } else {
@@ -91,7 +91,7 @@ function probePawn(board: board_.board_t): board_.pawnEntry_t {
             boardStaticEval: new util_.staticEval_c()
         }
 
-        for (let c = board_.Colors.WHITE; c < board_.Colors.BOTH; c++) {
+        for (let c = util_.Colors.WHITE; c < util_.Colors.BOTH; c++) {
             pawnStructure(board, c, newEntry);
             pawnShelter(board, c, newEntry);
         }
@@ -101,7 +101,7 @@ function probePawn(board: board_.board_t): board_.pawnEntry_t {
     return newEntry;
 }
 
-function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board_.pawnEntry_t) {
+function pawnStructure(board: board_.board_t, US: util_.Colors, newEntry: board_.pawnEntry_t) {
     let sq: number, r: number, moves: bitboard_.bitboard_t;
     let neighbours: bitboard_.bitboard_t, stoppers: bitboard_.bitboard_t, support: bitboard_.bitboard_t
     let phalanx: bitboard_.bitboard_t, opposed: bitboard_.bitboard_t;
@@ -110,14 +110,14 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
 
     const pov = (1 - US * 2);
     const THEM = US ^ 1;
-    const isWhite = (US == board_.Colors.WHITE);
-    const Up = Number(util_.pawnPush(US));
+    const isWhite = (US == util_.Colors.WHITE);
+    const Up = Number(bitboard_.pawnPush(US));
     const Down = -Up;
 
-    const myPawn = (isWhite) ? board_.Pieces.WHITEPAWN : board_.Pieces.BLACKPAWN;
-    const enemyPawn = (isWhite) ? board_.Pieces.BLACKPAWN : board_.Pieces.WHITEPAWN;
+    const myPawn = (isWhite) ? util_.Pieces.WHITEPAWN : util_.Pieces.BLACKPAWN;
+    const enemyPawn = (isWhite) ? util_.Pieces.BLACKPAWN : util_.Pieces.WHITEPAWN;
     const doubleAttackThem = bitboard_.pawnDoubleAttacksBB(THEM, board.piecesBB[enemyPawn]);
-    const kingRing = bitboard_.kingSafetyZone(THEM, board_.SQ64(board.kingSquare[THEM]))
+    const kingRing = bitboard_.kingSafetyZone(THEM, util_.SQ64(board.kingSquare[THEM]))
         & BigInt.asUintN(64, ~doubleAttackThem);
 
     const pceBB = { v: board.piecesBB[myPawn] };
@@ -186,7 +186,7 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
             || (!(stoppers ^ leverPush)
                 && (bitboard_.popcount({ v: phalanx }) >= bitboard_.popcount({ v: leverPush }))
             )
-            || (stoppers == blocked && r >= board_.Ranks.FIFTH_RANK
+            || (stoppers == blocked && r >= util_.Ranks.FIFTH_RANK
                 && (!!(bitboard_.shift(Up, (support))
                     & BigInt.asUintN(64, ~(board.piecesBB[enemyPawn] | doubleAttackThem))))
             );
@@ -233,21 +233,21 @@ function pawnStructure(board: board_.board_t, US: board_.Colors, newEntry: board
                 + WeakLever[util_.Phase.EG] * (+bitboard_.several(lever))) * pov
 
         }
-        if (blocked && r >= board_.Ranks.FIFTH_RANK) {
-            newEntry.boardStaticEval.pawns[util_.Phase.EG] += BlockedPawn[r - board_.Ranks.FIFTH_RANK][util_.Phase.EG] * pov
-            newEntry.boardStaticEval.pawns[util_.Phase.MG] += BlockedPawn[r - board_.Ranks.FIFTH_RANK][util_.Phase.MG] * pov
+        if (blocked && r >= util_.Ranks.FIFTH_RANK) {
+            newEntry.boardStaticEval.pawns[util_.Phase.EG] += BlockedPawn[r - util_.Ranks.FIFTH_RANK][util_.Phase.EG] * pov
+            newEntry.boardStaticEval.pawns[util_.Phase.MG] += BlockedPawn[r - util_.Ranks.FIFTH_RANK][util_.Phase.MG] * pov
 
         }
     }
 }
 
-function pawnShelter(board: board_.board_t, US: board_.Colors, newEntry: board_.pawnEntry_t) {
-    const isWhite = (US === board_.Colors.WHITE);
-    const myPawn = (isWhite) ? board_.Pieces.WHITEPAWN : board_.Pieces.BLACKPAWN;
-    const enemyPawn = (isWhite) ? board_.Pieces.BLACKPAWN : board_.Pieces.WHITEPAWN;
+function pawnShelter(board: board_.board_t, US: util_.Colors, newEntry: board_.pawnEntry_t) {
+    const isWhite = (US === util_.Colors.WHITE);
+    const myPawn = (isWhite) ? util_.Pieces.WHITEPAWN : util_.Pieces.BLACKPAWN;
+    const enemyPawn = (isWhite) ? util_.Pieces.BLACKPAWN : util_.Pieces.WHITEPAWN;
     const pov = (1 - US * 2);
     const THEM = US ^ 1;
-    const kingSQ = board_.SQ64(board.kingSquare[US]);
+    const kingSQ = util_.SQ64(board.kingSquare[US]);
 
     let b = (board.piecesBB[myPawn] | board.piecesBB[enemyPawn]) & BigInt.asUintN(64, ~bitboard_.forwardRanks(THEM, kingSQ));
     const myPawnBB = b & bitboard_.getPieces(US, board) & BigInt.asUintN(64, ~newEntry.attackedBy[enemyPawn]);
@@ -256,9 +256,9 @@ function pawnShelter(board: board_.board_t, US: board_.Colors, newEntry: board_.
     newEntry.boardStaticEval.pawns[util_.Phase.MG] += 5 * pov;
     newEntry.boardStaticEval.pawns[util_.Phase.EG] += 5 * pov;
 
-    const c = Math.max(board_.Files.B_FILE, Math.min(util_.fileOf(kingSQ), board_.Files.G_FILE));
+    const c = util_.clamp(util_.fileOf(kingSQ), util_.Files.B_FILE, util_.Files.G_FILE);
     for (let f = c - 1; f <= c + 1; ++f) {
-        const d = Math.min(f, board_.Files.H_FILE - f)
+        const d = Math.min(f, util_.Files.H_FILE - f)
 
         b = myPawnBB & bitboard_.files[f];
         const ourRank = b ? util_.relativeRank(US, util_.rankOf(bitboard_.fmSQ(THEM, b))) : 0;

@@ -9,6 +9,9 @@ import * as board_ from '../../game/board'
 import * as search_ from '../../search/search'
 import * as uci_ from './uci'
 import * as book_ from '../../game/book'
+import * as tb_ from '../../search/tbase'
+import * as thread_ from '../../search/thread'
+
 
 import { isMainThread, parentPort } from 'worker_threads';
 import { Worker as WorkerNode } from 'worker_threads';
@@ -22,22 +25,30 @@ enum Environment {
 
 type entrypointConfig_t = {
     postMainThread: (msg: string) => void;
-    postWorkerThread: (data: searchParam_t | SharedArrayBuffer) => void;
+    postWorkerThread: (data: searchParam_t) => void;
 
     postExternalThread: (msg: string) => void;
     bookOpen: (filePath: string) => { success: boolean, error: string };
     exitMain: () => void;
+    newWorker: () => void;
 
     isMainThread: boolean;
     environment: Environment;
+
 }
 type searchParam_t = {
     position: board_.board_t;
     info: search_.info_t;
+    threads: thread_.thread_t[];
 }
 
-util_.initUtil();
-bitboard_.initBitBoard();
+const hashSize = 32;
+
+util_.init();
+bitboard_.init();
+tb_.resize(hashSize);
+search_.init();
+
 
 const config = {} as entrypointConfig_t;
 (function entrypoint() {
@@ -72,104 +83,83 @@ if (config.isMainThread) {
     // eslint-disable-next-line prefer-const
     let info = {} as search_.info_t;
 
+    const threads = thread_.create(1)
+
     info.useBook = false;
     info.analyzingMode = false;
     info.opponent = "Guest";
     info.multiPV = 1;
     info.bookFile = "raccoon.bin";
     info.searchInitialized = false;
+    info.hashSize = hashSize;
+    info.nThreads = 1;
+    info.moveOverhead = 100;
+    info.useNNUE = true;
+    info.SIGNAL = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2);
 
-    /*
-    array[0] -> stop
-    array[1] -> ponderhit
-    */
-    const number_triggers = 2;
-    const sharedBuffer = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * number_triggers);
-    const sharedArray = new Int32Array(sharedBuffer);
-
-    const runMainThread = (line: string) => {
+    // uciMain calls UCI
+    const uciMain = (line: string) => {
         if (info.uciQuit || line === "exit") {
             config.exitMain();
         }
-        info.uciPonderHit = false;
+
         info.uciQuit = false;
-        info.uciStop = false;
-
-        sharedArray[0] = 0; // set stop to false
-        sharedArray[1] = 0; // set ponderhit to false
-
-        const report = uci_.uciParser(line, position, info, config.postExternalThread);
-
-        if (info.uciStop) {
-            sharedArray[0] = 1;
-        } else if (info.uciPonderHit) {
-            if (!info.ponder) config.postExternalThread("Error: I'm not pondering");
-            else {
-                info.ponder = false;
-                sharedArray[1] = 1;
-            }
-        } else {
-            if (report.runSearch) {
-                config.postWorkerThread({
-                    position: position,
-                    info: info
-                });
-            }
+        if (uci_.uciParser(line, position, info, config.postExternalThread, threads)) {
+            // Create new thread to run search in the background and leave main thread active
+            config.newWorker();
+            config.postWorkerThread({
+                position: position,
+                info: info,
+                threads: threads
+            });
         }
     }
 
     if (config.environment === Environment.nodeJS) {
-        const worker: WorkerNode = new WorkerNode(__filename);
-        worker.on('error', (err: Error) => { throw err; });
-        worker.on('exit', () => { config.postExternalThread("Worker crashes"); });
-        worker.on('message', (msg: string) => { config.postExternalThread(msg) });
+        config.newWorker = () => {
+            const worker: WorkerNode = new WorkerNode(__filename);
+            worker.on('error', (err: Error) => { throw err; });
+            worker.on('exit', () => { config.postExternalThread("Worker crashes"); });
+            worker.on('message', (msg: string) => { config.postExternalThread(msg) });
 
-        config.postWorkerThread = (data: searchParam_t | SharedArrayBuffer) => {
-            worker.postMessage(data);
+            config.postWorkerThread = (data: searchParam_t) => {
+                worker.postMessage(data);
+            }
         }
-        config.postWorkerThread(sharedBuffer);
 
         createInterface({
             input: process.stdin,
             output: process.stdout,
         }).on("line", (line: string) => {
             if (line) {
-                runMainThread(line);
+                uciMain(line);
             }
         }).setPrompt("");
+    }
+    else if (config.environment === Environment.WebWorker) {
+        config.newWorker = () => {
+            const worker: Worker = new Worker(__filename);
+            worker.onerror = function () { worker.terminate(); }
+            worker.onmessage = function (e) { config.postExternalThread(e.data) }
 
-    } else if (config.environment === Environment.WebWorker) {
-        const worker: Worker = new Worker(__filename); // web_Worker
-        worker.onerror = function () { worker.terminate(); }
-        worker.onmessage = function (e) { config.postExternalThread(e.data) }
-
-        config.postWorkerThread = (data: searchParam_t | SharedArrayBuffer) => {
-            worker.postMessage(data);
+            config.postWorkerThread = (data: searchParam_t) => {
+                worker.postMessage(data);
+            }
         }
-        config.postWorkerThread(sharedBuffer);
 
         onmessage = function (e) {
             if (e.data) {
-                runMainThread(e.data);
+                uciMain(e.data);
             }
         }
     }
 }
 else {
-    let sharedArray: Int32Array;
     let bookIsOpened = false;
 
-    const stopSearch = (): boolean => {
-        return sharedArray[0] === 1;
-    }
-    const isPonderHit = (): boolean => {
-        return sharedArray[1] === 1;
-    }
-
-    const runChildThread = (data: searchParam_t | SharedArrayBuffer) => {
+    const execSearch = (data: searchParam_t) => {
         if (util_.isOfType<searchParam_t>(data, 'position')) {
-            data.info.stopSearch = stopSearch;
-            data.info.isPonderHit = isPonderHit;
+            data.info.stdoutFn = config.postMainThread;
 
             if (!bookIsOpened && data.info.useBook) {
                 const bookResult = config.bookOpen(data.info.bookFile);
@@ -181,9 +171,7 @@ else {
                 }
             }
 
-            search_.search(data.position, data.info, config.postMainThread);
-        } else {
-            sharedArray = new Int32Array(data);
+            search_.search(data.position, data.info, data.threads);
         }
     }
     switch (config.environment) {
@@ -203,8 +191,8 @@ else {
                 return { success: false, error: "Unknown" };
 
             }
-            parentPort?.on('message', (data: searchParam_t | SharedArrayBuffer) => {
-                runChildThread(data);
+            parentPort?.on('message', (data: searchParam_t) => {
+                execSearch(data);
             });
             break;
         case Environment.WebWorker:

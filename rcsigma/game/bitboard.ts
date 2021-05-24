@@ -70,6 +70,8 @@ const files: bitboard_t[] = [
     BigInt("0x8080808080808080")
 ];
 
+const promotionRanks = ranks[0] | ranks[7];
+
 const queenSide = files[0] | files[1] | files[2] | files[3];
 const centerFiles = files[2] | files[3] | files[4] | files[5];
 const kingSide = files[4] | files[5] | files[6] | files[7];
@@ -159,7 +161,7 @@ function initStatic(): void {
         -1, 0, 1, -1, 1, -1, 0, 1
     ];
 
-    let sq: board_.Squares, r: number, f: number;
+    let sq: util_.Squares, r: number, f: number;
     let j: number, i: number;
 
     const heading = Array.from(Array<number>(64), () => new Array<number>(64));
@@ -191,14 +193,14 @@ function initStatic(): void {
 
     // Pawn attacks
     for (sq = 0; sq < 64; ++sq) {
-        mpawnAttacks[board_.Colors.WHITE][sq] = ((mbits[sq] << 9n) & BigInt("0xFEFEFEFEFEFEFEFE")) | ((mbits[sq] << 7n) & BigInt("0x7F7F7F7F7F7F7F7F"));
-        mpawnAttacks[board_.Colors.BLACK][sq] = ((mbits[sq] >> 9n) & BigInt("0x7F7F7F7F7F7F7F7F")) | ((mbits[sq] >> 7n) & BigInt("0xFEFEFEFEFEFEFEFE"));
+        mpawnAttacks[util_.Colors.WHITE][sq] = ((mbits[sq] << 9n) & BigInt("0xFEFEFEFEFEFEFEFE")) | ((mbits[sq] << 7n) & BigInt("0x7F7F7F7F7F7F7F7F"));
+        mpawnAttacks[util_.Colors.BLACK][sq] = ((mbits[sq] >> 9n) & BigInt("0x7F7F7F7F7F7F7F7F")) | ((mbits[sq] >> 7n) & BigInt("0xFEFEFEFEFEFEFEFE"));
     }
 
     // xrays to all directions
     for (sq = 0; sq < 64; ++sq) {
-        r = util_.ranksBoard[board_.SQ120(sq)];
-        f = util_.filesBoard[board_.SQ120(sq)];
+        r = util_.ranksBoard[util_.SQ120(sq)];
+        f = util_.filesBoard[util_.SQ120(sq)];
 
         for (i = 0; i < 8; ++i) {
             xrays[i][sq] = 0n;
@@ -229,42 +231,42 @@ function initStatic(): void {
 
     // Pawn evaluation bitboards: passed pawn, backward pawns, isolated pawns.
     isolated.fill(0n);
-    passed[board_.Colors.WHITE].fill(0n);
-    passed[board_.Colors.BLACK].fill(0n);
-    backward[board_.Colors.WHITE].fill(0n);
-    backward[board_.Colors.BLACK].fill(0n);
-    mOutpost[board_.Colors.WHITE].fill(0n);
-    mOutpost[board_.Colors.BLACK].fill(0n);
+    passed[util_.Colors.WHITE].fill(0n);
+    passed[util_.Colors.BLACK].fill(0n);
+    backward[util_.Colors.WHITE].fill(0n);
+    backward[util_.Colors.BLACK].fill(0n);
+    mOutpost[util_.Colors.WHITE].fill(0n);
+    mOutpost[util_.Colors.BLACK].fill(0n);
     for (sq = 0; sq < 64; ++sq) {
-        if (sq < board_.SQ64(board_.Squares.A2) || sq > board_.SQ64(board_.Squares.H7)) continue;
+        if (sq < util_.SQ64(util_.Squares.A2) || sq > util_.SQ64(util_.Squares.H7)) continue;
 
-        passed[board_.Colors.WHITE][sq] = xrays[6][sq];
-        passed[board_.Colors.BLACK][sq] = xrays[1][sq];
+        passed[util_.Colors.WHITE][sq] = xrays[6][sq];
+        passed[util_.Colors.BLACK][sq] = xrays[1][sq];
 
-        f = util_.filesBoard[board_.SQ120(sq)];
+        f = util_.filesBoard[util_.SQ120(sq)];
         if (f != 7) {
-            passed[board_.Colors.WHITE][sq] |= xrays[6][sq + 1];
-            passed[board_.Colors.BLACK][sq] |= xrays[1][sq + 1];
-            backward[board_.Colors.WHITE][sq] |= xrays[1][sq + 9];
-            backward[board_.Colors.BLACK][sq] |= xrays[6][sq - 7];
+            passed[util_.Colors.WHITE][sq] |= xrays[6][sq + 1];
+            passed[util_.Colors.BLACK][sq] |= xrays[1][sq + 1];
+            backward[util_.Colors.WHITE][sq] |= xrays[1][sq + 9];
+            backward[util_.Colors.BLACK][sq] |= xrays[6][sq - 7];
             isolated[sq] |= files[f + 1];
         }
 
         if (f != 0) {
-            passed[board_.Colors.WHITE][sq] |= xrays[6][sq - 1];
-            passed[board_.Colors.BLACK][sq] |= xrays[1][sq - 1];
-            backward[board_.Colors.WHITE][sq] |= xrays[1][sq + 7];
-            backward[board_.Colors.BLACK][sq] |= xrays[6][sq - 9];
+            passed[util_.Colors.WHITE][sq] |= xrays[6][sq - 1];
+            passed[util_.Colors.BLACK][sq] |= xrays[1][sq - 1];
+            backward[util_.Colors.WHITE][sq] |= xrays[1][sq + 7];
+            backward[util_.Colors.BLACK][sq] |= xrays[6][sq - 9];
             isolated[sq] |= files[f - 1];
         }
-        mOutpost[board_.Colors.WHITE][sq] = passed[board_.Colors.WHITE][sq] & ~files[f]
-        mOutpost[board_.Colors.BLACK][sq] = passed[board_.Colors.BLACK][sq] & ~files[f]
+        mOutpost[util_.Colors.WHITE][sq] = passed[util_.Colors.WHITE][sq] & ~files[f]
+        mOutpost[util_.Colors.BLACK][sq] = passed[util_.Colors.BLACK][sq] & ~files[f]
 
     }
 
     for (sq = 0; sq < 64; ++sq) {
-        kingZone[board_.Colors.WHITE][sq] = sq < board_.SQ64(board_.Squares.A8) ? (mkingAttacks[sq] | mkingAttacks[sq + 8]) : (mkingAttacks[sq] | mbits[sq]);
-        kingZone[board_.Colors.BLACK][sq] = sq > board_.SQ64(board_.Squares.H1) ? (mkingAttacks[sq] | mkingAttacks[sq - 8]) : (mkingAttacks[sq] | mbits[sq]);
+        kingZone[util_.Colors.WHITE][sq] = sq < util_.SQ64(util_.Squares.A8) ? (mkingAttacks[sq] | mkingAttacks[sq + 8]) : (mkingAttacks[sq] | mbits[sq]);
+        kingZone[util_.Colors.BLACK][sq] = sq > util_.SQ64(util_.Squares.H1) ? (mkingAttacks[sq] | mkingAttacks[sq - 8]) : (mkingAttacks[sq] | mbits[sq]);
     }
 
 }
@@ -276,7 +278,7 @@ function initMagic() {
 
     const rookMask = (sq: number): bitboard_t => {
         let result = 0n;
-        const rk = util_.ranksBoard[board_.SQ120(sq)], fl = util_.filesBoard[board_.SQ120(sq)];
+        const rk = util_.ranksBoard[util_.SQ120(sq)], fl = util_.filesBoard[util_.SQ120(sq)];
         for (let r = rk + 1; r <= 6; ++r) result |= (mbits[fl + r * 8]);
         for (let r = rk - 1; r >= 1; --r) result |= (mbits[fl + r * 8]);
         for (let f = fl + 1; f <= 6; ++f) result |= (mbits[f + rk * 8]);
@@ -285,7 +287,7 @@ function initMagic() {
     };
     const bishopMask = (sq: number): bitboard_t => {
         let result = 0n;
-        const rk = util_.ranksBoard[board_.SQ120(sq)], fl = util_.filesBoard[board_.SQ120(sq)];
+        const rk = util_.ranksBoard[util_.SQ120(sq)], fl = util_.filesBoard[util_.SQ120(sq)];
         for (let r = rk + 1, f = fl + 1; r <= 6 && f <= 6; ++r, ++f) result |= (mbits[f + r * 8]);
         for (let r = rk + 1, f = fl - 1; r <= 6 && f >= 1; ++r, --f) result |= (mbits[f + r * 8]);
         for (let r = rk - 1, f = fl + 1; r >= 1 && f <= 6; --r, ++f) result |= (mbits[f + r * 8]);
@@ -332,7 +334,7 @@ function indexToBitboard(bb: bitboard_t, k: number) {
 }
 
 function crAttacks(sq: number, mask: bitboard_t) {
-    const sRank = util_.ranksBoard[board_.SQ120(sq)], sFile = util_.filesBoard[board_.SQ120(sq)];
+    const sRank = util_.ranksBoard[util_.SQ120(sq)], sFile = util_.filesBoard[util_.SQ120(sq)];
     let r: number, f: number, b = 0n;
 
     for (f = sFile + 1, r = sRank; f <= 7; f++) { b |= mbits[r * 8 + f]; if (mask & mbits[r * 8 + f]) break; } // East
@@ -344,7 +346,7 @@ function crAttacks(sq: number, mask: bitboard_t) {
 }
 
 function cbAttacks(sq: number, mask: bitboard_t) {
-    const sRank = util_.ranksBoard[board_.SQ120(sq)], sFile = util_.filesBoard[board_.SQ120(sq)];
+    const sRank = util_.ranksBoard[util_.SQ120(sq)], sFile = util_.filesBoard[util_.SQ120(sq)];
     let r: number, f: number, b = 0n;
 
     for (f = sFile + 1, r = sRank + 1; f <= 7 && r <= 7; f++, r++) { b |= mbits[r * 8 + f]; if (mask & mbits[r * 8 + f]) break; }// North East
@@ -359,7 +361,7 @@ function cbAttacks(sq: number, mask: bitboard_t) {
 /**
  * Initializes all bitboard variables
  */
-function initBitBoard(): void {
+function init(): void {
     initStatic();
     initMagic();
 }
@@ -447,23 +449,24 @@ function pawnAttacks(c: number, sq: number): bitboard_t {
 /**
  * Get all pieces of a given color.
  * @param color
+ * @param board
  */
-function getPieces(color: board_.Colors, board: board_.board_t): bitboard_t {
+function getPieces(color: util_.Colors, board: board_.board_t): bitboard_t {
     return [(
-        board.piecesBB[board_.Pieces.WHITEPAWN]
-        | board.piecesBB[board_.Pieces.WHITEKNIGHT]
-        | board.piecesBB[board_.Pieces.WHITEBISHOP]
-        | board.piecesBB[board_.Pieces.WHITEROOK]
-        | board.piecesBB[board_.Pieces.WHITEQUEEN]
-        | board.piecesBB[board_.Pieces.WHITEKING]
+        board.piecesBB[util_.Pieces.WHITEPAWN]
+        | board.piecesBB[util_.Pieces.WHITEKNIGHT]
+        | board.piecesBB[util_.Pieces.WHITEBISHOP]
+        | board.piecesBB[util_.Pieces.WHITEROOK]
+        | board.piecesBB[util_.Pieces.WHITEQUEEN]
+        | board.piecesBB[util_.Pieces.WHITEKING]
     ),
     (
-        board.piecesBB[board_.Pieces.BLACKPAWN]
-        | board.piecesBB[board_.Pieces.BLACKKNIGHT]
-        | board.piecesBB[board_.Pieces.BLACKBISHOP]
-        | board.piecesBB[board_.Pieces.BLACKROOK]
-        | board.piecesBB[board_.Pieces.BLACKQUEEN]
-        | board.piecesBB[board_.Pieces.BLACKKING]
+        board.piecesBB[util_.Pieces.BLACKPAWN]
+        | board.piecesBB[util_.Pieces.BLACKKNIGHT]
+        | board.piecesBB[util_.Pieces.BLACKBISHOP]
+        | board.piecesBB[util_.Pieces.BLACKROOK]
+        | board.piecesBB[util_.Pieces.BLACKQUEEN]
+        | board.piecesBB[util_.Pieces.BLACKKING]
     )
     ][color];
 }
@@ -486,13 +489,13 @@ function sliderBlockers(sliders: bitboard_t, sq: number, pos: board_.board_t, pi
     pinnersObj.v = 0n;
 
     // Snipers are sliders that attack 'sq' when a piece and other snipers are removed
-    const q = (pos.piecesBB[board_.Pieces.WHITEQUEEN] | pos.piecesBB[board_.Pieces.BLACKQUEEN]);
-    const r = (pos.piecesBB[board_.Pieces.WHITEROOK] | pos.piecesBB[board_.Pieces.BLACKROOK]);
-    const b = (pos.piecesBB[board_.Pieces.WHITEBISHOP] | pos.piecesBB[board_.Pieces.BLACKBISHOP]);
+    const q = (pos.piecesBB[util_.Pieces.WHITEQUEEN] | pos.piecesBB[util_.Pieces.BLACKQUEEN]);
+    const r = (pos.piecesBB[util_.Pieces.WHITEROOK] | pos.piecesBB[util_.Pieces.BLACKROOK]);
+    const b = (pos.piecesBB[util_.Pieces.WHITEBISHOP] | pos.piecesBB[util_.Pieces.BLACKBISHOP]);
 
     const snipers = ((rookAttacks(sq, 0n) & (q | r))
         | (bishopAttacks(sq, 0n) & (q | b))) & sliders;
-    const occupancy = (getPieces(board_.Colors.WHITE, pos) | getPieces(board_.Colors.BLACK, pos))
+    const occupancy = (getPieces(util_.Colors.WHITE, pos) | getPieces(util_.Colors.BLACK, pos))
         ^ snipers;
 
 
@@ -503,7 +506,7 @@ function sliderBlockers(sliders: bitboard_t, sq: number, pos: board_.board_t, pi
 
         if (b && !several(b)) {
             blockers |= b;
-            if (b & getPieces(board_.PIECE_COLOR(pos.pieces[board_.SQ120(sq)]), pos))
+            if (b & getPieces(util_.PIECE_COLOR(pos.pieces[util_.SQ120(sq)]), pos))
                 pinnersObj.v |= bit(sniperSq);
         }
     }
@@ -537,7 +540,7 @@ function squaresBetween(from: number, to: number): bitboard_t {
  * @returns A bitboard with the squares doubly attacked by pawns of the given color from the squares in the given bitboard.
  */
 function pawnDoubleAttacksBB(c: number, bb: bitboard_t): bitboard_t {
-    return (c == board_.Colors.WHITE) ? shift(Direction.NORTH_WEST, bb) & shift(Direction.NORTH_EAST, bb)
+    return (c == util_.Colors.WHITE) ? shift(Direction.NORTH_WEST, bb) & shift(Direction.NORTH_EAST, bb)
         : shift(Direction.SOUTH_WEST, bb) & shift(Direction.SOUTH_EAST, bb);
 }
 
@@ -548,7 +551,7 @@ function pawnDoubleAttacksBB(c: number, bb: bitboard_t): bitboard_t {
  * @returns the squares attacked by pawns of the given color from the squares in the given bitboard
  */
 function pawnAttacksBB(c: number, bb: bitboard_t): bitboard_t {
-    return (c == board_.Colors.WHITE) ? shift(Direction.NORTH_WEST, bb) | shift(Direction.NORTH_EAST, bb)
+    return (c == util_.Colors.WHITE) ? shift(Direction.NORTH_WEST, bb) | shift(Direction.NORTH_EAST, bb)
         : shift(Direction.SOUTH_WEST, bb) | shift(Direction.SOUTH_EAST, bb);
 }
 
@@ -559,7 +562,7 @@ function pawnAttacksBB(c: number, bb: bitboard_t): bitboard_t {
  * @returns  returns a bitboard representing all the squares on the adjacent files of a given square.
  */
 function adjacentFiles(sq: number): bitboard_t {
-    const f = files[util_.filesBoard[board_.SQ120(sq)]];
+    const f = files[util_.filesBoard[util_.SQ120(sq)]];
     return shift(Direction.EAST, f) | shift(Direction.WEST, f);
 }
 
@@ -571,8 +574,8 @@ function adjacentFiles(sq: number): bitboard_t {
  */
 function forwardRanks(c: number, sq: number): bitboard_t {
     const r = util_.rankOf(sq);
-    return (c == board_.Colors.WHITE) ? BigInt.asUintN(64, ~ranks[0]) << BigInt(8 * util_.relativeRank(board_.Colors.WHITE, r))
-        : BigInt.asUintN(64, ~ranks[7]) >> BigInt(8 * util_.relativeRank(board_.Colors.BLACK, r))
+    return (c == util_.Colors.WHITE) ? BigInt.asUintN(64, ~ranks[0]) << BigInt(8 * util_.relativeRank(util_.Colors.WHITE, r))
+        : BigInt.asUintN(64, ~ranks[7]) >> BigInt(8 * util_.relativeRank(util_.Colors.BLACK, r))
 }
 
 /**
@@ -606,6 +609,10 @@ function passedPawn(c: number, sq: number): bitboard_t {
     return passed[c][sq]; // pawnAttackSpan(c, s) | forwardFile(c, s);
 }
 
+function pawnAdvance(pawns: bitboard_t, occupied: bitboard_t, c: number): bitboard_t {
+    return ~occupied & (c == util_.Colors.WHITE ? (pawns << 8n) : (pawns >> 8n));
+}
+
 
 /**
  * Gets a bitboard for detecting if a square is an outpost
@@ -636,10 +643,10 @@ function pretty(bb: bitboard_t): string {
     let sq: number;
     let s = "  +---+---+---+---+---+---+---+---+\n";
 
-    for (let rank = board_.Ranks.EIGHTH_RANK; rank >= board_.Ranks.FIRST_RANK; --rank) {
+    for (let rank = util_.Ranks.EIGHTH_RANK; rank >= util_.Ranks.FIRST_RANK; --rank) {
         s += `${(1 + rank).toString()} `
-        for (let file = board_.Files.A_FILE; file <= board_.Files.H_FILE; ++file) {
-            sq = board_.SQ64(board_.FILE_RANK_TO_SQUARE(file, rank))
+        for (let file = util_.Files.A_FILE; file <= util_.Files.H_FILE; ++file) {
+            sq = util_.SQ64(util_.FILE_RANK_TO_SQUARE(file, rank))
             s += (isSet(bb, sq)) ? "| X " : "|   ";
         }
         s += "| " + "\n  +---+---+---+---+---+---+---+---+\n";
@@ -749,11 +756,26 @@ function poplsb(bb: bitboardObj_t): number {
   * @param c  The color.
   * @param bb  A a non-zero bitboard.
  */
-function fmSQ(c: board_.Colors, bb: bitboard_t): number {
+function fmSQ(c: util_.Colors, bb: bitboard_t): number {
     util_.ASSERT(bb != 0n)
-    return c == board_.Colors.WHITE ? msb(bb) : lsb(bb);
+    return c == util_.Colors.WHITE ? msb(bb) : lsb(bb);
 }
 
+/**
+  * Returns the most advanced square for the given color
+  * @param c  The color.
+  * @param b  The chess board.
+ */
+function hasNonPawnMaterial(c: util_.Colors, b: board_.board_t): boolean {
+    const f = getPieces(c, b)
+    const kgs = b.piecesBB[util_.Pieces.BLACKKING] | b.piecesBB[util_.Pieces.WHITEKING]
+    const ps = b.piecesBB[util_.Pieces.WHITEPAWN] | b.piecesBB[util_.Pieces.BLACKPAWN]
+    return (f & (kgs | ps)) != f
+}
+
+function pawnPush(color: util_.Colors): Direction {
+    return (color == 0) ? Direction.NORTH : Direction.SOUTH;
+}
 
 export {
     bitboard_t,
@@ -770,6 +792,7 @@ export {
     centerFiles,
     centerSquares,
     kingSide,
+    promotionRanks,
 
     pawnAttacks,
     bishopAttacks,
@@ -783,6 +806,7 @@ export {
     forwardFiles,
     forwardRanks,
     pawnAttackSpan,
+    pawnAdvance,
     getPieces,
     sliderBlockers,
     adjacentFiles,
@@ -792,6 +816,7 @@ export {
     kingSafetyZone,
     squaresBetween,
     bit,
+    hasNonPawnMaterial,
 
     several,
     isSet,
@@ -805,5 +830,6 @@ export {
     fmSQ,
 
     pretty,
-    initBitBoard,
+    init,
+    pawnPush,
 }
