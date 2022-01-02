@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2021 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as util_ from '../rcsigma/util'
 import * as bitboard_ from '../rcsigma/game/bitboard'
 import * as board_ from '../rcsigma/game/board'
@@ -13,6 +18,7 @@ const getInfo = (): search_.info_t => {
     info.opponent = "Guest";
     info.multiPV = 1;
     info.bookFile = "raccoon.bin";
+    info.evalFile = "raccoon.nuue";
     info.searchInitialized = false;
     info.allowPonder = true;
     info.SIGNAL = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2);
@@ -272,45 +278,43 @@ describe("go Test", () => {
     });
     it("limitedByDepth Test", function () {
         info.limitedByDepth = false;
-        info.allotment = -1;
+        info.depthLimit = -1;
 
         // depth
         uci_.uciParser("go depth 33", board_.clearBoard(), info, console.log, threads);
         expect(info.limitedByDepth).toBe(true);
-        expect(info.allotment).toBe(33);
+        expect(info.depthLimit).toBe(33);
 
         // mate
         uci_.uciParser("go mate 7", board_.clearBoard(), info, console.log, threads);
         expect(info.limitedByDepth).toBe(true);
-        expect(info.allotment).toBe(13); //2 * mate - 1
+        expect(info.depthLimit).toBe(13); //2 * mate - 1
 
     });
 
     it("limitedByNodes Test", function () {
         info.limitedByNodes = false;
-        info.allotment = -1;
+        info.nodeLimit = -1;
 
         uci_.uciParser("go nodes 69", board_.clearBoard(), info, console.log, threads);
         expect(info.limitedByNodes).toBe(true);
-        expect(info.allotment).toBe(69);
+        expect(info.nodeLimit).toBe(69);
     });
 
     it("limitedByNone Test", function () {
         info.limitedByNone = false;
-        info.allotment = -1;
 
         uci_.uciParser("go infinite", board_.clearBoard(), info, console.log, threads);
         expect(info.limitedByNone).toBe(true);
-        expect(info.allotment).toBe(-1);
     });
 
     it("limitedByTime Test", function () {
         info.limitedByTime = false;
-        info.allotment = -1;
+        info.timeLimit = -1;
 
         uci_.uciParser("go movetime 419", board_.clearBoard(), info, console.log, threads);
         expect(info.limitedByTime).toBe(true);
-        expect(info.allotment).toBe(419);
+        expect(info.timeLimit).toBe(419);
     });
 
 });

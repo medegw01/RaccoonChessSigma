@@ -8,17 +8,23 @@ const VERSION = "0.1.0";
 const NAME = "RaccoonChessSigma";
 const AUTHOR = "Michael Edegware"
 
-const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const INFINITE = 32001;
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'; 32001;
 const MAX_MOVES = 256;
 const MAX_PLY = 128;
-const CHECKMATE = 32000 + MAX_PLY;
+const MATE_IN_MAX = 32000;
+const MATE = MATE_IN_MAX + MAX_PLY;
+const INFINITE = MATE + 1;
+
 const TBWIN = 31000 + MAX_PLY;
-const NO_VALUE = CHECKMATE + 1;
+const TBWIN_IN_MAX = TBWIN - MAX_PLY;
+const NO_VALUE = MATE + 1;
 
 const BOARD_SQUARE_NUM = 120;
 const SQUARE_NB = 64;
 const COLOUR_NB = 2;
+
+/** see to true if you want to run code in debugging mode */
+const DEBUGGING = false;
 
 enum Phase { MG, EG }
 
@@ -96,17 +102,22 @@ class LRUCache<TKey, TValue> {
     private cache: Map<TKey, TValue>;
     private maxEntries: number;
 
-    constructor(maxEntries = 20) {
-        this.maxEntries = maxEntries;
-        this.cache = new Map<TKey, TValue>();
+    constructor(maxEntries = 20, other?: LRUCache<TKey, TValue>) {
+        if (other) {
+            this.maxEntries = other.maxEntries;
+            this.cache = other.cache;
+        } else {
+            this.maxEntries = maxEntries;
+            this.cache = new Map<TKey, TValue>();
+        }
     }
 
-    public has(key: TKey): boolean {
+    public contains(key: TKey): boolean {
         return this.cache.has(key);
     }
 
-    public get(key: TKey): TValue | undefined {
-        const hasKey = this.has(key);
+    public fetch(key: TKey): TValue | undefined {
+        const hasKey = this.cache.has(key);
         let entry: TValue | undefined = undefined;
         if (hasKey) {// refresh key
             entry = this.cache.get(key);
@@ -117,9 +128,8 @@ class LRUCache<TKey, TValue> {
         return entry;
     }
 
-    public set(key: TKey, value: TValue): void {
-        if (this.cache.has(key)) this.cache.delete(key); // refresh key
-        else if (this.cache.size >= this.maxEntries) this.cache.delete(this.first()); // evict oldest
+    public put(key: TKey, value: TValue): void {
+        if (this.cache.size >= this.maxEntries) this.cache.delete(this.first()); // evict oldest
         this.cache.set(key, value);
     }
 
@@ -127,7 +137,17 @@ class LRUCache<TKey, TValue> {
         return (<IteratorResult<TKey, TKey>>this.cache.keys().next()).value;
     }
 
+    toJSON(): {
+        maxEntries: number;
+        cache: Map<TKey, TValue>;
+    } {
+        return {
+            maxEntries: this.maxEntries,
+            cache: this.cache,
+        }; // everything that needs to get stored
+    }
 }
+
 
 /*****************************************************************************
  * MACRO
@@ -147,14 +167,40 @@ function PIECE_COLOR(piece: number): Colors {
 
 //pbnrq
 function ptToP(color: Colors, pce: number): Pieces {
-    ASSERT(pce <= PieceType.KING && pce >= PieceType.NO_PIECE_TYPE)
-    return pce + 6 * color
+    ASSERT(pce <= PieceType.KING && pce >= PieceType.NO_PIECE_TYPE, "pce is not a valid PieceType")
+    return (pce == PieceType.NO_PIECE_TYPE) ? Pieces.EMPTY : pce + 6 * color
 }
 function pToPt(pce: Pieces): PieceType {
-    ASSERT(pce <= Pieces.BLACKKING && pce >= Pieces.EMPTY)
+    ASSERT(pce <= Pieces.BLACKKING && pce >= Pieces.EMPTY, "pce is not a valid Piece")
     return (pce < 7) ? pce : (pce % 7) + 1
 }
+function JSONstringify(data: any): string {
+    return JSON.stringify(data, (_, value) => {
+        if (value instanceof Map) {
+            return {
+                dataType: 'Map',
+                value: Array.from(value.entries())
+            };
+        } else if (typeof value === "bigint") {
+            return `0x${value.toString(16)}bigint`;
+        }
+        return value;
 
+    });
+}
+
+function JSONparse(json: string): any {
+    return JSON.parse(json, (_, value) => {
+        if (typeof value === 'object' && value !== null) {
+            if (value.dataType === 'Map') {
+                return new Map(value.value);
+            }
+        } else if (typeof value === "string" && /(?:0[xX])?[0-9a-fA-F]+bigint/.test(value)) {
+            return BigInt(value.substr(0, value.length - 6));
+        }
+        return value;
+    });
+}
 //===========================================================//
 // Game Globals
 //===========================================================//
@@ -580,12 +626,25 @@ function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
 
 
 export {
+    staticEval_c,
+    Phase,
+    LRUCache,
+    Castling,
+    Colors,
+    Files,
+    Ranks,
+    PieceType,
+    Pieces,
+    Squares,
+
     START_FEN,
     NAME,
     VERSION,
     AUTHOR,
-    CHECKMATE,
+    MATE,
     TBWIN,
+    MATE_IN_MAX,
+    TBWIN_IN_MAX,
     INFINITE,
     NO_VALUE,
     MAX_PLY,
@@ -631,16 +690,7 @@ export {
     randomTurn,
     random64Poly,
 
-    staticEval_c,
-    Phase,
-    LRUCache,
-    Castling,
-    Colors,
-    Files,
-    Ranks,
-    PieceType,
-    Pieces,
-    Squares,
+    DEBUGGING,
 
     bufferToArrayBuffer,
     getTimeMs,
@@ -664,4 +714,6 @@ export {
     PIECE_COLOR,
     ptToP,
     pToPt,
+    JSONparse,
+    JSONstringify,
 }

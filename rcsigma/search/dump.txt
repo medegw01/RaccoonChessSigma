@@ -1,0 +1,1259 @@
+// TT-scores are adjusted to avoid some well-known problems. This adjusts a score back to normal.
+int ttScoreToRealScore(int score, int ply)
+{
+    if (isLoseScore(score))
+    {
+        score += ply;
+    }
+    else if (isWinScore(score))
+    {
+        score -= ply;
+    }
+
+    return score;
+}
+
+// Converse of the previous function.
+int realScoreToTtScore(int score, int ply)
+{
+    if (isLoseScore(score))
+    {
+        score -= ply;
+    }
+    else if (isWinScore(score))
+    {
+        score += ply;
+    }
+
+    return score;
+}
+
+// Used for ordering moves during the quiescence search.
+// Delete as soon as MoveSort works everywhere.
+void Search::orderCaptures(const Position& pos, MoveList& moveList, const Move& ttMove) const
+{
+    for (auto i = 0; i < moveList.size(); ++i)
+    {
+        const auto move = moveList.getMove(i);
+
+        if (move == ttMove)
+        {
+            moveList.setScore(i, hashMoveScore);
+        }
+        else if (pos.captureOrPromotion(move))
+        {
+            moveList.setScore(i, pos.mvvLva(move) + captureMoveScore);
+        }
+        else
+        {
+            moveList.setScore(i, historyTable.getScore(pos, move));
+        }
+    }
+}
+
+// Select the best move from a move list with selection sort.
+// Delete as soon as MoveSort works everywhere.
+Move selectMove(MoveList& moveList, int currentMove)
+{
+    auto bestMove = currentMove;
+    auto bestScore = moveList.getScore(currentMove);
+
+    for (auto i = currentMove + 1; i < moveList.size(); ++i)
+    {
+        if (moveList.getScore(i) > bestScore)
+        {
+            bestScore = moveList.getScore(i);
+            bestMove = i;
+        }
+    }
+
+    if (bestMove > currentMove)
+    {
+        // Swap the values at bestLocation and currentMove.
+        const auto m = moveList.getMove(currentMove);
+        const auto s = moveList.getScore(currentMove);
+        moveList.setMove(currentMove, moveList.getMove(bestMove));
+        moveList.setScore(currentMove, moveList.getScore(bestMove));
+        moveList.setMove(bestMove, m);
+        moveList.setScore(bestMove, s);
+    }
+
+    return moveList.getMove(currentMove);
+}
+
+// Calculates the razoring margin for a given depth.
+int razoringMargin(int depth)
+{
+    return 50 * depth + 50;
+}
+
+// Calculates the reverse futility margin for a given depth.
+int reverseFutilityMargin(int depth)
+{
+    return 50 * depth + 100;
+}
+
+// Calculates the futility margin for a given depth.
+int futilityMargin(int depth)
+{
+    return 25 * depth + 100;
+}
+
+// Removes illegal moves from a moveList.
+// Remove after getting MoveSort working everywhere.
+void removeIllegalMoves(const Position& pos, MoveList& moveList, bool inCheck)
+{
+    auto marker = 0;
+
+    for (auto i = 0; i < moveList.size(); ++i)
+    {
+        if (pos.legal(moveList.getMove(i), inCheck))
+        {
+            moveList.setMove(marker++, moveList.getMove(i));
+        }
+    }
+
+    moveList.resize(marker);
+}
+
+void Search::orderRootMoves(const Position& pos, MoveList& moveList, const Move& ttMove) const
+{
+    for (auto i = 0; i < moveList.size(); ++i)
+    {
+        const auto move = moveList.getMove(i);
+
+        if (move == ttMove) // Move from transposition table
+        {
+            moveList.setScore(i, hashMoveScore);
+        }
+        else if (pos.captureOrPromotion(move))
+        {
+            auto score = pos.SEE(move);
+            if (score >= 0) // Order good captures and promotions after ttMove
+            {
+                score += captureMoveScore;
+            }
+            moveList.setScore(i, score);
+        }
+        else
+        {
+            const auto killers = killerTable.getKillers(0);
+            if (move == killers.first)
+            {
+                moveList.setScore(i, killerMoveScore[1]);
+            }
+            else if (move == killers.second)
+            {
+                moveList.setScore(i, killerMoveScore[2]);
+            }
+            else
+            {
+                moveList.setScore(i, historyTable.getScore(pos, move));
+            }
+        }
+    }
+}
+
+Search::Search(SearchListener& sl):
+    tp(1), listener(sl), searchNeedsMoreTime(false), nodesToTimeCheck(10000), nextSendInfo(1000), 
+    targetTime(1000), maxTime(10000), maxNodes(std::numeric_limits<size_t>::max()),
+    tbHits(0), nodeCount(0), selDepth(0), searching(false), pondering(false), infinite(false), 
+    cardinality(6), probeDepth(1), use50(true), rootPly(0), repetitionHashes({}), contempt({})
+{
+    for (auto i = 0; i < 64; ++i)
+    {
+        for (auto j = 0; j < 64; ++j)
+        {
+            lmrReductions[i][j] = static_cast<int>(std::max(1.0, (std::log1p(i) * std::log1p(j)) / 1.70));
+        }
+    }
+
+    for (auto d = 0; d < 1 + lmpDepth; ++d)
+    {
+        lmpMoveCounts[d] = static_cast<int>(std::round(2.98484 + std::pow(d, 1.74716)));
+    }
+}
+
+bool Search::repetitionDraw(const Position& pos, int ply) const
+{
+    const auto limit = std::max(rootPly + ply - pos.getFiftyMoveDistance(), 0);
+
+    for (auto i = rootPly + ply - 2; i >= limit; i -= 2)
+    {
+        if (repetitionHashes[i] == pos.getHashKey())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::vector<Move> Search::extractPv(const Position& pos) const
+{
+    Position root(pos);
+    std::vector<Move> pv;
+    std::unordered_set<HashKey> previousHashes;
+
+    for (auto ply = 0; ply < 128; ++ply)
+    {
+        const auto entry = transpositionTable.probe(root.getHashKey());
+
+        // No entry found -> end of PV
+        if (!entry)
+            break;
+
+        // No move found in the entry, so we cannot add to the PV
+        if (entry->getBestMove().empty())
+            break;
+
+        // Repetition draw -> end of PV
+        if (previousHashes.count(root.getHashKey()) > 0)
+            break;
+
+        // No exact score hash entry to use -> end of PV 
+        // If we are very near the root we accept all flags as we absolutely need the move 
+        // to be played and a ponder move is very important as well.
+        if (entry->getFlags() != TranspositionTable::Flags::ExactScore && ply >= 2)
+            break;
+
+        const auto m = entry->getBestMove();
+        pv.push_back(m);
+        previousHashes.insert(root.getHashKey());
+        root.makeMove(m);
+    }
+
+    return pv;
+}
+
+void Search::go(const Position& root, const SearchParameters& sp)
+{
+    std::unique_lock<std::mutex> waitLock(waitMutex);
+    tp.addJob(&Search::think, this, root, sp);
+    // Wait here until the search function has started.
+    // Think of a chain of commands "go", "stop", "go", "stop" sent within 1 or 2 milliseconds.
+    // If this part isn't here, some commands could get lost.
+    waitCv.wait(waitLock);
+}
+
+void Search::think(const Position& root, SearchParameters sp)
+{
+    const auto inCheck = root.inCheck();
+    auto alpha = -infinity;
+    auto beta = infinity;
+    auto delta = aspirationWindow;
+    auto score = matedInPly(0);
+    Position pos(root);
+    MoveList rootMoveList;
+    std::vector<Move> pv;
+    Move bestMove;
+
+    tbHits = 0;
+    nodeCount = 0;
+    nodesToTimeCheck = 10000;
+    contempt[root.getSideToMove()] = -sp.mContempt;
+    contempt[!root.getSideToMove()] = sp.mContempt;
+    searchNeedsMoreTime = false;
+    selDepth = 1;
+    nextSendInfo = 1000;
+    searching = true;
+    pondering = sp.mPonder;
+    infinite = (sp.mInfinite || sp.mDepth > 0 || sp.mNodes > 0);
+    const auto maxDepth = (sp.mDepth > 0 ? std::min(sp.mDepth + 1, 128) : 128);
+    maxNodes = (sp.mNodes > 0 ? sp.mNodes : std::numeric_limits<size_t>::max());
+    rootPly = sp.mRootPly;
+    repetitionHashes = sp.mHashKeys;
+    cardinality = sp.mSyzygyProbeLimit;
+    probeDepth = sp.mSyzygyProbeDepth;
+    use50 = sp.mSyzygy50MoveRule;
+    transpositionTable.startNewSearch();
+    historyTable.age();
+    counterMoveTable.clear();
+    killerTable.clear();
+
+    {
+        // Notify the thread which is waiting in "go" that the search has started.
+        // The lock is necessary to make sure that the thread in "go" is actually waiting on a condition variable.
+        // Without the lock in that case the thread blocks forever and we are done.
+        // No really, that actually happens relatively often. I had fun debugging it too.
+        std::unique_lock<std::mutex> waitLock(waitMutex);
+        waitCv.notify_one();
+    }
+
+    sw.reset();
+    sw.start();
+
+    // Allocate the time limits.
+    if (sp.mMoveTime)
+    {
+        targetTime = maxTime = sp.mMoveTime;
+    }
+    else
+    {
+        const auto lagBuffer = 50;
+        const auto time = sp.mTime[root.getSideToMove()];
+        const auto increment = sp.mIncrement[root.getSideToMove()];
+        targetTime = clamp(time / std::min(sp.mMovesToGo, 25) + increment - lagBuffer, 1, time - lagBuffer);
+        maxTime = clamp(time / 2 + increment, 1, time - lagBuffer);
+        if (sp.mPonderOption)
+        {
+            targetTime += targetTime / 3;
+            targetTime = clamp(targetTime, static_cast<uint64_t>(1), maxTime);
+        }
+    }
+
+    inCheck ? MoveGen::generateLegalEvasions(pos, rootMoveList)
+            : MoveGen::generatePseudoLegalMoves(pos, rootMoveList);
+    removeIllegalMoves(pos, rootMoveList, inCheck);
+
+    // Skip TB probing when no TB found: !maxCardinality -> !cardinality
+    if (cardinality > Syzygy::maxCardinality)
+    {
+        cardinality = Syzygy::maxCardinality;
+        probeDepth = 0;
+    }
+
+    if (cardinality >= pos.getTotalPieceCount())
+    {
+        score = 0;
+        auto rootInTb = Syzygy::rootProbe(pos, rootMoveList, score);
+
+        // Do not probe tablebases during the search if the root position is in the tablebases.
+        if (rootInTb)
+        {
+            cardinality = 0;
+        }
+        else
+        {
+            // If DTZ tables are missing, use WDL tables as a fallback
+            rootInTb = Syzygy::rootProbeWdl(pos, rootMoveList, score);
+
+            // Only probe during search if winning.
+            if (rootInTb && score <= 0)
+            {
+                cardinality = 0;
+            }
+        }
+
+        if (rootInTb)
+        {
+            tbHits = rootMoveList.size();
+        }
+    }
+
+    // Get the tt move from a possible previous search.
+    const auto ttEntry = transpositionTable.probe(pos.getHashKey());
+    if (ttEntry)
+    {
+        bestMove = ttEntry->getBestMove();
+    }
+
+    std::vector<SearchStack> searchStack;
+    for (auto i = 0; i < 128 + 1; ++i)
+    {
+        searchStack.emplace_back(i);
+    }
+    auto ss = &searchStack[0];
+
+    repetitionHashes[rootPly] = pos.getHashKey();
+    for (auto depth = 1; depth < maxDepth;)
+    {
+        const auto previousAlpha = alpha;
+        const auto previousBeta = beta;
+        const auto lmrNode = (!inCheck && depth >= lmrDepthLimit);
+        const auto killers = killerTable.getKillers(0);
+        auto movesSearched = 0;
+        auto bestScore = -mateScore;
+
+        orderRootMoves(pos, rootMoveList, bestMove);
+        try {
+            for (auto i = 0; i < rootMoveList.size(); ++i)
+            {
+                const auto move = selectMove(rootMoveList, i);
+                ++nodeCount;
+                --nodesToTimeCheck;
+                searchNeedsMoreTime = i > 0;
+
+                // Start sending currmove info only after one second has elapsed.
+                if (sw.elapsed<std::chrono::milliseconds>() > 1000)
+                {
+                    listener.infoCurrMove(move, depth, i);
+                }
+
+                const auto givesCheck = pos.givesCheck(move);
+                const auto newDepth = depth - 1;
+                const auto quietMove = !pos.captureOrPromotion(move);
+                // TODO: this part was changed
+                const auto nonCriticalMove = !givesCheck && quietMove && move != bestMove
+                                                                      && move != killers.first
+                                                                      && move != killers.second;
+
+                Position newPosition(pos);
+                newPosition.makeMove(move);
+                ss->mCurrentMove = move;
+                if (!movesSearched)
+                {
+                    score = newDepth > 0 ? -search<true>(newPosition, newDepth, -beta, -alpha, givesCheck != 0, ss + 1)
+                                         : -quiescenceSearch(newPosition, 0, -beta, -alpha, givesCheck != 0, ss + 1);
+                }
+                else
+                {
+                    const auto reduction = ((lmrNode && nonCriticalMove) ? lmrReductions[std::min(i, 63)][std::min(depth, 63)] : 0);
+
+                    score = newDepth - reduction > 0 ? -search<false>(newPosition, newDepth - reduction, -alpha - 1, -alpha, givesCheck != 0, ss + 1)
+                                                     : -quiescenceSearch(newPosition, 0, -alpha - 1, -alpha, givesCheck != 0, ss + 1);
+
+                    if (reduction && score > alpha)
+                    {
+                        score = newDepth > 0 ? -search<false>(newPosition, newDepth, -alpha - 1, -alpha, givesCheck != 0, ss + 1)
+                                             : -quiescenceSearch(newPosition, 0, -alpha - 1, -alpha, givesCheck != 0, ss + 1);
+                    }
+                    if (score > alpha && score < beta)
+                    {
+                        score = newDepth > 0 ? -search<true>(newPosition, newDepth, -beta, -alpha, givesCheck != 0, ss + 1)
+                                             : -quiescenceSearch(newPosition, 0, -beta, -alpha, givesCheck != 0, ss + 1);
+                    }
+                }
+                ++movesSearched;
+
+                while (score >= beta || ((movesSearched == 1) && score <= alpha))
+                {
+                    const auto lowerBound = score >= beta;
+                    if (lowerBound)
+                    {
+                        searchNeedsMoreTime = i > 0;
+                        bestMove = move;
+                        if (isWinScore(score))
+                        {
+                            beta = infinity;
+                        }
+                        else
+                        {
+                            beta = std::min(infinity, previousBeta + delta);
+                        }
+                        // Don't forget to update history and killer tables.
+                        if (!inCheck)
+                        {
+                            if (quietMove)
+                            {
+                                historyTable.addCutoff(pos, move, depth);
+                                killerTable.update(move, 0);
+                            }
+                            for (auto j = 0; j < i; ++j)
+                            {
+                                const auto move2 = rootMoveList.getMove(j);
+                                if (!pos.captureOrPromotion(move2))
+                                {
+                                    historyTable.addNotCutoff(pos, move2, depth);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        searchNeedsMoreTime = true;
+                        if (isLoseScore(score))
+                        {
+                            alpha = -infinity;
+                        }
+                        else
+                        {
+                            alpha = std::max(-infinity, previousAlpha - delta);
+                        }
+                    }
+                    delta *= 2;
+                    transpositionTable.save(pos.getHashKey(), 
+                                            bestMove, 
+                                            realScoreToTtScore(score, 0), 
+                                            depth, 
+                                            lowerBound ? TranspositionTable::Flags::LowerBoundScore 
+                                                       : TranspositionTable::Flags::UpperBoundScore);
+                    pv = extractPv(pos);
+                    listener.infoPv(pv, 
+                                    sw.elapsed<std::chrono::milliseconds>(), 
+                                    nodeCount,
+                                    tbHits,    
+                                    depth, 
+                                    score, 
+                                    lowerBound ? TranspositionTable::Flags::LowerBoundScore
+                                               : TranspositionTable::Flags::UpperBoundScore,
+                                    selDepth);
+                    score = newDepth > 0 ? -search<true>(newPosition, newDepth, -beta, -alpha, givesCheck != 0, ss + 1)
+                                         : -quiescenceSearch(newPosition, 0, -beta, -alpha, givesCheck != 0, ss + 1);
+                }
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    if (score > alpha) // No need to handle the case score >= beta, that is done slightly above
+                    {
+                        bestMove = move;
+                        alpha = score;
+                        transpositionTable.save(pos.getHashKey(), 
+                                                bestMove, 
+                                                realScoreToTtScore(score, 0), 
+                                                depth, 
+                                                TranspositionTable::Flags::ExactScore);
+
+                        pv = extractPv(pos);
+                        listener.infoPv(pv,
+                                        sw.elapsed<std::chrono::milliseconds>(),
+                                        nodeCount,
+                                        tbHits,
+                                        depth,
+                                        score,
+                                        TranspositionTable::Flags::ExactScore, 
+                                        selDepth);
+                    }
+                }
+            }
+        }
+        catch (const StopSearchException&)
+        {
+            pos = root; // Exception might mess up the position, fix it. 
+        }
+
+        transpositionTable.save(pos.getHashKey(), 
+                                bestMove, 
+                                realScoreToTtScore(bestScore, 0), 
+                                depth, 
+                                TranspositionTable::Flags::ExactScore);
+
+        pv = extractPv(pos);
+
+        // If there is only one root move then stop searching.
+        // Not done if we are in an infinite search or pondering, since we must search for ever in those cases.
+        // depth > 6 is there to make sure we have something to ponder on.
+        if (!infinite && !pondering && rootMoveList.size() == 1 && depth > 6)
+        {
+            break;
+        }
+
+        if (!searching)
+        {
+            break;
+        }
+
+        listener.infoPv(pv,
+                        sw.elapsed<std::chrono::milliseconds>(),
+                        nodeCount,
+                        tbHits,
+                        depth,
+                        bestScore,
+                        TranspositionTable::Flags::ExactScore,
+                        selDepth);
+
+        // Adjust alpha and beta based on the last score.
+        // Don't adjust if depth is low - it's a waste of time.
+        // Also don't use aspiration windows when searching for faster mate.
+        if (depth >= 4 && !isMateScore(bestScore))
+        {
+            alpha = bestScore - aspirationWindow;
+            beta = bestScore + aspirationWindow;
+        }
+        else
+        {
+            alpha = -infinity;
+            beta = infinity;
+        }
+        delta = aspirationWindow;
+        ++depth;
+    }
+
+    // If we are in an infinite search (or pondering) and we reach the max amount of iterations possible loop here until stopped.
+    // This is done because returning is against the UCI-protocol.
+    std::chrono::milliseconds dura(5);
+    while (searching && (sp.mInfinite || pondering))
+    {
+        std::this_thread::sleep_for(dura);
+    }
+
+    sw.stop();
+    // Make sure that the the flag that we are searching is set to false when we quit.
+    // If we somehow reach maximum depth we might not reset the flag otherwise.
+    searching = false;
+    const auto searchTime = sw.elapsed<std::chrono::milliseconds>();
+    listener.infoBestMove(pv,
+                          searchTime,
+                          nodeCount,
+                          tbHits);
+}
+
+#ifdef _MSC_VER
+#pragma warning (disable : 4127) // Shuts up warnings about conditional branches always being true/false.
+#endif
+
+template <bool pvNode>
+int Search::search(const Position& pos, int depth, int alpha, int beta, bool inCheck, SearchStack* ss)
+{
+    assert(alpha < beta);
+    assert(depth > 0);
+    assert(inCheck == pos.inCheck());
+
+    auto bestScore = matedInPly(ss->mPly), movesSearched = 0, prunedMoves = 0;
+    auto ttFlag = TranspositionTable::Flags::UpperBoundScore;
+    MoveList quietsSearched;
+    Move bestMove, ttMove;
+    int score;
+
+    // Small speed optimization, runs fine without it.
+    transpositionTable.prefetch(pos.getHashKey());
+
+    // Used for sending seldepth info.
+    if (ss->mPly > selDepth)
+    {
+        selDepth = ss->mPly;
+    }
+
+    // Don't go over max ply.
+    if (ss->mPly >= maxPly)
+    {
+        return evaluation.evaluate(pos);
+    }
+
+    // Time check things.
+    if (nodesToTimeCheck <= 0)
+    {
+        nodesToTimeCheck = 10000;
+        const auto time = sw.elapsed<std::chrono::milliseconds>();
+
+        // Check if we have gone over the node limit.
+        if (nodeCount >= maxNodes)
+        {
+            searching = false;
+        }
+
+        if (!infinite && !pondering) // Can't stop search if ordered to run indefinitely
+        {
+            // First check hard cutoff, then check soft cutoff which depends on the current search situation.
+            if (time > maxTime || time > (searchNeedsMoreTime ? 5 * targetTime : targetTime))
+            {
+                searching = false;
+            }
+            else
+            {
+                // TODO: Add easy move here.
+            }
+        }
+
+        if (!searching)
+        {
+            throw StopSearchException("allocated time has run out");
+        }
+
+        if (time >= nextSendInfo)
+        {
+            nextSendInfo += 1000;
+            listener.infoRegular(nodeCount, tbHits, time);
+        }
+    }
+
+    // Check for fifty move draws.
+    if (pos.getFiftyMoveDistance() >= 100)
+    {
+        if (inCheck)
+        {
+            // Might as well use quietsSearched at this point, we are returning anyways.
+            MoveGen::generateLegalEvasions(pos, quietsSearched);
+            if (quietsSearched.empty())
+            {
+                return bestScore; // Can't claim draw on fifty move if mated.
+            }
+        }
+        return contempt[pos.getSideToMove()];
+    }
+
+    // Check for repetition draws. Technically we are checking for 2-fold repetitions instead of 3-fold, but that is enough for game theoric correctness.
+    if (repetitionDraw(pos, ss->mPly))
+    {
+        return contempt[pos.getSideToMove()];
+    }
+
+    // Mate distance pruning, safe at all types of nodes.
+    alpha = std::max(matedInPly(ss->mPly), alpha);
+    beta = std::min(mateInPly(ss->mPly + 1), beta);
+    if (alpha >= beta)
+        return alpha;
+
+    // Probe the transposition table. 
+    const auto ttEntry = transpositionTable.probe(pos.getHashKey());
+    if (ttEntry)
+    {
+        ttMove = ttEntry->getBestMove();
+        if (ttEntry->getDepth() >= depth)
+        {
+            const auto ttScore = ttScoreToRealScore(ttEntry->getScore(), ss->mPly);
+            const auto ttFlags = ttEntry->getFlags();
+            if (ttFlags == TranspositionTable::Flags::ExactScore
+            || (ttFlags == TranspositionTable::Flags::UpperBoundScore && ttScore <= alpha)
+            || (ttFlags == TranspositionTable::Flags::LowerBoundScore && ttScore >= beta))
+            {
+                return ttScore;
+            }
+        }
+    }
+
+    // Probe the syzygy tablebases.
+    if (pos.getTotalPieceCount() <= cardinality
+        && (pos.getTotalPieceCount() < cardinality || depth >= probeDepth)
+        && pos.getFiftyMoveDistance() == 0)
+    {
+        int found;
+        score = Syzygy::probeWdl(pos, found);
+
+        if (found)
+        {
+            ++tbHits;
+            const auto drawScore = use50 ? 1 : 0;
+            score = score < -drawScore ? -minMateScore + ss->mPly
+                  : score > drawScore ? minMateScore - ss->mPly
+                  : score;
+            return score;
+        } 
+    }
+
+    // Get the static evaluation of the position. Not needed in nodes where we are in check.
+    const auto staticEval = (inCheck ? -infinity : evaluation.evaluate(pos));
+
+    // Reverse futility pruning / static null move pruning.
+    // Not useful in PV-nodes as this tries to search for nodes where score >= beta but in PV-nodes score < beta.
+    if (!pvNode && !inCheck && pos.getNonPawnPieceCount(pos.getSideToMove()) && depth <= reverseFutilityDepth && staticEval - reverseFutilityMargin(depth) >= beta)
+    {
+        return staticEval - reverseFutilityMargin(depth);
+    }
+
+    // Razoring.
+    // Not useful in PV-nodes as this tries to search for nodes where score <= alpha but in PV-nodes score > alpha.
+    if (!pvNode && !inCheck && depth <= razoringDepth && staticEval + razoringMargin(depth) <= alpha)
+    {
+        const auto razoringAlpha = alpha - razoringMargin(depth);
+        score = quiescenceSearch(pos, 0, razoringAlpha, razoringAlpha + 1, false, ss);
+        if (score <= razoringAlpha)
+        {
+            return score;
+        }
+    }
+
+    // Null move pruning.
+    // Not used when in a PV-node because we should _never_ fail high at a PV-node so doing this is a waste of time.
+    // I don't really like the staticEval >= beta condition but the gain in elo is significant so...
+    if (!pvNode && ss->mAllowNullMove && !inCheck && depth > 1 && staticEval >= beta && pos.getNonPawnPieceCount(pos.getSideToMove()))
+    {
+        const auto R = baseNullReduction + depth / 6;
+        const auto likelyFailLow = ttEntry && ttEntry->getFlags() == TranspositionTable::Flags::UpperBoundScore
+                                && ttEntry->getDepth() >= depth - 1 - R && ttEntry->getScore() <= alpha;
+        if (!likelyFailLow)
+        {
+            repetitionHashes[rootPly + ss->mPly] = pos.getHashKey();
+            ss->mCurrentMove = Move();
+            Position newPosition(pos);
+            newPosition.makeNullMove();
+            ++nodeCount;
+            --nodesToTimeCheck;
+            (ss + 1)->mAllowNullMove = false;
+            score = depth - 1 - R > 0 ? -search<false>(newPosition, depth - 1 - R, -beta, -beta + 1, false, ss + 1)
+                : -quiescenceSearch(newPosition, 0, -beta, -beta + 1, false, ss + 1);
+            (ss + 1)->mAllowNullMove = true;
+            if (score >= beta)
+            {
+                // Don't return unproven mate scores as they cause some instability.
+                if (isMateScore(score))
+                    score = beta;
+                transpositionTable.save(pos.getHashKey(), 
+                                        ttMove, 
+                                        realScoreToTtScore(score, ss->mPly), 
+                                        depth, 
+                                        TranspositionTable::Flags::LowerBoundScore);
+                return score;
+            }
+        }
+    }
+
+    // Internal iterative deepening.
+    if (ttMove.empty() && (pvNode ? depth > 4 : depth > 7))
+    {
+        // We can skip nullmove in IID since if it would have worked we wouldn't be here.
+        ss->mAllowNullMove = false;
+        score = search<pvNode>(pos, pvNode ? depth - 2 : depth / 2, alpha, beta, inCheck, ss);
+        ss->mAllowNullMove = true;
+
+        // Now probe the TT and get the best move.
+        const auto tte = transpositionTable.probe(pos.getHashKey());
+        if (tte)
+        {
+            ttMove = tte->getBestMove();
+        }
+    }
+
+    // Futility pruning is useless at PV-nodes for the same reason as razoring.
+    const auto futileNode = (!pvNode && !inCheck && depth <= futilityDepth && staticEval + futilityMargin(depth) <= alpha);
+    const auto lmpNode = (!pvNode && !inCheck && depth <= lmpDepth);
+    const auto lmrNode = (!inCheck && depth >= lmrDepthLimit);
+    const auto seePruningNode = !pvNode && !inCheck && depth <= seePruningDepth;
+    const auto killers = killerTable.getKillers(ss->mPly);
+    const auto counter = counterMoveTable.getCounterMove(pos, (ss - 1)->mCurrentMove);
+
+    MoveSort ms(pos, historyTable, ttMove, killers.first, killers.second, counter, inCheck);
+
+    repetitionHashes[rootPly + ss->mPly] = pos.getHashKey();
+    for (auto i = 0;; ++i)
+    {
+        const auto move = ms.next();
+        if (move.empty()) break;
+
+        const auto givesCheck = pos.givesCheck(move);
+        const auto newDepth = depth - 1;
+        const auto quietMove = !pos.captureOrPromotion(move);
+        if (quietMove) quietsSearched.emplace_back(move);
+        const auto nonCriticalMove = !givesCheck && quietMove && move != ttMove
+                                                              && move != killers.first
+                                                              && move != killers.second
+                                                              && move != counter;
+        ++nodeCount;
+        --nodesToTimeCheck;
+
+        // Futility pruning and late move pruning. Oh, SEE pruning as well.
+        if (nonCriticalMove)
+        {
+            if (futileNode)
+            {
+                bestScore = std::max(bestScore, staticEval + futilityMargin(depth));
+                ++prunedMoves;
+                continue;
+            }
+
+            if (lmpNode && i >= lmpMoveCounts[depth])
+            {
+                ++prunedMoves;
+                continue;
+            }
+
+            if (seePruningNode && pos.SEE(move) < 0)
+            {
+                ++prunedMoves;
+                continue;
+            }
+        }
+
+        if (!pos.legal(move, inCheck))
+        {
+            continue;
+        }
+
+        Position newPosition(pos);
+        newPosition.makeMove(move);
+        ss->mCurrentMove = move;
+        if (!movesSearched)
+        {
+            score = newDepth > 0 ? -search<pvNode>(newPosition, newDepth, -beta, -alpha, givesCheck != 0, ss + 1)
+                : -quiescenceSearch(newPosition, 0, -beta, -alpha, givesCheck != 0, ss + 1);
+        }
+        else
+        {
+            const auto reduction = ((lmrNode && nonCriticalMove) ? lmrReductions[std::min(i, 63)][std::min(depth, 63)] : 0);
+
+            score = newDepth - reduction > 0 ? -search<false>(newPosition, newDepth - reduction, -alpha - 1, -alpha, givesCheck != 0, ss + 1)
+                                             : -quiescenceSearch(newPosition, 0, -alpha - 1, -alpha, givesCheck != 0, ss + 1);
+
+            // The LMR'd move didn't fail low, drop the reduction because that most likely caused the fail high.
+            // If we are in a PV-node the alternative is to open the window first. The more unstable the search the better doing that is.
+            // Before the tuned evaluation opening the window was better, after the tuned eval it is worse. Why?
+            if (reduction && score > alpha)
+            {
+                score = newDepth > 0 ? -search<false>(newPosition, newDepth, -alpha - 1, -alpha, givesCheck != 0, ss + 1)
+                                     : -quiescenceSearch(newPosition, 0, -alpha - 1, -alpha, givesCheck != 0, ss + 1);
+            }
+
+            // If we are in a PV-node this is used to get the exact score for a new PV.
+            // Since we used null window on the previous searches the score is only a bound, and this won't do for a PV.
+            if (score > alpha && score < beta)
+            {
+                score = newDepth > 0 ? -search<true>(newPosition, newDepth, -beta, -alpha, givesCheck != 0, ss + 1)
+                                     : -quiescenceSearch(newPosition, 0, -beta, -alpha, givesCheck != 0, ss + 1);
+            }
+        }
+        ++movesSearched;
+
+        if (score > bestScore)
+        {
+            if (score > alpha)
+            {
+                if (score >= beta)
+                {
+                    transpositionTable.save(pos.getHashKey(), 
+                                            move, 
+                                            realScoreToTtScore(score, ss->mPly), 
+                                            depth, 
+                                            TranspositionTable::Flags::LowerBoundScore);
+
+                    // Updating move ordering heuristics while in check is not good, pollutes tables.
+                    if (!inCheck)
+                    {
+                        if (quietMove)
+                        {
+                            historyTable.addCutoff(pos, move, depth);
+                            killerTable.update(move, ss->mPly);
+                            counterMoveTable.update(pos, move, (ss - 1)->mCurrentMove);
+                        }
+                        for (auto j = 0; j < quietsSearched.size() - 1; ++j)
+                        {
+                            historyTable.addNotCutoff(pos, quietsSearched.getMove(j), depth);
+                        }
+                    }
+
+                    return score;
+                }
+                bestMove = move;
+                alpha = score;
+                ttFlag = TranspositionTable::Flags::ExactScore;
+            }
+            bestScore = score;
+        }
+    }
+
+    if (!movesSearched)
+    {
+        if (!prunedMoves)
+        {
+            return (inCheck ? bestScore : contempt[pos.getSideToMove()]);
+        }
+        // Looks like we pruned all moves away. Return some approximation of the score. Just alpha is fine too.
+        // Not used currently.
+        return staticEval; 
+    }
+
+    transpositionTable.save(pos.getHashKey(), bestMove, realScoreToTtScore(bestScore, ss->mPly), depth, ttFlag);
+
+    return bestScore;
+}
+
+int Search::quiescenceSearch(const Position& pos, int depth, int alpha, int beta, bool inCheck, SearchStack* ss)
+{
+    assert(alpha < beta);
+    assert(depth <= 0);
+    assert(inCheck == pos.inCheck());
+
+    int bestScore, delta;
+    MoveList moveList;
+    Move bestMove;
+    auto ttFlag = TranspositionTable::Flags::UpperBoundScore;
+
+    // Small speed optimization, runs fine without it.
+    transpositionTable.prefetch(pos.getHashKey());
+
+    // Don't go over max ply.
+    if (ss->mPly >= maxPly)
+    {
+        return evaluation.evaluate(pos);
+    }
+
+    // Check for fifty move draws.
+    if (pos.getFiftyMoveDistance() >= 100)
+    {
+        if (inCheck)
+        {
+            MoveGen::generateLegalEvasions(pos, moveList);
+            if (moveList.empty())
+            {
+                return matedInPly(ss->mPly); // Can't claim draw on fifty move if mated.
+            }
+        }
+        return contempt[pos.getSideToMove()];
+    }
+
+    // Check for repetition draws. 
+    if (repetitionDraw(pos, ss->mPly))
+    {
+        return contempt[pos.getSideToMove()];
+    }
+
+    // Mate distance pruning, safe at all types of nodes.
+    alpha = std::max(matedInPly(ss->mPly), alpha);
+    beta = std::min(mateInPly(ss->mPly + 1), beta);
+    if (alpha >= beta)
+        return alpha;
+
+    // We use only two depths when saving info to the TT, one for when we search captures+checks and one for when we search just captures.
+    // Since when we are in check we search all moves regardless of depth it goes to the first category as well.
+    // It seems that when this part was broken then not pruning checks below didn't work either for some reason.
+    const auto ttDepth = (inCheck || depth >= 0) ? 0 : -1;
+
+    const auto ttEntry = transpositionTable.probe(pos.getHashKey());
+    if (ttEntry)
+    {
+        bestMove = ttEntry->getBestMove();
+        if (ttEntry->getDepth() >= ttDepth)
+        {
+            const auto ttScore = ttScoreToRealScore(ttEntry->getScore(), ss->mPly);
+            const auto ttFlags = ttEntry->getFlags();
+            if (ttFlags == TranspositionTable::Flags::ExactScore
+            || (ttFlags == TranspositionTable::Flags::UpperBoundScore && ttScore <= alpha)
+            || (ttFlags == TranspositionTable::Flags::LowerBoundScore && ttScore >= beta))
+            {
+                return ttScore;
+            }
+        }
+    }
+
+    if (inCheck)
+    {
+        bestScore = matedInPly(ss->mPly);
+        delta = -infinity;
+        MoveGen::generateLegalEvasions(pos, moveList);
+        if (moveList.empty())
+        {
+            return bestScore;
+        }
+    }
+    else
+    {
+        bestScore = evaluation.evaluate(pos);
+        if (bestScore > alpha)
+        {
+            if (bestScore >= beta)
+            {
+                return bestScore;
+            }
+            alpha = bestScore;
+        }
+        delta = bestScore + deltaPruningMargin;
+        depth >= 0 ? MoveGen::generatePseudoLegalCapturesAndQuietChecks(pos, moveList)
+                   : MoveGen::generatePseudoLegalCaptures(pos, moveList, false);
+    }
+
+    orderCaptures(pos, moveList, bestMove);
+    repetitionHashes[rootPly + ss->mPly] = pos.getHashKey();
+    for (auto i = 0; i < moveList.size(); ++i)
+    {
+        const auto move = selectMove(moveList, i);
+        const auto givesCheck = pos.givesCheck(move);
+        ++nodeCount;
+        --nodesToTimeCheck;
+
+        // Only prune moves in quiescence search if we are not in check.
+        if (!inCheck)
+        {
+            const auto seeScore = pos.SEE(move);
+
+            // SEE pruning. If the move seems to lose material prune it.
+            // Since the SEE score is meaningless for discovered checks we don't prune them.
+            if (seeScore < 0 && givesCheck != 2)
+            {
+                continue;
+            }
+
+            // Delta pruning. If the move seems to have no chance of raising alpha prune it.
+            // Pruning checks here is too dangerous.
+            if (delta + seeScore <= alpha && !givesCheck)
+            {
+                bestScore = std::max(bestScore, delta + seeScore);
+                continue;
+            }
+        }
+
+        if (!pos.legal(move, inCheck))
+        {
+            continue;
+        }
+
+        Position newPosition(pos);
+        newPosition.makeMove(move);
+        const auto score = -quiescenceSearch(newPosition, depth - 1, -beta, -alpha, givesCheck != 0, ss + 1);
+
+        if (score > bestScore)
+        {
+            if (score > alpha)
+            {
+                if (score >= beta)
+                {
+                    transpositionTable.save(pos.getHashKey(),
+                                            move,
+                                            realScoreToTtScore(score, ss->mPly),
+                                            ttDepth,
+                                            TranspositionTable::Flags::LowerBoundScore);
+                    return score;
+                }
+                bestMove = move;
+                ttFlag = TranspositionTable::Flags::ExactScore;
+                alpha = score;
+            }
+            bestScore = score;
+        }
+    }
+
+    transpositionTable.save(pos.getHashKey(), 
+                            bestMove, 
+                            realScoreToTtScore(bestScore, ss->mPly), 
+                            ttDepth, 
+                            ttFlag);
+
+    return bestScore;
+}
+
+
+
+/*function printPV(move: number, score: number, depth: number, alpha: number, beta: number, pv: Array<move_.moveScore_t>, info: info_t) {
+    let flags = tb_.BOUND.NONE;
+    if (score > alpha) flags |= tb_.BOUND.LOWER;
+    if (score < beta) flags |= tb_.BOUND.UPPER;
+
+    scoreDropped = depth > 1 && (flags == tb_.BOUND.UPPER || bestMove.score - 30 >= score);
+
+    bestMove = { move: move, score: score, depth: depth }
+    ponderMove = { move: pv[1].move, score: pv[1].score, depth: depth }
+
+    let scoreStr = "";
+
+    if (isMateScore(score)) {
+        const mate_in = (score > 0 ? util_.MATE - score + 1 : -util_.MATE - score) / 2;
+        scoreStr += `mate ${mate_in}`;
+    }
+    else {
+        scoreStr += `cp ${score}`;
+    }
+
+    if (flags == tb_.BOUND.LOWER) scoreStr += ' lowerbound';
+    if (flags == tb_.BOUND.UPPER) scoreStr += ' upperbound';
+
+    let pvStr = "";
+    for (let index = 0; pv[index].move != move_.NO_MOVE; index++) {
+        pvStr += ` ${move_.moveToSmith(pv[index].move)}`
+    }
+
+    info.stdoutFn(`thread depth ${depth} score ${scoreStr} nodes ${nodes} time ${util_.getTimeMs() - info.uciLevel.startTime} pv ${pvStr}`);
+}*/
+
+
+/*
+const pv = new Array<move_.moveScore_t>(util_.MAX_PLY + 1);
+
+
+// you can search moves
+
+if (bestMove.move == move_.NO_MOVE) {
+    maxDepth = (info.limitedByDepth) ? info.allotment : util_.MAX_PLY;
+
+    let moves = new Array<move_.moveScore_t>(util_.MAX_PLY)
+    if (info.limitedByMoves) {
+        for (let i = 0; i < info.searchMoves.length; i++) {
+            moves.push(move_.smithToMove(info.searchMoves[i], board))
+        }
+    } else {
+        moves = move_.generateLegalMoves(board)
+    }
+
+    //-- iterative deepening
+    for (let currentDepth = 1; currentDepth <= maxDepth; ++currentDepth) {
+
+        for (let margin = (currentDepth >= 4 ? 10 : util_.INFINITE); ; margin *= 2) {
+            alpha = Math.max(bestScore - margin, -util_.INFINITE);
+            beta = Math.min(bestScore + margin, util_.INFINITE);
+            bestScore = alphaBeta(alpha, beta, currentDepth, board, pv, info, true, moves);
+
+            //-- out of time?
+            if (info.stopSearch()) {
+                break;
+            }
+            if (isMateScore(bestScore)) {
+                break;
+            }
+            if (bestScore > alpha && bestScore < beta) break;
+        }
+    }
+
+}
+
+info.stdoutFn(`bestmove ${move_.moveToSmith(bestMove.move)}`);
+//ponder is any
+info.stdoutFn(`thread hashfull ${tb_.hashfull()}`);*/
+
+
+/*function checkUp(info: info_t,) {
+    //-- check if time up or interrupt from gui
+    if (info.limitedByTime || info.uciLevel.time != -1) {
+        let targetTime;
+        if (info.limitedByTime) {
+            targetTime = info.allotment
+        } else {
+            const tb = 50;
+            targetTime = util_.clamp(info.uciLevel.time / Math.min(info.uciLevel.mtg, 25) + info.uciLevel.inc - tb, 1, info.uciLevel.time - tb)
+            const mt = util_.clamp(info.uciLevel.time / 2 + info.uciLevel.inc, 1, info.uciLevel.time - tb);
+            if (info.ponder) {
+                targetTime += targetTime / 3;
+                targetTime = util_.clamp(targetTime, 1, mt);
+            }
+        }
+
+        if (util_.getTimeMs() - info.uciLevel.startTime > targetTime) info.uciStop = true;
+
+    }
+}*/
+
+    /*
+    const from = FROM_SQUARE(move);
+    const to = TO_SQUARE(move);
+    const fType = util_.pToPt(board.pieces[from]);
+
+    const friendly = board_.getPieces(board.turn, board);
+    const enemy = board_.getPieces(board.turn ^ 1, board);
+    const occupied = friendly | enemy;
+
+    let attacks = 0n;
+    let forward = 0n;
+    let mask = {v:0n};
+    let rooks = {v:0n};
+    let rT: number;
+    let r
+
+
+    if ((move == NO_MOVE || move == NULL_MOVE)
+        || (util_.PIECE_COLOR(board.pieces[from]) != board.turn)
+        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.ENPASS))
+        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.PAWN_START))
+        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.CASTLE)))
+        return false;
+
+    switch (fType) {
+        case util_.PieceType.KNIGHT:
+            return !!(move & MOVE_FLAG.NORMAL) && bitboard_.isSet(bitboard_.knightAttacks(util_.SQ64(from)) & BigInt.asUintN(64, ~friendly), util_.SQ64(to))
+        case util_.PieceType.BISHOP:
+            return !!(move & MOVE_FLAG.NORMAL) && bitboard_.isSet(bitboard_.bishopAttacks(util_.SQ64(from), occupied) & BigInt.asUintN(64, ~friendly), util_.SQ64(to))
+        case util_.PieceType.ROOK:
+            return !!(move & MOVE_FLAG.NORMAL) && bitboard_.isSet(bitboard_.rookAttacks(util_.SQ64(from), occupied) & BigInt.asUintN(64, ~friendly), util_.SQ64(to))
+        case util_.PieceType.QUEEN:
+            return !!(move & MOVE_FLAG.NORMAL) && bitboard_.isSet(bitboard_.queenAttacks(util_.SQ64(from), occupied) & BigInt.asUintN(64, ~friendly), util_.SQ64(to))
+        case util_.PieceType.PAWN:
+            if (move & MOVE_FLAG.CASTLE) false;
+
+            attacks = bitboard_.pawnAttacks(board.turn, util_.SQ64(from));
+
+            if (move & MOVE_FLAG.ENPASS)
+                return to == board.enpassant && bitboard_.isSet(attacks, util_.SQ64(to));
+
+            forward = bitboard_.pawnAdvance(1n << BigInt(util_.SQ64(from)), occupied, board.turn);
+
+            if (move & MOVE_FLAG.PROMOTED)
+                return util_.relativeRank(board.turn, util_.rankOf(util_.SQ64(to))) == 7
+                    && !!(bitboard_.ranks[util_.rankOf(util_.SQ64(to))] & ((attacks & enemy) | forward))
+            if (move & MOVE_FLAG.PAWN_START) {
+                forward |= bitboard_.pawnAdvance(forward & (!board.turn ? bitboard_.ranks[2] : bitboard_.ranks[5]), occupied, board.turn);
+                return bitboard_.isSet(
+                    ((bitboard_.ranks[2] | bitboard_.ranks[3] | bitboard_.ranks[4] | bitboard_.ranks[5]) & ((attacks & enemy) | forward)),
+                    util_.SQ64(to))
+            }
+            return false;
+        case util_.PieceType.KING:
+            if (move & MOVE_FLAG.NORMAL) return bitboard_.isSet(bitboard_.kingAttacks(util_.SQ64(from)) & BigInt.asUintN(64, ~friendly), util_.SQ64(to));
+            if (!(move & MOVE_FLAG.CASTLE)) return false
+            
+
+            }
+        default:
+            return false
+    }
+*/
+
+
+
+
+

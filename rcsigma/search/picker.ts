@@ -1,9 +1,15 @@
+/* eslint-disable no-case-declarations */
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2021 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
 
-import * as thread_ from './thread'
+import * as util_ from '../util'
 import * as move_ from '../game/move'
 import * as board_ from '../game/board'
+import * as thread_ from './thread'
 import * as search_ from './search'
-import * as util_ from '../util'
+
 
 type movePicker_t = {
     split: number, noisySize: number, quietSize: number;
@@ -31,8 +37,8 @@ const HistoryDivisor = 512;
 
 function init(): movePicker_t {
     const movePicker = {} as movePicker_t;
-    movePicker.values = new Array<number>(util_.MAX_MOVES)
-    movePicker.moves = new Array<number>(util_.MAX_MOVES)
+    movePicker.values = new Array<number>(util_.MAX_MOVES).fill(0)
+    movePicker.moves = new Array<number>(util_.MAX_MOVES).fill(move_.NO_MOVE)
     return movePicker;
 }
 
@@ -78,17 +84,16 @@ function getRefutationMoves(mp: movePicker_t, thread: thread_.thread_t) {
     mp.killer2 = thread.killers[thread.height][1];
 
     // Set Counter Move if one exists
-    if (previous == move_.NO_MOVE || previous == move_.NULL_MOVE) mp.counter = move_.NO_MOVE;
+    if (!previous || previous == move_.NULL_MOVE) mp.counter = move_.NO_MOVE;
     else mp.counter = thread.cmtable[thread.board.turn ^ 1][util_.pToPt(cmPiece) - 1][util_.SQ64(cmTo)];
 }
 
 
 function getCaptureHistories(mp: movePicker_t): void {
-    const MVVAugment = [0, 0, 2400, 2400, 4800, 9600];
+    const MVVAugment = [0, 2400, 2400, 4800, 9600];
     for (let i = 0; i < mp.noisySize; i++) {
         const from = move_.FROM_SQUARE(mp.moves[i]);
         const to = move_.TO_SQUARE(mp.moves[i]);
-
 
         const piece = util_.pToPt(mp.thread.board.pieces[from]);
         let captured = util_.pToPt(mp.thread.board.pieces[to]);
@@ -96,13 +101,18 @@ function getCaptureHistories(mp: movePicker_t): void {
         if (mp.moves[i] & move_.MOVE_FLAG.ENPASS) captured = util_.PieceType.PAWN;
         if (mp.moves[i] & move_.MOVE_FLAG.PROMOTED) captured = util_.PieceType.PAWN;
 
-        util_.ASSERT(util_.PieceType.PAWN <= piece && piece <= util_.PieceType.KING);
-        util_.ASSERT(util_.PieceType.PAWN <= captured && captured <= util_.PieceType.QUEEN);
+        util_.ASSERT(util_.PieceType.PAWN <= piece && piece <= util_.PieceType.KING,
+            `piece value ${piece} but expected between 1(Pawn) to 5(King)`);
 
-        mp.values[i] = 64000 + mp.thread.chistory[piece][to][captured];
+
+        util_.ASSERT(util_.PieceType.PAWN <= captured && captured <= util_.PieceType.QUEEN,
+            `captured value ${captured} but expected between 1(Pawn) to 5(Queen)`);
+
+
+        mp.values[i] = 64000 + mp.thread.chistory[piece - 1][util_.SQ64(to)][captured - 1];
         if ((mp.moves[i] & move_.MOVE_FLAG.PROMOTED)
             && (util_.pToPt(move_.PROMOTED(mp.moves[i])) == util_.PieceType.QUEEN)) mp.values[i] += 64000;
-        mp.values[i] += MVVAugment[captured];
+        mp.values[i] += MVVAugment[captured - 1];
 
         util_.ASSERT(mp.values[i] >= 0);
     }
@@ -123,17 +133,18 @@ function getHistoryScores(mp: movePicker_t) {
         // Extract information from this move
         const to = move_.TO_SQUARE(mp.moves[i]);
         const from = move_.FROM_SQUARE(mp.moves[i]);
-        const piece = mp.thread.board.pieces[from]
+        const piece = mp.thread.board.pieces[from];
+
 
         // Start with the basic Butterfly history
         mp.values[i] = mp.thread.history[mp.thread.board.turn][util_.SQ64(from)][util_.SQ64(to)];
 
         // Add Counter Move History if it exists
-        if (counter != move_.NO_MOVE && counter != move_.NULL_MOVE)
+        if (counter != move_.NO_MOVE && counter != move_.NULL_MOVE && counter != undefined)
             mp.values[i] += mp.thread.continuation[0][util_.pToPt(cmPiece) - 1][util_.SQ64(cmTo)][util_.pToPt(piece) - 1][util_.SQ64(to)];
 
         // Add Followup Move History if it exists
-        if (follow != move_.NO_MOVE && follow != move_.NULL_MOVE)
+        if (follow != move_.NO_MOVE && follow != move_.NULL_MOVE && follow != undefined)
             mp.values[i] += mp.thread.continuation[1][util_.pToPt(fmPiece) - 1][util_.SQ64(fmTo)][util_.pToPt(piece) - 1][util_.SQ64(to)];
     }
 }
@@ -170,11 +181,11 @@ function getHistory(thread: thread_.thread_t, move: move_.move_t, cmhist: { v: n
     const fmTo = move_.TO_SQUARE(follow);
 
     // Set Counter Move History if it exists
-    if (counter == move_.NO_MOVE || counter == move_.NULL_MOVE) cmhist.v = 0;
-    else cmhist.v = thread.continuation[0][util_.pToPt(cmPiece) - 1][cmTo][util_.pToPt(piece) - 1][util_.SQ64(to)];
+    if (counter == move_.NO_MOVE || counter == move_.NULL_MOVE || counter == undefined) cmhist.v = 0;
+    else cmhist.v = thread.continuation[0][util_.pToPt(cmPiece) - 1][util_.SQ64(cmTo)][util_.pToPt(piece) - 1][util_.SQ64(to)];
 
-    // Set Followup Move History if it exists
-    if (follow == move_.NO_MOVE || follow == move_.NULL_MOVE) fmhist.v = 0;
+    // Set Followup Move History if itS exists
+    if (follow == move_.NO_MOVE || follow == move_.NULL_MOVE || follow == undefined) fmhist.v = 0;
     else fmhist.v = thread.continuation[1][util_.pToPt(fmPiece) - 1][util_.SQ64(fmTo)][util_.pToPt(piece) - 1][util_.SQ64(to)];
 
     // Return CMHist + FMHist + ButterflyHist
@@ -189,6 +200,7 @@ function getBestMoveIndex(mp: movePicker_t, start: number, end: number): number 
     }
     return best;
 }
+
 
 function updateKiller(thread: thread_.thread_t, move: move_.move_t): void {
     // Avoid saving the same Killer Move twice
@@ -224,15 +236,20 @@ function updateHistoryHeuristics(thread: thread_.thread_t, moves: move_.move_t[]
     const colour = thread.board.turn;
     const bestMove = moves[length - 1];
 
+    let cmPiece = 0;
+    let fmPiece = 0;
+
     // Extract information from last move
     const counter = thread.movesStack[thread.height - 1];
-    const cmPiece = util_.pToPt(thread.pieceStack[thread.height - 1]);
     const cmTo = move_.TO_SQUARE(counter);
 
     // Extract information from two moves ago
     const follow = thread.movesStack[thread.height - 2];
-    const fmPiece = util_.pToPt(thread.pieceStack[thread.height - 2]);
     const fmTo = move_.TO_SQUARE(follow);
+
+
+    if (counter != undefined) cmPiece = util_.pToPt(thread.pieceStack[thread.height - 1]);
+    if (follow != undefined) fmPiece = util_.pToPt(thread.pieceStack[thread.height - 2]);
 
     // Update Killer Moves (Avoid duplicates)
     if (thread.killers[thread.height][0] != bestMove) {
@@ -241,7 +258,7 @@ function updateHistoryHeuristics(thread: thread_.thread_t, moves: move_.move_t[]
     }
 
     // Update Counter Moves (BestMove refutes the previous move)
-    if (counter != move_.NO_MOVE && counter != move_.NULL_MOVE)
+    if (counter != move_.NO_MOVE && counter != move_.NULL_MOVE && counter != undefined)
         thread.cmtable[colour ^ 1][cmPiece - 1][util_.SQ64(cmTo)] = bestMove;
 
     // If the 1st quiet move failed-high below depth 4, we don't update history tables
@@ -266,13 +283,13 @@ function updateHistoryHeuristics(thread: thread_.thread_t, moves: move_.move_t[]
             * delta - thread.history[colour][util_.SQ64(from)][util_.SQ64(to)] * Math.abs(delta) / HistoryDivisor
 
         // Update Counter Move History
-        if (counter != move_.NO_MOVE && counter != move_.NULL_MOVE)
+        if (counter != move_.NO_MOVE && counter != move_.NULL_MOVE && counter != undefined)
             thread.continuation[0][cmPiece - 1][util_.SQ64(cmTo)][piece - 1][util_.SQ64(to)] += HistoryMultiplier
                 * delta - thread.continuation[0][cmPiece - 1][util_.SQ64(cmTo)][piece - 1][util_.SQ64(to)] * Math.abs(delta) / HistoryDivisor;
 
 
         // Update Followup Move History
-        if (follow != move_.NO_MOVE && follow != move_.NULL_MOVE)
+        if (follow != move_.NO_MOVE && follow != move_.NULL_MOVE && follow != undefined)
             thread.continuation[0][fmPiece - 1][util_.SQ64(fmTo)][piece - 1][util_.SQ64(to)] += HistoryMultiplier
                 * delta - thread.continuation[0][fmPiece - 1][util_.SQ64(fmTo)][piece - 1][util_.SQ64(to)] * Math.abs(delta) / HistoryDivisor;
     }
@@ -292,14 +309,25 @@ function selectNextMove(mp: movePicker_t, board: board_.board_t, skipQuiets: boo
     let best: number, bestMove: number;
     let i = 0
     let j = 0
+    //let moves: number[];
+
     switch (mp.stage) {
         case STAGE.TABLE:
             mp.stage = STAGE.GENERATE_NOISY;
-            if (move_.pseudoLegal(board, mp.tableMove))
+            if (move_.pseudoLegal(board, mp.tableMove)) {
+                if (mp.tableMove == 8116) { // TODO
+                    throw `700ssss`;
+                }
                 return mp.tableMove;
+            }
         /* falls through */
         case STAGE.GENERATE_NOISY:
-            mp.noisySize = mp.split = move_.generateNoisy(board, mp.moves)
+            const moves: number[] = [];
+            mp.noisySize = mp.split = move_.generateNoisy(board, moves)
+            for (i = 0; i < mp.noisySize; i++) {
+                mp.moves[i] = moves[i];
+            }
+            //mp.thread.searchInfo.stdoutFn(`GENERATE_NOISY ${mp.moves} ${mp.threshold} ${board_.boardToFen(board)}`)
             getCaptureHistories(mp);
             mp.stage = STAGE.GOOD_NOISY;
         /* falls through */
@@ -314,6 +342,7 @@ function selectNextMove(mp: movePicker_t, board: board_.board_t, skipQuiets: boo
 
                     // Skip moves which fail to beat our SEE margin. We flag those moves
                     // as failed with the value (-1), and then repeat the selection process
+                    //mp.thread.searchInfo.stdoutFn(`GOOD_NOISY ${mp.moves} ${mp.threshold} ${move_.moveToSmith(mp.moves[best])} ${board_.boardToFen(board)}`)
                     if (!search_.see(board, mp.moves[best], mp.threshold)) {
                         mp.values[best] = -1;
                         return selectNextMove(mp, board, skipQuiets);
@@ -349,8 +378,9 @@ function selectNextMove(mp: movePicker_t, board: board_.board_t, skipQuiets: boo
             mp.stage = STAGE.KILLER_2;
             if (!skipQuiets
                 && mp.killer1 != mp.tableMove
-                && move_.pseudoLegal(board, mp.killer1))
+                && move_.pseudoLegal(board, mp.killer1)) {
                 return mp.killer1;
+            }
 
         /* falls through */
         case STAGE.KILLER_2:
@@ -358,8 +388,9 @@ function selectNextMove(mp: movePicker_t, board: board_.board_t, skipQuiets: boo
             mp.stage = STAGE.COUNTER_MOVE;
             if (!skipQuiets
                 && mp.killer2 != mp.tableMove
-                && move_.pseudoLegal(board, mp.killer2))
+                && move_.pseudoLegal(board, mp.killer2)) {
                 return mp.killer2;
+            }
 
         /* falls through */
         case STAGE.COUNTER_MOVE:
@@ -369,17 +400,19 @@ function selectNextMove(mp: movePicker_t, board: board_.board_t, skipQuiets: boo
                 && mp.counter != mp.tableMove
                 && mp.counter != mp.killer1
                 && mp.counter != mp.killer2
-                && move_.pseudoLegal(board, mp.counter))
+                && move_.pseudoLegal(board, mp.counter)) {
                 return mp.counter;
+            }
 
         /* falls through */
         case STAGE.GENERATE_QUIET:
             // Generate and evaluate all quiet moves when not skipping them
             if (!skipQuiets) {
-                const moves = new Array<number>(265);
+                const moves: number[] = [];
+                mp.noisySize = mp.split = move_.generateNoisy(board, moves)
                 mp.quietSize = move_.generateQuiet(board, moves)
-                for (i = 0, j = mp.split; i < moves.length; i++, j++) {
-                    moves[j] = moves[i]
+                for (i = 0, j = mp.split; i < mp.quietSize; i++, j++) {
+                    mp.moves[j] = moves[i];
                 }
                 getHistoryScores(mp)
             }

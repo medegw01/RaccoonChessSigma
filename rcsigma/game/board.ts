@@ -1,12 +1,11 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020- 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
-
 import * as bitboard_ from './bitboard'
-import * as util_ from '../util'
 import * as hash_ from './hash'
 import * as move_ from './move'
+import * as util_ from '../util'
 
 type undo_t = {
     move: move_.move_t;
@@ -16,12 +15,13 @@ type undo_t = {
     halfMoves: number;
     castlingRight: number;
 
-    ply: number;
     fullMoves: number;
     currentPolyglotKey: bitboard_.bitboard_t;
 
     materialEg: number[];
     materialMg: number[];
+
+    fen: string;
 }
 type board_t = {
     pieces: util_.Pieces[];
@@ -33,7 +33,6 @@ type board_t = {
     fullMoves: number;
     castlingRight: number;
 
-    ply: number;
 
     currentPolyglotKey: bitboard_.bitboard_t;
 
@@ -76,6 +75,8 @@ type pawnEntry_t = {
 * BOARD POSITION
 ****************************************************************************/
 function checkBoard(position: board_t): void {
+    if (!util_.DEBUGGING) return;
+
     const tmpNumberPiece = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     const tmpPieceBB = [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n];
     const tmpNumberbigPiece = [0, 0];
@@ -153,8 +154,6 @@ function clearBoard(board: board_t = {} as board_t): board_t {
     board.fullMoves = 1;
     board.castlingRight = 0;
 
-    board.ply = 0;
-
     board.currentPolyglotKey = 0n;
 
     board.materialEg = new Array<number>(2).fill(0);
@@ -169,7 +168,7 @@ function clearBoard(board: board_t = {} as board_t): board_t {
 
     board.pieceList = new Array<util_.Squares>(13 * 10).fill(0);
 
-    board.pawnEvalHash = new util_.LRUCache(util_.MAX_PLY)
+    board.pawnEvalHash = new util_.LRUCache(util_.MAX_PLY);
 
     return board;
 }
@@ -235,8 +234,8 @@ function mirrorBoard(board: board_t): void {
     for (sq = 0; sq < 64; sq++) {
         tempPiecesArray[sq] = board.pieces[util_.SQ120(util_.FLIP64(sq))];
     }
-    const ply = board.ply;
     const half = board.halfMoves;
+    const full = board.fullMoves;
 
     clearBoard(board);
 
@@ -249,12 +248,17 @@ function mirrorBoard(board: board_t): void {
     board.castlingRight = tempCastlePerm;
     board.enpassant = tempEnPas;
     board.halfMoves = half;
-    board.ply = ply;
+    board.fullMoves = full;
     board.currentPolyglotKey = hash_.polyglotKey(board);
 
     updateMaterialList(board);
 }
 
+function copyBoard(board: board_t): board_t {
+    const b = <board_t>util_.JSONparse(util_.JSONstringify(board))
+    b.pawnEvalHash = new util_.LRUCache(0, b.pawnEvalHash) // hack
+    return b;
+}
 function getInfo(board: board_t): string {
     let ascii_t = "INFO:\n";
     ascii_t += "turn: " + (getTurn(board)) + '\n';
@@ -477,7 +481,6 @@ function fenToBoard(fen: string, board: board_t): void {
     if (fullMove < 1) util_.ASSERT(false, `FenErr: Full move must be greater than 0. GOT ${fullMove}`);
 
     board.halfMoves = halfMove;
-    board.ply = 0;
     board.fullMoves = fullMove;
     board.currentPolyglotKey = hash_.polyglotKey(board);
 
@@ -544,6 +547,87 @@ function boardToFen(board: board_t): string {
 
     return fen_str;
 }
+
+/**
+  * Returns the most advanced square for the given color
+  * @param c  The color.
+  * @param b  The chess board.
+ */
+function hasNonPawnMaterial(c: util_.Colors, b: board_t): boolean {
+    const f = getPieces(c, b)
+    const kgs = b.piecesBB[util_.Pieces.BLACKKING] | b.piecesBB[util_.Pieces.WHITEKING]
+    const ps = b.piecesBB[util_.Pieces.WHITEPAWN] | b.piecesBB[util_.Pieces.BLACKPAWN]
+    return (f & (kgs | ps)) != f
+}
+
+
+/**
+ * Returns a bitboard of all the pieces (both colors)
+ * that are blocking attacks on the square 's' from 'sliders'. A piece blocks a
+ * slider if removing that piece from the board would result in a position where
+ * square 's' is attacked. For example, a king-attack blocking piece can be either
+ * a pinned or a discovered check piece, according if its color is the opposite
+ * or the same of the color of the slider.
+ * @param sliders The slider Pieces
+ * @param sq The square
+ * @param pos The current board
+ * @param pinnersObj The bitboard for pinners
+ */
+function sliderBlockers(sliders: bitboard_.bitboard_t, sq: number, pos: board_t, pinnersObj: bitboard_.bitboardObj_t): bitboard_.bitboard_t {
+    let blockers = 0n;
+    pinnersObj.v = 0n;
+
+    // Snipers are sliders that attack 'sq' when a piece and other snipers are removed
+    const q = (pos.piecesBB[util_.Pieces.WHITEQUEEN] | pos.piecesBB[util_.Pieces.BLACKQUEEN]);
+    const r = (pos.piecesBB[util_.Pieces.WHITEROOK] | pos.piecesBB[util_.Pieces.BLACKROOK]);
+    const b = (pos.piecesBB[util_.Pieces.WHITEBISHOP] | pos.piecesBB[util_.Pieces.BLACKBISHOP]);
+
+    const snipers = ((bitboard_.rookAttacks(sq, 0n) & (q | r))
+        | (bitboard_.bishopAttacks(sq, 0n) & (q | b))) & sliders;
+    const occupancy = (getPieces(util_.Colors.WHITE, pos) | getPieces(util_.Colors.BLACK, pos))
+        ^ snipers;
+
+
+    const sniperOBJ: bitboard_.bitboardObj_t = { v: snipers };
+    while (sniperOBJ.v) {
+        const sniperSq = bitboard_.poplsb(sniperOBJ);
+        const b = bitboard_.squaresBetween(sq, sniperSq) & occupancy;
+
+        if (b && !bitboard_.several(b)) {
+            blockers |= b;
+            if (b & getPieces(util_.PIECE_COLOR(pos.pieces[util_.SQ120(sq)]), pos))
+                pinnersObj.v |= bitboard_.bit(sniperSq);
+        }
+    }
+    return blockers;
+}
+
+/**
+ * Get all pieces of a given color.
+ * @param color
+ * @param board
+ */
+function getPieces(color: util_.Colors, board: board_t): bitboard_.bitboard_t {
+    return [(
+        board.piecesBB[util_.Pieces.WHITEPAWN]
+        | board.piecesBB[util_.Pieces.WHITEKNIGHT]
+        | board.piecesBB[util_.Pieces.WHITEBISHOP]
+        | board.piecesBB[util_.Pieces.WHITEROOK]
+        | board.piecesBB[util_.Pieces.WHITEQUEEN]
+        | board.piecesBB[util_.Pieces.WHITEKING]
+    ),
+    (
+        board.piecesBB[util_.Pieces.BLACKPAWN]
+        | board.piecesBB[util_.Pieces.BLACKKNIGHT]
+        | board.piecesBB[util_.Pieces.BLACKBISHOP]
+        | board.piecesBB[util_.Pieces.BLACKROOK]
+        | board.piecesBB[util_.Pieces.BLACKQUEEN]
+        | board.piecesBB[util_.Pieces.BLACKKING]
+    )
+    ][color];
+}
+
+
 export {
     undo_t,
     board_t,
@@ -553,10 +637,14 @@ export {
     evaluationFN,
 
 
+    hasNonPawnMaterial,
+    getPieces,
+    sliderBlockers,
     getTurn,
     mirrorBoard,
     clearBoard,
     checkBoard,
+    copyBoard,
 
     boardToPosition_t,
     boardToASCII,

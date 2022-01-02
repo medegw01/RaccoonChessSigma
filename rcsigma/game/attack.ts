@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ function allAttackersToSquare(board: board_.board_t, occupied: bitboard_.bitboar
 }
 
 function squareIsAttacked(sq64: number, turn: util_.Colors, board: board_.board_t): bitboard_.bitboard_t {
-    const occupied = bitboard_.getPieces(turn, board) | bitboard_.getPieces(turn ^ 1, board);
+    const occupied = board_.getPieces(turn, board) | board_.getPieces(turn ^ 1, board);
     const enemyPawns = board.piecesBB[util_.ptToP(turn ^ 1, util_.PieceType.PAWN)];
     const enemyKnights = board.piecesBB[util_.ptToP(turn ^ 1, util_.PieceType.KNIGHT)];
     const enemyBishops = board.piecesBB[util_.ptToP(turn ^ 1, util_.PieceType.BISHOP)] | board.piecesBB[util_.ptToP(turn ^ 1, util_.PieceType.QUEEN)];

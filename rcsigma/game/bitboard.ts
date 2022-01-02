@@ -1,10 +1,9 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
 import * as util_ from '../util'
-import * as board_ from '../game/board'
 
 type bitboard_t = bigint
 
@@ -447,74 +446,6 @@ function pawnAttacks(c: number, sq: number): bitboard_t {
 }
 
 /**
- * Get all pieces of a given color.
- * @param color
- * @param board
- */
-function getPieces(color: util_.Colors, board: board_.board_t): bitboard_t {
-    return [(
-        board.piecesBB[util_.Pieces.WHITEPAWN]
-        | board.piecesBB[util_.Pieces.WHITEKNIGHT]
-        | board.piecesBB[util_.Pieces.WHITEBISHOP]
-        | board.piecesBB[util_.Pieces.WHITEROOK]
-        | board.piecesBB[util_.Pieces.WHITEQUEEN]
-        | board.piecesBB[util_.Pieces.WHITEKING]
-    ),
-    (
-        board.piecesBB[util_.Pieces.BLACKPAWN]
-        | board.piecesBB[util_.Pieces.BLACKKNIGHT]
-        | board.piecesBB[util_.Pieces.BLACKBISHOP]
-        | board.piecesBB[util_.Pieces.BLACKROOK]
-        | board.piecesBB[util_.Pieces.BLACKQUEEN]
-        | board.piecesBB[util_.Pieces.BLACKKING]
-    )
-    ][color];
-}
-
-
-/**
- * Returns a bitboard of all the pieces (both colors)
- * that are blocking attacks on the square 's' from 'sliders'. A piece blocks a
- * slider if removing that piece from the board would result in a position where
- * square 's' is attacked. For example, a king-attack blocking piece can be either
- * a pinned or a discovered check piece, according if its color is the opposite
- * or the same of the color of the slider.
- * @param sliders The slider Pieces
- * @param sq The square
- * @param pos The current board
- * @param pinnersObj The bitboard for pinners
- */
-function sliderBlockers(sliders: bitboard_t, sq: number, pos: board_.board_t, pinnersObj: bitboardObj_t): bitboard_t {
-    let blockers = 0n;
-    pinnersObj.v = 0n;
-
-    // Snipers are sliders that attack 'sq' when a piece and other snipers are removed
-    const q = (pos.piecesBB[util_.Pieces.WHITEQUEEN] | pos.piecesBB[util_.Pieces.BLACKQUEEN]);
-    const r = (pos.piecesBB[util_.Pieces.WHITEROOK] | pos.piecesBB[util_.Pieces.BLACKROOK]);
-    const b = (pos.piecesBB[util_.Pieces.WHITEBISHOP] | pos.piecesBB[util_.Pieces.BLACKBISHOP]);
-
-    const snipers = ((rookAttacks(sq, 0n) & (q | r))
-        | (bishopAttacks(sq, 0n) & (q | b))) & sliders;
-    const occupancy = (getPieces(util_.Colors.WHITE, pos) | getPieces(util_.Colors.BLACK, pos))
-        ^ snipers;
-
-
-    const sniperOBJ: bitboardObj_t = { v: snipers };
-    while (sniperOBJ.v) {
-        const sniperSq = poplsb(sniperOBJ);
-        const b = squaresBetween(sq, sniperSq) & occupancy;
-
-        if (b && !several(b)) {
-            blockers |= b;
-            if (b & getPieces(util_.PIECE_COLOR(pos.pieces[util_.SQ120(sq)]), pos))
-                pinnersObj.v |= bit(sniperSq);
-        }
-    }
-    return blockers;
-}
-
-
-/**
  * Get a bitboard with the bit corresponding to the given square set
  * @param sq The square
  * @return A bitboard which is equivalent to 1ULL << sq
@@ -761,17 +692,6 @@ function fmSQ(c: util_.Colors, bb: bitboard_t): number {
     return c == util_.Colors.WHITE ? msb(bb) : lsb(bb);
 }
 
-/**
-  * Returns the most advanced square for the given color
-  * @param c  The color.
-  * @param b  The chess board.
- */
-function hasNonPawnMaterial(c: util_.Colors, b: board_.board_t): boolean {
-    const f = getPieces(c, b)
-    const kgs = b.piecesBB[util_.Pieces.BLACKKING] | b.piecesBB[util_.Pieces.WHITEKING]
-    const ps = b.piecesBB[util_.Pieces.WHITEPAWN] | b.piecesBB[util_.Pieces.BLACKPAWN]
-    return (f & (kgs | ps)) != f
-}
 
 function pawnPush(color: util_.Colors): Direction {
     return (color == 0) ? Direction.NORTH : Direction.SOUTH;
@@ -807,8 +727,6 @@ export {
     forwardRanks,
     pawnAttackSpan,
     pawnAdvance,
-    getPieces,
-    sliderBlockers,
     adjacentFiles,
     pawnDoubleAttacksBB,
     pawnAttacksBB,
@@ -816,7 +734,6 @@ export {
     kingSafetyZone,
     squaresBetween,
     bit,
-    hasNonPawnMaterial,
 
     several,
     isSet,

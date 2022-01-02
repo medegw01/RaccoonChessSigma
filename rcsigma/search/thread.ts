@@ -1,7 +1,13 @@
-import * as util_ from '../util'
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2021 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as board_ from '../game/board'
-import * as search_ from './search'
+import * as bitboard_ from '../game/bitboard'
 import * as eval_ from '../evaluate/rc/eval'
+import * as search_ from './search'
+import * as util_ from '../util'
 
 type thread_t = {
     //search thread
@@ -38,6 +44,7 @@ type thread_t = {
     nThreads: number;
 
     evtable: BigUint64Array;
+    evCache: util_.LRUCache<bitboard_.bitboard_t, number>;
 
     jbuffer: boolean;
 
@@ -48,6 +55,7 @@ const STACK_SIZE = util_.MAX_PLY + STACK_OFFSET
 
 function reset(t: thread_t) {
     t.evtable = new BigUint64Array(eval_.Cache.SIZE);
+    t.evCache = new util_.LRUCache(eval_.Cache.SIZE);
 
     t.killers = Array.from(Array<number>(util_.MAX_PLY + 1), () => new Array<number>(2).fill(0));
     t.cmtable = Array.from(Array<number>(util_.COLOUR_NB),

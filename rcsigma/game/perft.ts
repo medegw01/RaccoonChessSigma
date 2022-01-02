@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 

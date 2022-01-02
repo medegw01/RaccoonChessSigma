@@ -1,4 +1,8 @@
-import { bitboard_t } from "../game/bitboard";
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2021 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as util_ from "../util"
 
 enum BOUND {
@@ -23,10 +27,10 @@ type entry_t = {
 type TTable_t = {
     number_entries: number;
     generation: number;
-    move16: Array<Uint16Array>;
+    move16: Array<Uint32Array>;
     genBound8: Array<Uint8Array>;
     depth8: Array<Uint8Array>;
-    hash16: Array<Uint16Array>;
+    hash64: Array<BigInt64Array>;
     value16: Array<Int16Array>;
     eval16: Array<Int16Array>;
 }
@@ -58,7 +62,7 @@ function clear(): void {
         TT.move16[i].fill(0);
         TT.genBound8[i].fill(0);
         TT.depth8[i].fill(0);
-        TT.hash16[i].fill(0);
+        TT.hash64[i].fill(0n);
         TT.value16[i].fill(0);
         TT.eval16[i].fill(0);
     }
@@ -66,26 +70,25 @@ function clear(): void {
 
 function resize(MB: number): void {
     TT.number_entries = ((MB << 20) / 16) - 2;
-    TT.move16 = Array.from(Array<number>(TT_BUCKET_NB), () => new Uint16Array(TT.number_entries));
+    TT.move16 = Array.from(Array<number>(TT_BUCKET_NB), () => new Uint32Array(TT.number_entries));
     TT.genBound8 = Array.from(Array<number>(TT_BUCKET_NB), () => new Uint8Array(TT.number_entries));
     TT.depth8 = Array.from(Array<number>(TT_BUCKET_NB), () => new Uint8Array(TT.number_entries));
-    TT.hash16 = Array.from(Array<number>(TT_BUCKET_NB), () => new Uint16Array(TT.number_entries));
+    TT.hash64 = Array.from(Array<number>(TT_BUCKET_NB), () => new BigInt64Array(TT.number_entries));
     TT.value16 = Array.from(Array<number>(TT_BUCKET_NB), () => new Int16Array(TT.number_entries));
     TT.eval16 = Array.from(Array<number>(TT_BUCKET_NB), () => new Int16Array(TT.number_entries));
     clear();
 }
 
 
-function save(hash64: bitboard_t, move: number, value: number, eval_: number, depth: number, bound: number): void {
+function save(hash64: bigint, move: number, value: number, eval_: number, depth: number, bound: number): void {
     const index = Number(hash64 & BigInt(TT.number_entries))
-    const hash16 = Number(hash64 >> 48n);
 
     let replacePos = 0;
     let i: number;
 
     // Find a matching hash, or replace using MAX(x1, x2, x3),
     // where xN equals the depth minus 4 times the age difference
-    for (i = 0; i < TT_BUCKET_NB && TT.hash16[i][index] != hash16; i++) {
+    for (i = 0; i < TT_BUCKET_NB && TT.hash64[i][index] != hash64; i++) {
         if (TT.depth8[replacePos][index] - ((259 + TT.generation - TT.genBound8[replacePos][index]) & TT_MASK_AGE)
             >= TT.depth8[i][index] - ((259 + TT.generation - TT.genBound8[i][index]) & TT_MASK_AGE)) {
             replacePos = i;
@@ -97,7 +100,7 @@ function save(hash64: bitboard_t, move: number, value: number, eval_: number, de
     // Don't overwrite an entry from the same position, unless we have
     // an exact bound or depth that is nearly as good as the old one
     if (bound != BOUND.EXACT
-        && hash16 == TT.hash16[replacePos][index]
+        && hash64 == TT.hash64[replacePos][index]
         && depth < TT.depth8[replacePos][index] - 3) {
         return;
     }
@@ -108,22 +111,21 @@ function save(hash64: bitboard_t, move: number, value: number, eval_: number, de
     TT.value16[replacePos][index] = value;
     TT.eval16[replacePos][index] = eval_;
     TT.move16[replacePos][index] = move;
-    TT.hash16[replacePos][index] = hash16;
+    TT.hash64[replacePos][index] = hash64;
 }
 
-function probe(hash64: bitboard_t): { entry: entry_t, found: boolean } {
+function probe(hash64: bigint): { entry: entry_t, found: boolean } {
     const index = Number(hash64 & BigInt(TT.number_entries))
-    const hash16 = Number(hash64 >> 48n);
 
     // Search for a matching hash signature
-    for (let i = 0; i < TT_BUCKET_NB && TT.hash16[i][index] != hash16; i++) {
-        if (TT.hash16[i][index] == hash16) {
+    for (let i = 0; i < TT_BUCKET_NB; i++) {
+        if (TT.hash64[i][index] == hash64) {
             // Update age but retain bound type
             TT.genBound8[i][index] = TT.generation | (TT.genBound8[i][index] & TT_MASK_BOUND);
 
             return {
                 entry: {
-                    move: TT.hash16[i][index],
+                    move: TT.move16[i][index],
                     value: TT.value16[i][index],
                     eval: TT.eval16[i][index],
                     depth: TT.depth8[i][index],
@@ -140,16 +142,16 @@ function probe(hash64: bitboard_t): { entry: entry_t, found: boolean } {
 function valueFrom(value: number, height: number): number {
     // When probing MATE scores into the table
     // we must factor in the search height
-    return value >= (util_.TBWIN - util_.MAX_PLY) ? value - height
-        : value <= -(util_.TBWIN - util_.MAX_PLY) ? value + height : value;
+    return value >= util_.TBWIN_IN_MAX ? value - height
+        : value <= -util_.TBWIN_IN_MAX ? value + height : value;
 }
 
 function valueTo(value: number, height: number): number {
     // When storing MATE scores into the table
     // we must factor in the search height
 
-    return value >= (util_.TBWIN - util_.MAX_PLY) ? value + height
-        : value <= -(util_.TBWIN - util_.MAX_PLY) ? value - height : value;
+    return value >= util_.TBWIN_IN_MAX ? value + height
+        : value <= -util_.TBWIN_IN_MAX ? value - height : value;
 }
 
 

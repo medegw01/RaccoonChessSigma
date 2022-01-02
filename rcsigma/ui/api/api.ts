@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 -2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
@@ -262,7 +262,7 @@ export class Raccoon {
         if (config && config.use_nnue) {
             return rc0_eval_.evaluate(this.board)
         } else {
-            return rc_eval_.evaluate(this.board);
+            return rc_eval_.evaluate(this.board, this.thread);
         }
     }
 }

@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 -2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
@@ -10,7 +10,8 @@ import * as move_ from './move'
 import * as thread_ from '../search/thread'
 
 function inCheck(board: board_.board_t): boolean {
-    return (attack_.isSquareAttacked(board.kingSquare[board.turn], (board.turn) ^ 1, board))
+    return !!attack_.squareIsAttacked(util_.SQ64(board.kingSquare[board.turn]), board.turn, board)
+    //return (attack_.isSquareAttacked(board.kingSquare[board.turn], (board.turn) ^ 1, board))
 }
 
 function inCheckmate(board: board_.board_t): boolean {
@@ -45,7 +46,7 @@ function insufficientMaterial(board: board_.board_t): boolean {
 }
 
 function inDraw(board: board_.board_t, thread: thread_.thread_t): boolean {
-    const is_50Move = (board.halfMoves >= 100 && board.ply !== 0);
+    const is_50Move = (board.halfMoves >= 100);
     return is_50Move || insufficientMaterial(board) || inThreefoldRepetition(board, thread) || inStalemate(board);
 }
 

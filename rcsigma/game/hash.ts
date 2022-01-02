@@ -1,10 +1,10 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
-import * as bitboard_ from './bitboard'
 import * as board_ from './board'
+import * as bitboard_ from './bitboard'
 import * as util_ from '../util'
 
 function pawnCP(board: board_.board_t): boolean {

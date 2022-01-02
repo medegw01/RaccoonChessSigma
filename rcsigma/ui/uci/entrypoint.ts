@@ -1,9 +1,8 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020- 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
-import * as util_ from '../../util'
 import * as bitboard_ from '../../game/bitboard'
 import * as board_ from '../../game/board'
 import * as search_ from '../../search/search'
@@ -11,6 +10,7 @@ import * as uci_ from './uci'
 import * as book_ from '../../game/book'
 import * as tb_ from '../../search/tbase'
 import * as thread_ from '../../search/thread'
+import * as util_ from '../../util'
 
 
 import { isMainThread, parentPort } from 'worker_threads';
@@ -84,17 +84,17 @@ if (config.isMainThread) {
     let info = {} as search_.info_t;
 
     const threads = thread_.create(1)
-
     info.useBook = false;
     info.analyzingMode = false;
     info.opponent = "Guest";
     info.multiPV = 1;
     info.bookFile = "raccoon.bin";
+    info.evalFile = "raccoon.nuue";
     info.searchInitialized = false;
     info.hashSize = hashSize;
     info.nThreads = 1;
     info.moveOverhead = 100;
-    info.useNNUE = true;
+    info.useNNUE = false;
     info.SIGNAL = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2);
 
     // uciMain calls UCI
@@ -170,6 +170,10 @@ else {
                     config.postMainThread(bookResult.error);
                 }
             }
+
+            // for now, workers does not copy function, so recreating the function class this way
+            // resolves 'e.pawnEvalHash.contains is not a function' error
+            data.position = board_.copyBoard(data.position) // hack
 
             search_.search(data.position, data.info, data.threads);
         }

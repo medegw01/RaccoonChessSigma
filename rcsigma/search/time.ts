@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2021 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as util_ from '../util'
 import * as search_ from './search'
 
@@ -26,9 +31,9 @@ function init(info: search_.info_t): void {
 
     // Interface told us to search for a predefined duration
     if (info.limitedByTime) {
-        info.idealUsage = info.allotment;
-        info.maxAlloc = info.allotment;
-        info.maxUsage = info.allotment;
+        info.idealUsage = info.timeLimit;
+        info.maxAlloc = info.timeLimit;
+        info.maxUsage = info.timeLimit;
     }
 
 }

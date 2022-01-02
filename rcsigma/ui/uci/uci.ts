@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
@@ -60,14 +60,14 @@ function uciGO(token: string, info: search_.info_t, turn: string, stdoutFn: stdo
     info.limitedByNodes = node != -1;
     info.limitedBySelf = !info.limitedByNone && !info.limitedByTime && !info.limitedByDepth && !info.limitedByNodes;
     info.limitedByMoves = info.searchMovesStr.length > 0;
+    info.timeLimit = movetime;
+    info.depthLimit = (depth != -1) ? depth : 2 * mate - 1;
+    info.nodeLimit = node;
 
     if (token.includes('ponder')) {
         if (!info.allowPonder) stdoutFn("error: ponder was disabled")
         else sharedArray[1] = 1;
     }
-    if (info.limitedByDepth) info.allotment = (depth != -1) ? depth : 2 * mate - 1;
-    else if (info.limitedByTime) info.allotment = movetime;
-    else if (info.limitedByNodes) info.allotment = node;
 
     info.uciLevel = {
         startTime: util_.getTimeMs(),
@@ -114,8 +114,7 @@ function uciSetOption(info: search_.info_t, threads: thread_.thread_t[], name: s
     return true;
 }
 
-function uciParser(data: string, position: board_.board_t, info: search_.info_t, stdoutFn: stdoutFn_t, threads: thread_.thread_t[]): boolean {
-    /*
+function uciParser(data: string, position: board_.board_t, info: search_.info_t, stdoutFn: stdoutFn_t, threads: thread_.thread_t[]): boolean {    /*
     |------------|-----------------------------------------------------------------------|
     |  Commands  | Response. * denotes that the command blocks until no longer searching |
     |------------|-----------------------------------------------------------------------|
@@ -138,7 +137,10 @@ function uciParser(data: string, position: board_.board_t, info: search_.info_t,
     (/^(.*?)\n?$/).exec(data);
     const token = RegExp.$1;
 
-    if (token === "quit") info.uciQuit = true;
+    if (token === "quit") {
+        info.uciQuit = true;
+        sharedArray[0] = 1, sharedArray[1] = 0;
+    }
     else if (token === "stop") sharedArray[0] = 1, sharedArray[1] = 0;
     else if (token === "ponderhit") {
         if (!sharedArray[1]) stdoutFn("error: raccoon not pondering")

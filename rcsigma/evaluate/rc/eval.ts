@@ -9,7 +9,6 @@ import * as board_ from '../../game/board'
 import * as move_ from '../../game/move'
 import * as bitboard_ from '../../game/bitboard'
 import * as thread_ from '../../search/thread'
-import * as nn_ from '../rc0/backend/nn'
 
 
 enum Scale {
@@ -224,11 +223,11 @@ const flankAttacks = [8, 0];
 // which piece type attacks which one. Attacks on lesser pieces which are
 // pawn-defended are not considered.
 const threatByMinor = [
-    [0, 0], [55, 41], [5, 32], [77, 56], [89, 119], [79, 162]
+    [0, 0], [0, 0], [55, 41], [5, 32], [77, 56], [89, 119], [79, 162]
 ];
 
 const threatByRook = [
-    [0, 0], [37, 68], [3, 44], [42, 60], [0, 39], [58, 43]
+    [0, 0], [0, 0], [37, 68], [3, 44], [42, 60], [0, 39], [58, 43]
 ];
 
 // passedRank[Rank] contains a bonus according to the rank of a passed pawn
@@ -245,6 +244,7 @@ const threatByPawnPush = [48, 39];
 const threatBySafePawn = [173, 94];
 const knightOnQueen = [16, 11];
 const sliderOnQueen = [60, 18];
+const threatByRank = [13, 0];
 
 //-- helpers for evaluation
 let passedPawn: bitboard_.bitboard_t[];
@@ -257,7 +257,7 @@ let kingAttackersCount: number[];
 let kingAttackWeight: number[];
 let boardStaticEval: util_.staticEval_c;
 
-let sf = Scale.NORMAL;
+//let sf = Scale.NORMAL;
 
 function initEvaluation() {
     attacked = (new Array<bitboard_.bitboard_t>(2)).fill(0n);
@@ -285,7 +285,7 @@ function initEvaluation() {
 const mobilityArea = (board: board_.board_t, color: util_.Colors, pawn_attacks: bitboard_.bitboard_t) => {
     const shifted = bitboard_.shift(
         bitboard_.pawnPush(color),
-        bitboard_.getPieces(color, board) | bitboard_.getPieces(color ^ 1, board)
+        board_.getPieces(color, board) | board_.getPieces(color ^ 1, board)
     );
     const p = (color === util_.Colors.WHITE) ? board.piecesBB[util_.Pieces.WHITEPAWN] : board.piecesBB[util_.Pieces.BLACKPAWN];
     const k = (color === util_.Colors.WHITE) ? board.piecesBB[util_.Pieces.WHITEKING]
@@ -293,8 +293,8 @@ const mobilityArea = (board: board_.board_t, color: util_.Colors, pawn_attacks: 
     return BigInt.asUintN(64, ~((p & shifted) | k | pawn_attacks));
 }
 
-function pawnEval(board: board_.board_t) {
-    const pawnEntry = pawn_.probePawn(board);
+function pawnEval(board: board_.board_t, thread: thread_.thread_t) {
+    const pawnEntry = pawn_.probePawn(board, thread);
     // Update Evaluation with pawn entry 
     for (let c = util_.Colors.WHITE; c < util_.Colors.BOTH; c++) {
         attacked[c] |= pawnEntry.attacked[c];
@@ -323,7 +323,7 @@ function knightEval(board: board_.board_t, US: util_.Colors) {
     const mobArea = mobilityArea(board, US, attackedBy[(isWhite) ? util_.Pieces.BLACKPAWN : util_.Pieces.WHITEPAWN]);
     const outpostRanks = bitboard_.ranks[util_.relativeRank(US, 3)]
         | bitboard_.ranks[util_.relativeRank(US, 4)] | bitboard_.ranks[util_.relativeRank(US, 5)];
-    const notOccupied = BigInt.asUintN(64, ~bitboard_.getPieces(US, board));
+    const notOccupied = BigInt.asUintN(64, ~board_.getPieces(US, board));
 
     const myPawn = (isWhite) ? util_.Pieces.WHITEPAWN : util_.Pieces.BLACKPAWN;
     const enemyPawn = (isWhite) ? util_.Pieces.BLACKPAWN : util_.Pieces.WHITEPAWN;
@@ -397,7 +397,7 @@ function bishopEval(board: board_.board_t, US: util_.Colors,) {
     const mobArea = mobilityArea(board, US, attackedBy[(isWhite) ? util_.Pieces.BLACKPAWN : util_.Pieces.WHITEPAWN]);
     const outpostRanks = bitboard_.ranks[util_.relativeRank(US, 3)]
         | bitboard_.ranks[util_.relativeRank(US, 4)] | bitboard_.ranks[util_.relativeRank(US, 5)];
-    const notOccupied = BigInt.asUintN(64, ~bitboard_.getPieces(US, board));
+    const notOccupied = BigInt.asUintN(64, ~board_.getPieces(US, board));
 
     const myPawn = (isWhite) ? util_.Pieces.WHITEPAWN : util_.Pieces.BLACKPAWN;
     const enemyPawn = (isWhite) ? util_.Pieces.BLACKPAWN : util_.Pieces.WHITEPAWN;
@@ -406,7 +406,7 @@ function bishopEval(board: board_.board_t, US: util_.Colors,) {
 
 
     // x-ray through queens
-    const occ = bitboard_.getPieces(US, board) | bitboard_.getPieces(THEM, board)
+    const occ = board_.getPieces(US, board) | board_.getPieces(THEM, board)
         ^ (board.piecesBB[util_.Pieces.BLACKQUEEN] ^ board.piecesBB[util_.Pieces.WHITEQUEEN]);
 
     const pceBB = { v: board.piecesBB[pce] };
@@ -439,7 +439,7 @@ function bishopEval(board: board_.board_t, US: util_.Colors,) {
         // bishop pawn: 
         // number of pawns on the same color square as the bishop multiplied by one plus the
         // number of our blocked pawns in the center files C, D, E or F
-        const blocked = board.piecesBB[myPawn] & bitboard_.shift(DOWN, bitboard_.getPieces(US, board) | bitboard_.getPieces(THEM, board));
+        const blocked = board.piecesBB[myPawn] & bitboard_.shift(DOWN, board_.getPieces(US, board) | board_.getPieces(THEM, board));
         const psc = (bitboard_.isSet(bitboard_.lightSquares, sq)) ? bitboard_.lightSquares & board.piecesBB[myPawn]
             : bitboard_.darkSquares & board.piecesBB[myPawn];
         const bp = bitboard_.popcount({ v: psc })
@@ -516,7 +516,7 @@ function rookEval(board: board_.board_t, US: util_.Colors) {
         & BigInt.asUintN(64, ~bitboard_.pawnDoubleAttacksBB(THEM, enemyPawnBB));
 
     // x-ray through queens, and our rooks
-    const occ = bitboard_.getPieces(US, board) | bitboard_.getPieces(THEM, board)
+    const occ = board_.getPieces(US, board) | board_.getPieces(THEM, board)
         ^ (board.piecesBB[pce])
         ^ (board.piecesBB[util_.Pieces.BLACKQUEEN] ^ board.piecesBB[util_.Pieces.WHITEQUEEN])
 
@@ -548,7 +548,7 @@ function rookEval(board: board_.board_t, US: util_.Colors) {
             boardStaticEval.pieces[util_.Phase.EG] += rookOnOpenFile[util_.Phase.EG][+open] * pov;
         }
         else {
-            const allPieces = bitboard_.getPieces(US, board) | bitboard_.getPieces(THEM, board);
+            const allPieces = board_.getPieces(US, board) | board_.getPieces(THEM, board);
             const blockedPawns = (US === util_.Colors.WHITE) ? board.piecesBB[util_.Pieces.WHITEPAWN] & (allPieces >> 8n)
                 : board.piecesBB[util_.Pieces.BLACKPAWN] & (allPieces << 8n);
             if (myPawnBB & blockedPawns & rF) { // If our pawn on this file is blocked, increase penalty
@@ -596,7 +596,7 @@ function queenEval(board: board_.board_t, US: util_.Colors) {
     const isWhite = (US === util_.Colors.WHITE);
     const pce = (isWhite) ? util_.Pieces.WHITEQUEEN : util_.Pieces.BLACKQUEEN;
     const mobArea = mobilityArea(board, US, attackedBy[(isWhite) ? util_.Pieces.BLACKPAWN : util_.Pieces.WHITEPAWN]);
-    const occ = bitboard_.getPieces(US, board) | bitboard_.getPieces(THEM, board);
+    const occ = board_.getPieces(US, board) | board_.getPieces(THEM, board);
     const enemyPawnBB = (isWhite) ? board.piecesBB[util_.Pieces.BLACKPAWN]
         : board.piecesBB[util_.Pieces.WHITEPAWN];
 
@@ -626,7 +626,7 @@ function queenEval(board: board_.board_t, US: util_.Colors) {
         const enemyRookBishop = (isWhite) ? board.piecesBB[util_.Pieces.BLACKROOK] | board.piecesBB[util_.Pieces.BLACKBISHOP]
             : board.piecesBB[util_.Pieces.WHITEBISHOP] | board.piecesBB[util_.Pieces.WHITEROOK]
         const pinner: bitboard_.bitboardObj_t = { v: 0n };
-        if (bitboard_.sliderBlockers(enemyRookBishop, sq, board, pinner)) {
+        if (board_.sliderBlockers(enemyRookBishop, sq, board, pinner)) {
             boardStaticEval.pieces[util_.Phase.EG] -= queenRelativePin[util_.Phase.EG] * pov;
             boardStaticEval.pieces[util_.Phase.MG] -= queenRelativePin[util_.Phase.MG] * pov;
         }
@@ -676,11 +676,11 @@ function kingEval(board: board_.board_t, US: util_.Colors) {// stockfish
 
     // Safe target squares are defended or are weak and attacked by two.
     // We exclude squares containing pieces which we cannot capture.
-    const safe = ~bitboard_.getPieces(THEM, board)
+    const safe = ~board_.getPieces(THEM, board)
         & (attacked[US] | (weak & attacked2[THEM]));
 
     // Find square and piece combinations which would check our King
-    const occ = (bitboard_.getPieces(THEM, board) | bitboard_.getPieces(US, board))
+    const occ = (board_.getPieces(THEM, board) | board_.getPieces(US, board))
         ^ board.piecesBB[util_.ptToP(US, util_.PieceType.QUEEN)];
 
     b1 = bitboard_.rookAttacks(sq, occ);
@@ -718,7 +718,7 @@ function kingEval(board: board_.board_t, US: util_.Colors) {// stockfish
 
     const kingFlankAttack = bitboard_.popcount({ v: b1 }) + bitboard_.popcount({ v: b2 });
     const kingFlankDefense = bitboard_.popcount({ v: b3 });
-    const kingDefenders = bitboard_.sliderBlockers(bitboard_.getPieces(THEM, board), sq, board, { v: 0n });
+    const kingDefenders = board_.sliderBlockers(board_.getPieces(THEM, board), sq, board, { v: 0n });
 
 
     kingDanger += kingAttackersCount[THEM] * kingAttackWeight[THEM]
@@ -777,7 +777,7 @@ function passedEval(board: board_.board_t, US: util_.Colors) {
     const blockedPassers = b & bitboard_.shift(Down, board.piecesBB[enemyPawn])
     if (blockedPassers) {
         helpers = bitboard_.shift(Up, board.piecesBB[myPawn])
-            & BigInt.asUintN(64, ~bitboard_.getPieces(THEM, board))
+            & BigInt.asUintN(64, ~board_.getPieces(THEM, board))
             & (BigInt.asUintN(64, ~attacked2[THEM]) | attacked[US])
 
         // Remove blocked candidate passers that don't have help to pass
@@ -817,8 +817,8 @@ function passedEval(board: board_.board_t, US: util_.Colors) {
                     )
 
 
-                if (!(bitboard_.getPieces(THEM, board) & bb))
-                    unsafeSq &= attacked[THEM] | bitboard_.getPieces(THEM, board);
+                if (!(board_.getPieces(THEM, board) & bb))
+                    unsafeSq &= attacked[THEM] | board_.getPieces(THEM, board);
 
                 // If there are no enemy pieces or attacks on passed pawn span, assign a big bonus.
                 // Or if there is some, but they are all attacked by our pawns, assign a bit smaller bonus.
@@ -830,7 +830,7 @@ function passedEval(board: board_.board_t, US: util_.Colors) {
                             !(unsafeSq & bitboard_.bit(blockSq)) ? 7 :
                                 0;
                 // Assign a larger bonus if the block square is defended
-                if ((bitboard_.getPieces(US, board) & bb) || (attacked[US] & bitboard_.bit(blockSq)))
+                if ((board_.getPieces(US, board) & bb) || (attacked[US] & bitboard_.bit(blockSq)))
                     k += 5;
 
                 bonus[util_.Phase.EG] += k * w
@@ -911,7 +911,7 @@ function spaceEval(board: board_.board_t, US: util_.Colors) {
             & (board.piecesBB[util_.ptToP(THEM, util_.PieceType.PAWN)] | doubleAttackThem)
 
         const number_blocked = bitboard_.popcount({ v: blockedByOppPawns });
-        const weight = bitboard_.popcount({ v: bitboard_.getPieces(US, board) }) - 3 + Math.min(number_blocked, 9);
+        const weight = bitboard_.popcount({ v: board_.getPieces(US, board) }) - 3 + Math.min(number_blocked, 9);
 
         boardStaticEval.space[util_.Phase.MG] += ((bonus * weight * weight / 16) << 0) * pov;
     }
@@ -928,7 +928,7 @@ function threatsEval(board: board_.board_t, US: util_.Colors) {
     let b: bitboard_.bitboardObj_t, cnt: number;
 
     // Non-pawn enemies
-    const nonPawnEnemies = bitboard_.getPieces(THEM, board)
+    const nonPawnEnemies = board_.getPieces(THEM, board)
         & BigInt.asUintN(64, ~(board.piecesBB[util_.ptToP(THEM, util_.PieceType.PAWN)] | board.piecesBB[util_.ptToP(US, util_.PieceType.PAWN)]));
 
     // Squares strongly protected by the enemy, either because they defend the
@@ -940,7 +940,7 @@ function threatsEval(board: board_.board_t, US: util_.Colors) {
     const defended = nonPawnEnemies & stronglyProtected;
 
     // Enemies not strongly protected and under our attack
-    const weak = bitboard_.getPieces(THEM, board) & BigInt.asUintN(64, ~stronglyProtected) & attacked[US];
+    const weak = board_.getPieces(THEM, board) & BigInt.asUintN(64, ~stronglyProtected) & attacked[US];
 
     // Bonus according to the kind of attacking pieces
     if (defended | weak) {
@@ -948,16 +948,29 @@ function threatsEval(board: board_.board_t, US: util_.Colors) {
             v: (defended | weak) & (attackedBy[util_.ptToP(US, util_.PieceType.KNIGHT)] | attackedBy[util_.ptToP(US, util_.PieceType.BISHOP)])
         };
         while (b.v) {
-            const pce = util_.pToPt(board.pieces[util_.SQ120(bitboard_.poplsb(b))]);
+            const sq120 = util_.SQ120(bitboard_.poplsb(b))
+            const pce = util_.pToPt(board.pieces[sq120]);
             boardStaticEval.threat[util_.Phase.MG] += threatByMinor[pce][util_.Phase.MG] * pov;
             boardStaticEval.threat[util_.Phase.EG] += threatByMinor[pce][util_.Phase.EG] * pov;
+
+            if (pce != util_.PieceType.PAWN) {
+                const r = util_.relativeRank(THEM, util_.rankOf(util_.SQ64(sq120)));
+                boardStaticEval.threat[util_.Phase.MG] += threatByRank[util_.Phase.MG] * r * pov;
+                boardStaticEval.threat[util_.Phase.EG] += threatByRank[util_.Phase.EG] * r * pov;
+            }
         }
 
         b = { v: weak & attackedBy[util_.ptToP(US, util_.PieceType.ROOK)] };
         while (b.v) {
-            const pce = util_.pToPt(board.pieces[util_.SQ120(bitboard_.poplsb(b))]);
+            const sq120 = util_.SQ120(bitboard_.poplsb(b))
+            const pce = util_.pToPt(board.pieces[sq120]);
             boardStaticEval.threat[util_.Phase.MG] += threatByRook[pce][util_.Phase.MG] * pov;
             boardStaticEval.threat[util_.Phase.EG] += threatByRook[pce][util_.Phase.EG] * pov;
+            if (pce != util_.PieceType.PAWN) {
+                const r = util_.relativeRank(THEM, util_.rankOf(util_.SQ64(sq120)));
+                boardStaticEval.threat[util_.Phase.MG] += threatByRank[util_.Phase.MG] * r * pov;
+                boardStaticEval.threat[util_.Phase.EG] += threatByRank[util_.Phase.EG] * r * pov;
+            }
         }
 
         if (weak & attackedBy[util_.ptToP(US, util_.PieceType.KING)]) {
@@ -1001,7 +1014,7 @@ function threatsEval(board: board_.board_t, US: util_.Colors) {
     boardStaticEval.threat[util_.Phase.EG] += threatBySafePawn[util_.Phase.EG] * cnt * pov;
 
     // Find squares where our pawns can push on the next move
-    const allSquares = bitboard_.getPieces(US, board) | bitboard_.getPieces(THEM, board);
+    const allSquares = board_.getPieces(US, board) | board_.getPieces(THEM, board);
     b = {
         v: bitboard_.shift(Up, board.piecesBB[util_.ptToP(US, util_.PieceType.PAWN)]) & BigInt.asUintN(64, ~allSquares)
     }
@@ -1053,7 +1066,7 @@ function threatsEval(board: board_.board_t, US: util_.Colors) {
  * used in general case when no specialized evaluation or tablebase evaluation is available
  * @param board 
  */
-function gameEvaluation(board: board_.board_t): [number, number] {
+function gameEvaluation(board: board_.board_t, thread: thread_.thread_t): [number, number] {
     const sumScore = (phase: util_.Phase): number => {
         return (
             boardStaticEval.psqt[phase] + boardStaticEval.imbalance[phase] + boardStaticEval.pawns[phase] + boardStaticEval.pieces[phase]
@@ -1071,7 +1084,7 @@ function gameEvaluation(board: board_.board_t): [number, number] {
     boardStaticEval.pieceValue[util_.Phase.MG] = (board.materialMg[util_.Colors.WHITE] - board.materialMg[util_.Colors.BLACK]);
     boardStaticEval.pieceValue[util_.Phase.EG] = (board.materialEg[util_.Colors.WHITE] - board.materialEg[util_.Colors.BLACK]);
     //-- Pawns
-    pawnEval(board);
+    pawnEval(board, thread);
 
     //-- pieces
     colorLoop(knightEval);
@@ -1135,9 +1148,9 @@ function scaleFactor(board: board_.board_t, eg: number): number {
     const minors = knights | bishops;
     const pieces = knights | bishops | rooks;
 
-    const white = bitboard_.getPieces(util_.Colors.WHITE, board);
+    const white = board_.getPieces(util_.Colors.WHITE, board);
 
-    const black = bitboard_.getPieces(util_.Colors.BLACK, board);
+    const black = board_.getPieces(util_.Colors.BLACK, board);
 
     const weak = eg < 0 ? white : black;
     const strong = eg < 0 ? black : white;
@@ -1188,61 +1201,34 @@ function scaleFactor(board: board_.board_t, eg: number): number {
  * https://hxim.github.io/Stockfish-Evaluation-Guide/
  * @param board
  */
-function evaluate(position: board_.board_t, useNNUE = false): number {
-    const [mg, egT] = gameEvaluation(position);
+function evaluate(position: board_.board_t, thread: thread_.thread_t): number {
+
+    const [mg, eg] = gameEvaluation(position, thread);
     const p = phase(position);
-    sf = scaleFactor(position, egT);
-    const eg = useNNUE ? (egT + nn_.evaluate(position)) : egT
-    return (((mg * p + ((eg * (256 - p) * (sf / Scale.NORMAL)) << 0)) / 256) << 0);
+    return (((mg * p + ((eg * (256 - p) * (scaleFactor(position, eg) / Scale.NORMAL)) << 0)) / 256) << 0);
 }
 
 function evaluateCached(position: board_.board_t, thread: thread_.thread_t): number {
     // We can recognize positions we just evaluated
-    if (thread.movesStack[thread.height - 1] == move_.NULL_MOVE)
+    if (thread.movesStack[thread.height - 1] == move_.NULL_MOVE) {
         return -thread.evalStack[thread.height - 1] + 2 * TEMPO;
-
-    // Check if this evaluation is cached already
-    const probe = probeCachedEvaluate(position, thread);
-    if (probe.found) return probe.eval
-
-    const evl = evaluate(position, thread.searchInfo.useNNUE);
-    storeCachedEvaluate(position, thread, evl)
-
-    // Factor in the Tempo after interpolation and scaling, so that
-    // if a null move is made, then we know eval = last_eval + 2 * Tempo
-    return TEMPO + (position.turn == util_.Colors.WHITE ? evl : -evl);
-}
-
-function probeCachedEvaluate(position: board_.board_t, thread: thread_.thread_t): { found: boolean, eval: number } {
-    const key1 = position.turn ? position.currentPolyglotKey ^ util_.random64Poly[util_.randomTurn] : position.currentPolyglotKey;
-    const eve = thread.evtable[Number(key1 & BigInt(Cache.MASK))];
-    const key2 = (eve & BigInt(~0xffff)) | (key1 & BigInt(0xffff));
-
-    const u16 = new Uint16Array(1);
-    const i16 = new Int16Array(1);
-    u16[0] = Number(eve & BigInt(0xffff));
-    i16[0] = u16[0];
-
-    return {
-        found: key1 == key2,
-        eval: TEMPO + (position.turn == util_.Colors.WHITE ? i16[0] : -i16[0])
     }
+    // Check if this evaluation is cached already
+    let score = 0;
+    if (thread.evCache.contains(position.currentPolyglotKey)) {
+        score = thread.evCache.fetch(position.currentPolyglotKey)!
+    } else {
+        score = evaluate(position, thread);
+        thread.evCache.put(position.currentPolyglotKey, score);
+    }
+
+    return TEMPO + ((position.turn == util_.Colors.WHITE) ? score : -score);
 }
-function storeCachedEvaluate(position: board_.board_t, thread: thread_.thread_t, evl: number): void {
-    const key1 = position.turn ? position.currentPolyglotKey ^ util_.random64Poly[util_.randomTurn] : position.currentPolyglotKey;
-    const u16 = new Uint16Array(1);
-    const i16 = new Int16Array(1);
-    i16[0] = evl;
-    u16[0] = i16[0];
-    thread.evtable[Number(key1 & BigInt(Cache.MASK))] = (key1 & BigInt(~0xffff)) | BigInt(u16[0])
-}
+
 
 export {
     evaluate,
     evaluateCached,
-    probeCachedEvaluate,
-    storeCachedEvaluate,
-
     Cache,
 }
 

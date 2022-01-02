@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2021 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as util_ from '../rcsigma/util'
 import * as bitboard_ from '../rcsigma/game/bitboard'
 import * as board_ from '../rcsigma/game/board'
@@ -54,86 +59,8 @@ describe("General Test", () => {
     expect(bitboard_.pretty(pos.piecesBB[util_.Pieces.BLACKPAWN])).toBe(bp);
   });
 
+  it("test must be running in debugging mode pretty", function () {
+    expect(util_.DEBUGGING).toBe(true);
+  });
+
 });
-
-/*
-char switchCase(unsigned char c)
-{
-    return static_cast<char>(std::isupper(c) ? std::tolower(c) : std::toupper(c));
-}
-std::string flipFenString(const std::string& fen)
-{
-    std::string f, token;
-    std::stringstream ss(fen);
-
-    for (auto i = 0; i < 8; i++)
-    {
-        std::getline(ss, token, i < 7 ? '/' : ' ');
-        std::transform(token.begin(), token.end(), token.begin(), switchCase);
-        f.insert(0, token + (i ? "/" : " "));
-    }
-
-    ss >> token; // Side to move
-    f += (token == "w" ? "b " : "w ");
-
-    ss >> token; // Castling flags
-    std::transform(token.begin(), token.end(), token.begin(), switchCase);
-    f += token + " ";
-
-    ss >> token; // En-passant square
-    f += (token == "-" ? token : token.replace(1, 1, token[1] == '3' ? "6" : "3"));
-
-    std::getline(ss, token); // Full and half moves
-    f += token;
-
-    return f;
-}
-
-bool Testing::testReversedEval() const
-{
-    Evaluation evaluation;
-
-    for (const auto& s : positions)
-    {
-        Position pos(s);
-        Position pos2(flipFenString(s));
-        const auto score = evaluation.evaluate(pos);
-        const auto flippedScore = evaluation.evaluate(pos2);
-
-        if (score != flippedScore)
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool Testing::testPseudoLegal() const
-{
-    for (const auto& s : positions)
-    {
-        Position pos(s);
-        MoveList moveList, moveList2;
-        const auto inCheck = pos.inCheck();
-
-        inCheck ? MoveGen::generateLegalEvasions(pos, moveList)
-                : MoveGen::generatePseudoLegalMoves(pos, moveList);
-
-        for (uint16_t i = 0; i < std::numeric_limits<uint16_t>::max(); ++i)
-        {
-            if (pos.pseudoLegal(i, inCheck))
-            {
-                moveList2.emplace_back(i);
-            }
-        }
-
-        if (moveList.size() != moveList2.size())
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-*/

@@ -2,9 +2,12 @@
 // Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
-import * as util_ from '../../util'
+
 import * as board_ from '../../game/board'
 import * as bitboard_ from '../../game/bitboard'
+import * as move_ from '../../game/move'
+import * as util_ from '../../util'
+import * as thread_ from '../../search/thread'
 
 const pawnPSQT = [
     [
@@ -72,12 +75,12 @@ const KingOnFile = [[[-21, 10], [-7, 1]],
 [[0, -3], [9, -4]]];
 
 
-function probePawn(board: board_.board_t): board_.pawnEntry_t {
+function probePawn(board: board_.board_t, thread: thread_.thread_t): board_.pawnEntry_t {
     let newEntry: board_.pawnEntry_t;
     const key = board.piecesBB[util_.ptToP(util_.Colors.WHITE, util_.PieceType.PAWN)]
         | board.piecesBB[util_.ptToP(util_.Colors.BLACK, util_.PieceType.PAWN)]
-    if (board.pawnEvalHash.has(key)) {
-        newEntry = board.pawnEvalHash.get(key)!;
+    if (board.pawnEvalHash.contains(key)) {
+        newEntry = board.pawnEvalHash.fetch(key)!;
     } else {
         newEntry = {
             attacked: (new Array<bitboard_.bitboard_t>(2)).fill(0n),
@@ -92,16 +95,16 @@ function probePawn(board: board_.board_t): board_.pawnEntry_t {
         }
 
         for (let c = util_.Colors.WHITE; c < util_.Colors.BOTH; c++) {
-            pawnStructure(board, c, newEntry);
+            pawnStructure(board, c, newEntry, thread);
             pawnShelter(board, c, newEntry);
         }
-        board.pawnEvalHash.set(key, newEntry)
+        board.pawnEvalHash.put(key, newEntry)
     }
 
     return newEntry;
 }
 
-function pawnStructure(board: board_.board_t, US: util_.Colors, newEntry: board_.pawnEntry_t) {
+function pawnStructure(board: board_.board_t, US: util_.Colors, newEntry: board_.pawnEntry_t, thread: thread_.thread_t) {
     let sq: number, r: number, moves: bitboard_.bitboard_t;
     let neighbours: bitboard_.bitboard_t, stoppers: bitboard_.bitboard_t, support: bitboard_.bitboard_t
     let phalanx: bitboard_.bitboard_t, opposed: bitboard_.bitboard_t;
@@ -149,7 +152,20 @@ function pawnStructure(board: board_.board_t, US: util_.Colors, newEntry: board_
         stoppers = board.piecesBB[enemyPawn] & bitboard_.passedPawn(US, sq);
         lever = board.piecesBB[enemyPawn] & bitboard_.pawnAttacks(US, sq);
         leverPush = board.piecesBB[enemyPawn] & bitboard_.pawnAttacks(US, sq + Up);
-        doubled = !!(board.piecesBB[myPawn] & bitboard_.bit(sq - Up));
+        doubled = true
+        try {
+            doubled = !!(board.piecesBB[myPawn] & bitboard_.bit(sq - Up));
+        } catch (e) {
+            console.log(board_.boardToFen(board))
+            console.log(`sq: ${sq} ${sq - Up}`)
+
+            for (let i = 0; i < thread.height; i++) {
+                console.log(thread.undoStack[i].fen)
+                console.log(`${move_.moveToSmith(thread.movesStack[i])} ${util_.pieceToAscii[thread.pieceStack[i]]} ${move_.moveToSmith(thread.undoStack[i].move)}`)
+            }
+            throw e
+        }
+
         neighbours = board.piecesBB[myPawn] & bitboard_.adjacentFiles(sq);
         phalanx = neighbours & bitboard_.ranks[util_.rankOf(sq)];
         support = neighbours & bitboard_.ranks[util_.rankOf(sq - Up)];
@@ -250,8 +266,8 @@ function pawnShelter(board: board_.board_t, US: util_.Colors, newEntry: board_.p
     const kingSQ = util_.SQ64(board.kingSquare[US]);
 
     let b = (board.piecesBB[myPawn] | board.piecesBB[enemyPawn]) & BigInt.asUintN(64, ~bitboard_.forwardRanks(THEM, kingSQ));
-    const myPawnBB = b & bitboard_.getPieces(US, board) & BigInt.asUintN(64, ~newEntry.attackedBy[enemyPawn]);
-    const enemyPawnBB = b & bitboard_.getPieces(THEM, board)
+    const myPawnBB = b & board_.getPieces(US, board) & BigInt.asUintN(64, ~newEntry.attackedBy[enemyPawn]);
+    const enemyPawnBB = b & board_.getPieces(THEM, board)
 
     newEntry.boardStaticEval.pawns[util_.Phase.MG] += 5 * pov;
     newEntry.boardStaticEval.pawns[util_.Phase.EG] += 5 * pov;

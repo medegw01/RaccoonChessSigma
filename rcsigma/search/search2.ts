@@ -343,7 +343,6 @@ if (workerData) {
 //http://mediocrechess.blogspot.com/2007/01/guide-aspiration-windows-killer-moves.html
 function aspirationWindow(thread: thread_.thread_t) {
     const pv = thread.pv;
-    console.log(pv.length)
     const multiPV = thread.multiPV;
     const mainThread = thread.index == 0;
 
@@ -361,7 +360,7 @@ function aspirationWindow(thread: thread_.thread_t) {
         thread.searchInfo.stdoutFn("aspirationWindow")
 
         // Perform a search and consider reporting results
-        bestScore = alphaBeta(thread, thread.pv, alpha, beta, Math.max(1, depth));
+        bestScore = alphaBeta(thread, pv, alpha, beta, Math.max(1, depth));
 
         // Abort Check. Exit the search if signaled by main thread or the
         // UCI thread, or if the search time has expired outside pondering mode
@@ -369,9 +368,9 @@ function aspirationWindow(thread: thread_.thread_t) {
 
         thread.searchInfo.stdoutFn(`${bestScore} ${alpha} ${beta}`)
 
-        if ((mainThread && (bestScore >= alpha && bestScore <= beta))
+        if ((mainThread && (bestScore > alpha && bestScore < beta))
             || (mainThread && time_.elasped(thread.searchInfo) >= WindowTimerMS)) {
-            report(thread.threads, alpha, beta, bestScore, thread.pv);
+            report(thread.threads, alpha, beta, bestScore, pv);
         }
 
         // break if it's mate score ISMATE          = MATE - maxDepth * 2; // Matt
@@ -692,7 +691,7 @@ function alphaBeta(thread: thread_.thread_t, pv: pv_t, alpha: number, beta: numb
             && !see(board, move, seeMargin[+isQuiet]))
             continue;
 
-        // Apply move, skip if move is illegal
+        // Apply move, skip if move is illegalS
         if (!move_.make(move, board, thread))
             continue;
 
@@ -991,8 +990,8 @@ function singularity(thread: thread_.thread_t, mp: mp_.movePicker_t, ttValue: nu
     }
 
     // Reapply the table move we took off
-    // move_.make(mp.tableMove, board, thread); // TODO
-    util_.ASSERT(move_.make(mp.tableMove, board, thread))
+    move_.make(mp.tableMove, board, thread); // TODO
+    //util_.ASSERT(move_.make(mp.tableMove, board, thread))
 
     // Move is singular if all other moves failed low
     return value <= rBeta;

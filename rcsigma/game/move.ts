@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------------------
-// Copyright (c) 2020 Michael Edegware
+// Copyright (c) 2020 - 2021 Michael Edegware
 // Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // -------------------------------------------------------------------------------------------------
 
@@ -369,7 +369,7 @@ function generateQuiet(board: board_.board_t, moves: move_t[]): number {
     const UP = bitboard_.pawnPush(board.turn)
     const rank3BB = bitboard_.ranks[util_.relativeRank(board.turn, 2)];
 
-    const occupied = bitboard_.getPieces(board.turn, board) | bitboard_.getPieces(board.turn ^ 1, board);
+    const occupied = board_.getPieces(board.turn, board) | board_.getPieces(board.turn ^ 1, board);
     let castles = 0n;
     if (board.turn == util_.Colors.WHITE) {
         castles |= (board.castlingRight & util_.Castling.WHITE_CASTLE_OO) ? bitboard_.bit(util_.SQ64(util_.Squares.H1)) : 0n
@@ -385,7 +385,7 @@ function generateQuiet(board: board_.board_t, moves: move_t[]): number {
     const myRooks = board.piecesBB[util_.ptToP(board.turn, util_.PieceType.ROOK)] | board.piecesBB[util_.ptToP(board.turn, util_.PieceType.QUEEN)];
     const myKing = board.piecesBB[util_.ptToP(board.turn, util_.PieceType.KING)];
 
-    const kingAttackers = attack_.allAttackersToSquare(board, occupied, util_.SQ64(board.kingSquare[board.turn])) & bitboard_.getPieces(board.turn ^ 1, board)
+    const kingAttackers = attack_.allAttackersToSquare(board, occupied, util_.SQ64(board.kingSquare[board.turn])) & board_.getPieces(board.turn ^ 1, board)
 
     // Double checks can only be evaded by moving the King
     if (bitboard_.several(kingAttackers)) {
@@ -453,8 +453,8 @@ function generateNoisy(board: board_.board_t, moves: move_t[]): number {
     const UpRight = (board.turn == util_.Colors.WHITE) ? bitboard_.Direction.NORTH_EAST : bitboard_.Direction.SOUTH_WEST;
     const UP = bitboard_.pawnPush(board.turn);
 
-    const US = bitboard_.getPieces(board.turn, board)
-    const THEM = bitboard_.getPieces(board.turn ^ 1, board)
+    const US = board_.getPieces(board.turn, board)
+    const THEM = board_.getPieces(board.turn ^ 1, board)
     const occupied = US | THEM;
 
     const myPawns = board.piecesBB[util_.ptToP(board.turn, util_.PieceType.PAWN)];
@@ -463,7 +463,7 @@ function generateNoisy(board: board_.board_t, moves: move_t[]): number {
     const myRooks = board.piecesBB[util_.ptToP(board.turn, util_.PieceType.ROOK)] | board.piecesBB[util_.ptToP(board.turn, util_.PieceType.QUEEN)];
     const myKing = board.piecesBB[util_.ptToP(board.turn, util_.PieceType.KING)];
 
-    const kingAttackers = attack_.allAttackersToSquare(board, occupied, util_.SQ64(board.kingSquare[board.turn])) & bitboard_.getPieces(board.turn ^ 1, board)
+    const kingAttackers = attack_.allAttackersToSquare(board, occupied, util_.SQ64(board.kingSquare[board.turn])) & board_.getPieces(board.turn ^ 1, board)
 
     // Double checks can only be evaded by moving the King
     if (bitboard_.several(kingAttackers)) {
@@ -515,10 +515,23 @@ function generateNoisy(board: board_.board_t, moves: move_t[]): number {
 function pseudoLegal(board: board_.board_t, move: move_t): boolean {
     const from = FROM_SQUARE(move);
     const to = TO_SQUARE(move);
+
+    // Quick check against obvious illegal moves, such as our special move values,
+    // moving a piece that is not ours, normal move and enpass moves that have bits
+    // set which would otherwise indicate that the move is a castle or a promotion
+    if ((move == NO_MOVE || move == NULL_MOVE)
+        || (util_.PIECE_COLOR(board.pieces[from]) != board.turn)
+        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.ENPASS))
+        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.PAWN_START))
+        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.CASTLE)))
+        return false;
+
+    if ((move & MOVE_FLAG.CAPTURED) && !(move & MOVE_FLAG.ENPASS) && (CAPTURED(move) != board.pieces[to])) return false
+
     const fType = util_.pToPt(board.pieces[from]);
 
-    const friendly = bitboard_.getPieces(board.turn, board);
-    const enemy = bitboard_.getPieces(board.turn ^ 1, board);
+    const friendly = board_.getPieces(board.turn, board);
+    const enemy = board_.getPieces(board.turn ^ 1, board);
     const occupied = friendly | enemy;
     let castles = 0n;
     if (board.turn == util_.Colors.WHITE) {
@@ -533,14 +546,8 @@ function pseudoLegal(board: board_.board_t, move: move_t): boolean {
     let forward = 0n;
     let kingAttackers: bitboard_.bitboard_t, cBB: bitboard_.bitboardObj_t
 
-
-    if ((move == NO_MOVE || move == NULL_MOVE)
-        || (util_.PIECE_COLOR(board.pieces[from]) != board.turn)
-        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.ENPASS))
-        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.PAWN_START))
-        || (!!(PROMOTED(move)) && !!(move & MOVE_FLAG.CASTLE)))
-        return false;
-
+    // Knight, Bishop, Rook, and Queen moves are legal so long as the
+    // move type is NORMAL and the destination is an attacked square
     switch (fType) {
         case util_.PieceType.KNIGHT:
             return !!(move & MOVE_FLAG.NORMAL) && bitboard_.isSet(bitboard_.knightAttacks(util_.SQ64(from)) & BigInt.asUintN(64, ~friendly), util_.SQ64(to))
@@ -724,7 +731,7 @@ function makeMove(move: move_t, board: board_.board_t, thread: thread_.thread_t)
     const me = board.turn;
     const opp = me ^ 1;
 
-    // initialise undo
+    // initialize undo
     const undo = {} as board_.undo_t;
     undo.currentPolyglotKey = board.currentPolyglotKey;
 
@@ -733,12 +740,12 @@ function makeMove(move: move_t, board: board_.board_t, thread: thread_.thread_t)
 
     undo.halfMoves = board.halfMoves;
     undo.fullMoves = board.fullMoves;
-    undo.ply = board.ply;
 
     undo.enpassant = board.enpassant;
     undo.castlingRight = board.castlingRight;
     undo.materialEg = board.materialEg;
     undo.materialMg = board.materialMg;
+    undo.fen = board_.boardToFen(board);
 
     thread.undoStack[thread.height] = undo;
 
@@ -758,7 +765,6 @@ function makeMove(move: move_t, board: board_.board_t, thread: thread_.thread_t)
     }
 
     thread.height++;
-    board.ply++;
     board.halfMoves++;
     board.fullMoves += (me === util_.Colors.BLACK) ? 1 : 0;
 
@@ -827,14 +833,15 @@ function makeMove(move: move_t, board: board_.board_t, thread: thread_.thread_t)
         return false;
     }
 
+    board_.checkBoard(board)
+
     return true;
 }
 
 function takeMove(board: board_.board_t, thread: thread_.thread_t): boolean {
     if (thread.height === 0) return false;
-    thread.height--;
-    board.ply--;
     board.fullMoves -= (board.turn === util_.Colors.WHITE) ? 1 : 0;
+    thread.height--;
 
     const move = thread.undoStack[thread.height].move;
     const from = FROM_SQUARE(move);
@@ -886,35 +893,38 @@ function takeMove(board: board_.board_t, thread: thread_.thread_t): boolean {
     board.turn = thread.undoStack[thread.height].turn;
     board.castlingRight = thread.undoStack[thread.height].castlingRight;
     board.halfMoves = thread.undoStack[thread.height].halfMoves;
+    board.fullMoves = thread.undoStack[thread.height].fullMoves;
     board.enpassant = thread.undoStack[thread.height].enpassant;
     board.materialEg = thread.undoStack[thread.height].materialEg;
     board.materialMg = thread.undoStack[thread.height].materialMg;
+
+    board_.checkBoard(board)
+
     return true;
 }
 
 function makeNullMove(board: board_.board_t, thread: thread_.thread_t) {
     const undo = {} as board_.undo_t;
 
+    // initialize undo
+    undo.turn = board.turn;
     undo.currentPolyglotKey = board.currentPolyglotKey;
     undo.enpassant = board.enpassant;
-    undo.halfMoves = board.halfMoves++;
-    undo.fullMoves = board.fullMoves++;
-    undo.ply = board.ply++;
-    undo.materialMg = board.materialMg;
-    undo.materialEg = board.materialEg;
-
+    undo.castlingRight = board.castlingRight
+    undo.halfMoves = board.halfMoves;
+    undo.fullMoves = board.fullMoves;
+    undo.move = NO_MOVE;
     thread.undoStack[thread.height] = undo;
 
-    board.turn = board.turn ^ 1;
+    board.turn ^= 1;
     board.currentPolyglotKey ^= util_.random64Poly[util_.randomTurn];
+    if (board.enpassant != util_.Squares.OFF_SQUARE) board.currentPolyglotKey ^= util_.random64Poly[util_.randomEnpass + util_.filesBoard[board.enpassant]];
 
-    board.currentPolyglotKey ^= util_.random64Poly[util_.randomEnpass + util_.filesBoard[board.enpassant]];
-    if (board.enpassant != util_.Squares.OFF_SQUARE) {
-        board.currentPolyglotKey ^= util_.random64Poly[util_.randomEnpass + util_.filesBoard[board.enpassant]];
-        board.enpassant = util_.Squares.OFF_SQUARE;
-    }
-
+    board.enpassant = util_.Squares.OFF_SQUARE;
+    board.fullMoves++;
     thread.height++;
+
+    board_.checkBoard(board)
 }
 
 
@@ -938,26 +948,48 @@ function make(move: move_t, board: board_.board_t, thread: thread_.thread_t): bo
 
 function takeNullMove(board: board_.board_t, thread: thread_.thread_t) {
     thread.height--;
-    board.ply--;
 
-    board.currentPolyglotKey = thread.undoStack[thread.height].currentPolyglotKey; //Hack
     board.castlingRight = thread.undoStack[thread.height].castlingRight;
     board.halfMoves = thread.undoStack[thread.height].halfMoves;
+    board.fullMoves = thread.undoStack[thread.height].fullMoves;
     board.enpassant = thread.undoStack[thread.height].enpassant;
-    board.materialEg = thread.undoStack[thread.height].materialEg;
-    board.materialMg = thread.undoStack[thread.height].materialMg;
+    board.turn = thread.undoStack[thread.height].turn;
+    board.currentPolyglotKey = thread.undoStack[thread.height].currentPolyglotKey;
 
-    board.turn = board.turn ^ 1;
+    board_.checkBoard(board)
     return true;
 }
 
+function makeLegal(move: move_t, board: board_.board_t, thread: thread_.thread_t): void {
+
+    // Track some move information for history lookups
+    thread.movesStack[thread.height] = move;
+    thread.pieceStack[thread.height] = board.pieces[FROM_SQUARE(move)];
+
+    // Assumed tShat this move is legal
+    const wasLegal = makeMove(move, board, thread)
+    util_.ASSERT(wasLegal, "last move was not legal")
+}
+
 function take(move: move_t, board: board_.board_t, thread: thread_.thread_t): boolean {
+    board_.checkBoard(board)
     if (move == NULL_MOVE) {
         return takeNullMove(board, thread)
     }
     else {
         return takeMove(board, thread)
     }
+    /*try {
+        board_.checkBoard(board)
+    } catch (e) {
+        console.log(util_.pieceToAscii[CAPTURED(move)])
+        console.log(`${board_.boardToFen(board)} ${moveToSmith(move)} ${move}`)
+        for (let i = 0; i <= thread.height; i++) {
+            console.log(thread.undoStack[i].fen)
+            console.log(`${moveToSmith(thread.movesStack[i])} ${util_.pieceToAscii[thread.pieceStack[i]]} ${moveToSmith(thread.undoStack[i].move)}`)
+        }
+        throw e
+    }*/
 }
 
 
@@ -1021,14 +1053,14 @@ function moveIsInRootMoves(thread: thread_.thread_t, move: move_t): number {
     // if we are doing a "go searchmoves <>"  command, in which case we have
     // to limit our search to the provided moves.
 
-    for (let i = 0; i < util_.MAX_MOVES; i++)
+    for (let i = 0; i < thread.searchInfo.excludedMoves.length; i++)
         if (move == thread.searchInfo.excludedMoves[i])
             return 0;
 
     if (!thread.searchInfo.limitedByMoves)
         return 1;
 
-    for (let i = 0; i < util_.MAX_MOVES; i++)
+    for (let i = 0; i < thread.searchInfo.searchMoves.length; i++)
         if (move == thread.searchInfo.searchMoves[i])
             return 1;
 
@@ -1051,6 +1083,8 @@ export {
     NULL_MOVE,
     MOVE_FLAG,
 
+    CAPTURED,
+
 
     smithToMove,
     moveToSmith,
@@ -1067,6 +1101,7 @@ export {
     clearPieces,
     addPiece,
     movePiece,
+    makeLegal,
     makeMove,
     takeMove,
     make,

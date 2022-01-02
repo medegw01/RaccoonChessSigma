@@ -40,6 +40,7 @@
     "test:perft": "jest -- ./tests/perft.test.ts",
     "test:general": "jest -- ./tests/general.test.ts",
     "test:poly": "jest -- ./tests/poly.test.ts",
+    "test:search": "jest -- ./tests/search.test.ts",
     "coverage": "jest --coverage",
     "lint-and-fix": "eslint \"*/**/*.{js,ts,tsx}\" --fix",
     "lint": "eslint \"*/**/*.{js,ts,tsx}\""

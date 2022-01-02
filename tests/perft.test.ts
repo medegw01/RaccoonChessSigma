@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------------------------------
+// Copyright (c) 2021 Michael Edegware
+// Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+// -------------------------------------------------------------------------------------------------
+
 import * as util_ from '../rcsigma/util'
 import * as board_ from '../rcsigma/game/board'
 import * as bitboard_ from '../rcsigma/game/bitboard'
